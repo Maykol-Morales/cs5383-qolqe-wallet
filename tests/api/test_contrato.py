@@ -21,6 +21,10 @@ CHECKS = [schemathesis.checks.not_a_server_error, schemathesis.checks.status_cod
           schemathesis.checks.response_schema_conformance]
 
 
+# derandomize: mismos ejemplos en cada corrida, para que el pipeline sea repetible.
+# Para explorar con otras semillas: quitar derandomize y subir CONTRATO_EJEMPLOS.
+
+
 @pytest.fixture(scope="session")
 def servidor():
     if URL:
@@ -60,7 +64,7 @@ lazy = schemathesis.pytest.from_fixture("esquema")
 
 
 @lazy.exclude(path_regex=EXCLUIDAS).parametrize()
-@settings(max_examples=int(os.getenv("CONTRATO_EJEMPLOS", "15")), deadline=None, suppress_health_check=list(HealthCheck))
+@settings(max_examples=int(os.getenv("CONTRATO_EJEMPLOS", "15")), deadline=None, derandomize=True, suppress_health_check=list(HealthCheck))
 @pytest.mark.contrato
 def test_contrato_openapi(case, autorizacion):
     """Respuestas conformes al esquema: códigos, tipos, cabeceras y sin errores 5xx."""
