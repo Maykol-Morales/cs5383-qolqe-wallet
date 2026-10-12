@@ -1,0 +1,147 @@
+# language: en
+@g3
+Feature: Categorías de movimientos
+  Como cliente
+  Quiero crear y administrar categorías propias
+  Para organizar mis gastos
+
+  # Datos: Ana tiene 3 categorías: Comida, Familia y Servicios.
+
+  Background:
+    Given que inicié sesión como Ana
+
+  @HU-G3-03 @api
+  Scenario: Crear una categoría con nombre y color de la paleta
+    When creo la categoría "Transporte" de color "#43A047"
+    Then la respuesta es 201
+    And la categoría "Transporte" existe con color "#43A047" y 0 movimientos
+
+  @HU-G3-03 @api
+  Scenario Outline: Longitud del nombre (3 a 20 caracteres)
+    When creo una categoría con nombre de <n> caracteres
+    Then la operación es "<resultado>"
+
+    Examples:
+      | n  | resultado          |
+      | 2  | CATEGORIA_INVALIDA |
+      | 3  | exitosa            |
+      | 20 | exitosa            |
+      | 21 | CATEGORIA_INVALIDA |
+
+  @HU-G3-03 @api
+  Scenario Outline: El color debe ser de la paleta de 8 colores
+    When creo la categoría "Transporte" de color "<color>"
+    Then la operación es "<resultado>"
+
+    Examples:
+      | color   | resultado          |
+      | #E53935 | exitosa            |
+      | #6D4C41 | exitosa            |
+      | #000000 | CATEGORIA_INVALIDA |
+      | rojo    | CATEGORIA_INVALIDA |
+
+  @HU-G3-03 @api
+  Scenario Outline: El nombre es único sin distinguir mayúsculas
+    When creo la categoría "<nombre>" de color "#43A047"
+    Then la operación es "<resultado>"
+
+    Examples:
+      | nombre    | resultado           |
+      | Comida    | CATEGORIA_DUPLICADA |
+      | COMIDA    | CATEGORIA_DUPLICADA |
+      | comida    | CATEGORIA_DUPLICADA |
+      | Comidas   | exitosa             |
+
+  @HU-G3-03 @api
+  Scenario Outline: Máximo 10 categorías por usuario (R-G3-03)
+    Given que ya tengo <existentes> categorías
+    When creo la categoría "Nueva cat" de color "#43A047"
+    Then la operación es "<resultado>"
+
+    Examples:
+      | existentes | resultado         |
+      | 8          | exitosa           |
+      | 9          | exitosa           |
+      | 10         | LIMITE_CATEGORIAS |
+
+  @HU-G3-04 @api
+  Scenario: Mis categorías en orden alfabético con su cantidad de movimientos
+    When listo mis categorías
+    Then veo las categorías "Comida, Familia, Servicios" en orden alfabético
+    And la categoría "Servicios" tiene 5 movimientos y la categoría "Comida" tiene 0
+
+  @HU-G3-04 @api
+  Scenario: Solo veo mis categorías
+    Given que Carla tiene la categoría "Ajena"
+    When listo mis categorías
+    Then veo las categorías "Comida, Familia, Servicios" en orden alfabético
+
+  @HU-G3-05 @api
+  Scenario: Cambiar el nombre y el color de una categoría
+    When cambio la categoría "Comida" a nombre "Restaurantes" y color "#FB8C00"
+    Then la categoría "Restaurantes" existe con color "#FB8C00" y 0 movimientos
+
+  @HU-G3-05 @api
+  Scenario: Cambiar solo el color conserva el nombre
+    When cambio el color de la categoría "Comida" a "#FB8C00"
+    Then la categoría "Comida" existe con color "#FB8C00" y 0 movimientos
+
+  @HU-G3-05 @api
+  Scenario Outline: Editar no compara la categoría consigo misma
+    When renombro la categoría "Comida" como "<nombre>"
+    Then la operación es "exitosa"
+
+    Examples:
+      | nombre |
+      | Comida |
+      | COMIDA |
+
+  @HU-G3-05 @api @DEF-10
+  Scenario Outline: Editar valida los nombres duplicados de otras categorías
+    When renombro la categoría "Comida" como "<nombre>"
+    Then la respuesta es 409 con el código "CATEGORIA_DUPLICADA"
+
+    Examples:
+      | nombre    |
+      | Familia   |
+      | SERVICIOS |
+
+  @HU-G3-05 @api
+  Scenario Outline: Editar aplica las reglas de nombre y color
+    When cambio la categoría "Comida" a nombre "<nombre>" y color "<color>"
+    Then la operación es "<resultado>"
+
+    Examples:
+      | nombre                | color   | resultado          |
+      | Co                    | #43A047 | CATEGORIA_INVALIDA |
+      | Comida de la oficina! | #43A047 | CATEGORIA_INVALIDA |
+      | Comida                | #123456 | CATEGORIA_INVALIDA |
+
+  @HU-G3-05 @api
+  Scenario: No puedo editar la categoría de otro usuario
+    Given que Carla tiene la categoría "Ajena"
+    When intento editar la categoría de Carla
+    Then la respuesta es 404 con el código "CATEGORIA_NO_ENCONTRADA"
+
+  @HU-G3-06 @api
+  Scenario: Eliminar una categoría deja sus movimientos sin categoría
+    When elimino la categoría "Servicios"
+    Then la respuesta es 204
+    And la categoría "Servicios" ya no existe
+    And los 5 movimientos que tenía quedan sin categoría y conservan su monto, fecha y tipo
+
+  @HU-G3-06 @api
+  Scenario: Eliminar una categoría ajena o inexistente responde 404
+    Given que Carla tiene la categoría "Ajena"
+    When intento eliminar la categoría de Carla
+    Then la respuesta es 404 con el código "CATEGORIA_NO_ENCONTRADA"
+
+  @HU-G3-06 @api
+  Scenario: Eliminar una categoría no afecta los movimientos de otras categorías
+    When elimino la categoría "Servicios"
+    Then los 5 movimientos de "Familia" siguen con su categoría
+
+  @HU-G3-03 @api
+  Scenario: Las categorías requieren sesión
+    When listo mis categorías sin token
+    Then la respuesta es 401 con el código "NO_AUTENTICADO"
