@@ -6,3 +6,5 @@ datos/
 .coverage
 htmlcov/
 reportes/
+reporte-schemathesis/
+*.pptx.pdf
