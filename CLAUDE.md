@@ -49,7 +49,7 @@ pytest tests/api -m "HU-G3-01"         # una historia (cada escenario lleva etiq
 MOSTRAR_DEFECTOS=1 pytest tests/api    # los defectos fallan a la vista
 QOLQE_URL=http://localhost:8000 pytest tests/api/test_nucleo.py   # contra servidor real
 pytest --cov=qolqe                     # cobertura (64 %)
-./demo.sh preparar | ensayo | demo | schemathesis [todos] | plan-b   # ver "Presentación y demo"
+./demo.sh preparar | ensayo | demo | schemathesis [g3] [todos] | plan-b   # ver "Presentación y demo"
 ```
 
 Resultado de referencia (Parte 1, 2026-10-17): `252 passed, 1 skipped, 24 xfailed` + 60 subpruebas de contrato, 141 escenarios Gherkin (G3 70, núcleo 71), 12 defectos abiertos, unos 70 s. El skip es el escenario `@concurrencia` (pertenece a la Parte 3).
@@ -91,7 +91,8 @@ DEF-01 redondeo comisión · 02 PIN descendente aceptado · 03 login exitoso no 
 - **Estructura pedida por el docente**: 1) herramienta de automatización y justificación (1-2 slides), 2) módulo asignado, importancia y prioridad (1-2 slides), 3) diseño de casos funcionales y técnicos sobre una HU elegida, 4) demo en vivo (solo indicar que viene). El equipo eligió **HU-N-07** (núcleo, transferencias) y **HU-G3-01** (historial).
 - **Artifacts** (privados; Maykol los comparte desde Share): presentación https://claude.ai/artifact/Y36yMfSCkNB16EiFANs8xK (13 slides: portada, herramienta, módulo, 4 de HU-N-07, 4 de HU-G3-01, técnicos, demo) y mapa visual https://claude.ai/artifact/KASkEjLiBq5AsLbhrKifQq. Se mantienen con las fuentes en el scratchpad de la sesión (no versionadas): hay que actualizar cifras en ambos cuando cambie el repo.
 - Diseño de la presentación: fondo verde bosque / crema / dorado, Fraunces + DM Sans + JetBrains Mono; en el slide 2 se quitó Schemathesis a propósito (queda en el slide de técnicos como "Contrato OpenAPI").
-- **demo.sh**: `preparar` crea `.venv`; `ensayo` corre los 4 pasos (HU-G3-01, todo, DEF-07 con `MOSTRAR_DEFECTOS=1`, contrato) y mide tiempo; `demo` pausa con Enter; `schemathesis [todos]` levanta un servidor temporal, corre el CLI con `--seed 1` y abre el HTML en `reporte-schemathesis/` (ignorado por git); `plan-b` guarda la salida en `reportes/ensayo.txt`; `SIN_CONTRATO=1` omite el paso 4. El paso 3 sale con rc=1 a propósito (los defectos fallan a la vista): avisarlo al presentar.
+- **demo.sh**: `preparar` crea `.venv`; `ensayo` corre los 4 pasos (HU-G3-01, todo, DEF-07 con `MOSTRAR_DEFECTOS=1`, contrato) y mide tiempo; `demo` pausa con Enter; `schemathesis [g3] [todos]` levanta un servidor temporal, corre el CLI con `--seed 1` y abre el HTML en `reporte-schemathesis/` (ignorado por git); `plan-b` guarda la salida en `reportes/ensayo.txt`; `SIN_CONTRATO=1` omite el paso 4. El paso 3 sale con rc=1 a propósito (los defectos fallan a la vista): avisarlo al presentar.
+- **Corrida `schemathesis g3`** (2026-10-17): 9/69 operaciones (movimientos y categorías), 1212 casos, todos pasan; aviso de Schemathesis: `GET /api/movimientos` y `POST /api/categorias` validan más de lo que documenta el OpenAPI (mismo tipo que "contrato impreciso", no es defecto).
 - **Corrida del CLI con todos los checks**: 44 hallazgos (23 contrato impreciso, 3 datos inválidos aceptados, 17 `Allow` ruido, 1 recurso tras crear), ninguno 5xx; clasificados en `docs/informe.md` §2. No se registran como defectos nuevos (solo es defecto lo que incumple la documentación o da 5xx).
 - **Revisión completa con agentes (Opus)**: se corrigieron datos de los slides (prioridad del núcleo, escenario del DEF-07), verdes falsos (cierre de cuenta, HU-N-03 CA2, "eliminar dos veces", notas leídas de vuelta, códigos de error explícitos) y se registró **DEF-13**. Hallazgo descartado: la fila "Página" ya es valor límite en el análisis.
 

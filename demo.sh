@@ -5,6 +5,7 @@
 #   ./demo.sh demo            igual, pero espera Enter entre pasos (para el vivo)
 #   ./demo.sh schemathesis    CLI de Schemathesis contra un servidor temporal; abre el reporte HTML
 #   ./demo.sh schemathesis todos   ídem con todos los checks (44 hallazgos, ver informe §2)
+#   ./demo.sh schemathesis g3      solo endpoints de G3 (movimientos y categorías); combinable: g3 todos
 #   ./demo.sh plan-b          pytest -rx guardando la salida en reportes/ensayo.txt (pregrabada)
 # El paso 4 (contrato) repite lo que ya corre en el paso 2: es opcional, SIN_CONTRATO=1 lo omite.
 set -euo pipefail
@@ -37,7 +38,13 @@ pasos() {
 schemathesis_cli() {
   activar
   local checks="not_a_server_error,status_code_conformance,content_type_conformance,response_headers_conformance,response_schema_conformance"
-  [ "${1:-}" = todos ] && checks=all
+  local incluir=()
+  for a in "$@"; do
+    case "$a" in
+      todos) checks=all ;;
+      g3) incluir=(--include-path-regex '^/api/(movimientos|categorias)') ;;
+    esac
+  done
   command -v curl >/dev/null || { echo "Falta curl"; exit 1; }
   if (exec 3<>"/dev/tcp/localhost/$PUERTO") 2>/dev/null; then
     echo "Puerto $PUERTO ocupado: usa otro con PUERTO=nnnn ./demo.sh schemathesis"; exit 1
@@ -61,10 +68,10 @@ schemathesis_cli() {
     -d '{"celular":"987654321","pin":"4826"}' | python -c "import sys,json;print(json.load(sys.stdin)['access_token'])")
   # Se excluyen operaciones que invalidan la sesión o el reloj compartidos
   schemathesis run "http://localhost:$PUERTO/openapi.json" -H "Authorization: Bearer $token" \
-    --seed 1 --max-examples 30 --checks "$checks" \
+    --seed 1 --max-examples 30 --checks "$checks" "${incluir[@]}" \
     --exclude-path-regex '/api/auth/logout|/api/seguridad/sesiones|/api/pruebas/reloj|/api/pruebas/reiniciar|/api/cuentas/me/cierre' \
     --report html --report-dir reporte-schemathesis || true
-  local html; html=$(find reporte-schemathesis -name 'index.html' 2>/dev/null | head -1 || true)
+  local html; html=$(ls -t reporte-schemathesis/*/index.html 2>/dev/null | head -1 || true)
   if [ -n "$html" ]; then
     echo "Reporte: $html"
     command -v xdg-open >/dev/null && xdg-open "$html" >/dev/null 2>&1 || { command -v open >/dev/null && open "$html"; } || true
@@ -80,7 +87,7 @@ case "${1:-}" in
     else echo "Aviso: schemathesis no quedó instalado (revisa requirements-dev.txt)"; exit 1; fi ;;
   ensayo) pasos ;;
   demo) PAUSA=1 pasos ;;
-  schemathesis) schemathesis_cli "${2:-}" ;;
+  schemathesis) shift; schemathesis_cli "$@" ;;
   plan-b) activar; mkdir -p reportes; pytest -rx 2>&1 | tee reportes/ensayo.txt || true ;;
   *) sed -n '2,/^set /{/^set /!p}' "$0" ;;
 esac
