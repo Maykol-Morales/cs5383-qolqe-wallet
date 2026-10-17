@@ -37,11 +37,14 @@ Feature: Transferencias
       | 500.01 | MONTO_INVALIDO |
       | 10.005 | MONTO_INVALIDO |
       | 10.50  | exitosa        |
+      | 100.50 | exitosa        |
+      | -10.00 | MONTO_INVALIDO |
+      | 600.00 | MONTO_INVALIDO |
 
   @HU-N-07 @api
   Scenario: Descripción de hasta 60 caracteres
     When transfiero S/ 10.00 al celular 912345678 con una descripción de 61 caracteres
-    Then la respuesta es 422
+    Then la respuesta es 422 con el código "SOLICITUD_INVALIDA"
 
   @HU-N-07 @api
   Scenario: Descripción de exactamente 60 caracteres
@@ -112,6 +115,7 @@ Feature: Transferencias
     When intento transferir S/ 500.00 al celular 912345678
     Then la operación es "exitosa"
 
+  # Pertenece a la Parte 3 (rendimiento): se omite con skip y sus pasos se implementarán allí.
   @HU-N-07 @concurrencia
   Scenario: Transferencias simultáneas no superan el límite diario ni dejan el saldo negativo
     Given que inicié sesión como Carla
@@ -131,7 +135,9 @@ Feature: Transferencias
       | 66.00  | 1.00     | 67.00  |
       | 100.00 | 1.50     | 101.50 |
       | 300.00 | 4.50     | 304.50 |
+      | 332.99 | 4.99     | 337.98 |
       | 333.33 | 5.00     | 338.33 |
+      | 400.00 | 5.00     | 405.00 |
       | 500.00 | 5.00     | 505.00 |
       | 66.99  | 1.00     | 67.99  |
       | 333.34 | 5.00     | 338.34 |
@@ -164,6 +170,7 @@ Feature: Transferencias
     Then la respuesta es 201
     And el comprobante muestra monto S/ 100.00, comisión S/ 1.50, total S/ 101.50 y mi nuevo saldo S/ 1398.50
     And el CCI del comprobante termina en "9012" y no revela el resto
+    And el movimiento en mi historial y su detalle muestran el CCI terminado en "9012" sin revelar el resto
 
   @HU-N-09 @api
   Scenario Outline: Simulación de la comisión sin realizar ninguna operación
@@ -184,12 +191,12 @@ Feature: Transferencias
   @HU-N-07 @api
   Scenario: El monto debe ser numérico
     When intento transferir S/ abc al celular 912345678
-    Then la respuesta es 422
+    Then la respuesta es 422 con el código "SOLICITUD_INVALIDA"
 
   @HU-N-07 @api
   Scenario: El monto es obligatorio
     When intento transferir sin monto al celular 912345678
-    Then la respuesta es 422
+    Then la respuesta es 422 con el código "SOLICITUD_INVALIDA"
 
   @HU-N-07 @api
   Scenario: Un acumulado un centavo bajo el límite diario es válido
@@ -236,12 +243,49 @@ Feature: Transferencias
   @HU-N-09 @api
   Scenario: Un tipo de transferencia inexistente es rechazado
     When simulo una transferencia OTRO de S/ 100.00
-    Then la respuesta es 422
+    Then la respuesta es 422 con el código "SOLICITUD_INVALIDA"
 
   @HU-N-09 @api
   Scenario: Sin tipo la simulación se trata como transferencia entre cuentas Qolqe
     When simulo una transferencia de S/ 100.00 sin indicar el tipo
     Then veo comisión S/ 0.00 y total S/ 100.00
+
+  @HU-N-08 @api
+  Scenario Outline: El límite diario cuenta las transferencias interbancarias hasta el límite
+    Given que inicié sesión como Diego
+    And que ya transferí S/ 500.00 al CCI 00219300123456789012
+    And que ya transferí S/ <segunda> al CCI 00219300123456789012
+    When intento transferir S/ 0.01 al CCI 00219300123456789012
+    Then la operación es "exitosa"
+
+    Examples:
+      | segunda |
+      | 499.98  |
+      | 499.99  |
+
+  @HU-N-08 @api @DEF-13
+  Scenario: Una interbancaria que supera el límite diario acumulado se rechaza
+    Given que inicié sesión como Diego
+    And que ya transferí S/ 500.00 al CCI 00219300123456789012
+    And que ya transferí S/ 500.00 al CCI 00219300123456789012
+    When intento transferir S/ 0.01 al CCI 00219300123456789012
+    Then la respuesta es 422 con el código "LIMITE_DIARIO_EXCEDIDO"
+
+  @HU-N-08 @api @DEF-13
+  Scenario: Las interbancarias del día cuentan para el límite de una transferencia a Qolqe
+    Given que inicié sesión como Diego
+    And que ya transferí S/ 500.00 al CCI 00219300123456789012
+    And que ya transferí S/ 500.00 al CCI 00219300123456789012
+    When intento transferir S/ 0.01 al celular 912345678
+    Then la respuesta es 422 con el código "LIMITE_DIARIO_EXCEDIDO"
+
+  @HU-N-08 @api
+  Scenario: Las transferencias a Qolqe del día cuentan para el límite de una interbancaria
+    Given que inicié sesión como Diego
+    And que ya transferí S/ 500.00 al celular 912345678
+    And que ya transferí S/ 500.00 al celular 912345678
+    When intento transferir S/ 0.01 al CCI 00219300123456789012
+    Then la respuesta es 422 con el código "LIMITE_DIARIO_EXCEDIDO"
 
   @HU-N-07 @api @DEF-12
   Scenario: Dos transferencias en el mismo segundo tienen códigos de operación distintos

@@ -10,9 +10,13 @@ Feature: Historial de movimientos
 
   @HU-G3-01 @api
   Scenario: Por defecto se consultan los últimos 30 días hasta hoy
-    Given que inicié sesión como Ana
+    Given que soy un usuario nuevo con saldo S/ 100.00
+    And que hice una transferencia de S/ 0.01 a Bruno hace 31 días a las 23:59:59
+    And que hice una transferencia de S/ 0.01 a Bruno hace 30 días a las 00:00:00
     When consulto mi historial
     Then el rango del historial es de hace 30 días hasta hoy
+    And el historial indica 1 movimiento y 1 página
+    And el movimiento más reciente es esa transferencia
 
   @HU-G3-01 @api @DEF-07
   Scenario: El historial por defecto incluye los movimientos de hoy
@@ -25,19 +29,20 @@ Feature: Historial de movimientos
   Scenario: El rango incluye completo el día "hasta"
     Given que tengo 3 movimientos de hace un día
     When consulto mi historial desde "ayer" hasta "ayer"
-    Then el historial indica 3 movimientos y 1 páginas
+    Then el historial indica 3 movimientos y 1 página
 
   @HU-G3-01 @api
   Scenario: El rango incluye completo el día "desde"
     Given que tengo 3 movimientos de hace un día
     When consulto mi historial desde "ayer" hasta "hoy"
-    Then el historial indica 3 movimientos y 1 páginas
+    Then el historial indica 3 movimientos y 1 página
 
   @HU-G3-01 @api
   Scenario: Un rango sin movimientos devuelve una lista vacía
     Given que tengo 3 movimientos de hace un día
     When consulto mi historial desde "hace 10 días" hasta "hace 2 días"
-    Then el historial indica 0 movimientos y 1 páginas
+    Then el historial indica 0 movimientos y 1 página
+    And la página trae 0 movimientos
 
   @HU-G3-01 @api
   Scenario Outline: Validación del rango de consulta (R-G3-01)
@@ -61,7 +66,7 @@ Feature: Historial de movimientos
   Scenario Outline: Filtro por tipo de movimiento
     Given que inicié sesión como Ana
     When consulto mi historial de los últimos 90 días de tipo "<tipo>"
-    Then el historial indica 5 movimientos y 1 páginas
+    Then el historial indica 5 movimientos y 1 página
     And todos los movimientos son de tipo "<tipo>"
 
     Examples:
@@ -74,7 +79,7 @@ Feature: Historial de movimientos
   Scenario: El filtro por tipo incluye la recarga de hoy
     Given que inicié sesión como Ana
     When consulto mi historial de los últimos 90 días de tipo "RECARGA"
-    Then el historial indica 6 movimientos y 1 páginas
+    Then el historial indica 6 movimientos y 1 página
 
   @HU-G3-01 @api
   Scenario: Un tipo inexistente es rechazado
@@ -86,7 +91,7 @@ Feature: Historial de movimientos
   Scenario Outline: Filtro por categoría
     Given que inicié sesión como Ana
     When consulto mi historial de los últimos 90 días de la categoría "<categoria>"
-    Then el historial indica 5 movimientos y 1 páginas
+    Then el historial indica 5 movimientos y 1 página
     And todos los movimientos tienen la categoría "<categoria>"
 
     Examples:
@@ -95,9 +100,9 @@ Feature: Historial de movimientos
       | Familia   |
 
   @HU-G3-01 @api
-  Scenario: Una categoría inexistente o de otro usuario es rechazada
+  Scenario: Una categoría inexistente como filtro es rechazada
     Given que inicié sesión como Ana
-    When consulto mi historial de la categoría "NoExiste"
+    When consulto mi historial de una categoría que no existe
     Then la respuesta es 422 con el código "FILTRO_INVALIDO"
 
   @HU-G3-01 @api
@@ -118,15 +123,15 @@ Feature: Historial de movimientos
 
   @HU-G3-01 @api
   Scenario Outline: Cada página trae como máximo 10 movimientos
-    Given que tengo 11 movimientos de hace un día
+    Given que tengo 21 movimientos de hace un día
     When consulto la página <pagina> de mi historial
     Then la página trae <cantidad> movimientos
 
     Examples:
       | pagina | cantidad |
       | 1      | 10       |
-      | 2      | 1        |
-      | 3      | 0        |
+      | 3      | 1        |
+      | 4      | 0        |
 
   @HU-G3-01 @api
   Scenario Outline: La página debe ser mayor o igual a 1
@@ -206,16 +211,28 @@ Feature: Historial de movimientos
     And que hice una transferencia de S/ 25.00 a Bruno
     When agrego a ese movimiento una nota de <n> caracteres
     Then la operación es "<resultado>"
+    And la nota guardada del movimiento tiene <guardada> caracteres
 
+    # Una nota vacía ("", 0 caracteres) se acepta y deja el movimiento sin nota (null).
     Examples:
-      | n   | resultado     |
-      | 1   | exitosa       |
-      | 100 | exitosa       |
-      | 99  | exitosa       |
-      | 101 | NOTA_INVALIDA |
+      | n   | resultado     | guardada |
+      | 0   | exitosa       | 0        |
+      | 1   | exitosa       | 1        |
+      | 100 | exitosa       | 100      |
+      | 99  | exitosa       | 99       |
+      | 101 | NOTA_INVALIDA | 0        |
 
   @HU-G3-07 @api
-  Scenario: Editar y quitar la nota
+  Scenario: Editar la nota
+    Given que inicié sesión como Ana
+    And que hice una transferencia de S/ 25.00 a Bruno
+    And que agregué a ese movimiento la nota "Almuerzo"
+    When cambio la nota de ese movimiento a "Almuerzo con Bruno"
+    Then el movimiento queda con la nota "Almuerzo con Bruno"
+    And el movimiento conserva su monto, fecha y tipo
+
+  @HU-G3-07 @api
+  Scenario: Quitar la nota
     Given que inicié sesión como Ana
     And que hice una transferencia de S/ 25.00 a Bruno
     And que agregué a ese movimiento la nota "Almuerzo"
@@ -288,18 +305,33 @@ Feature: Historial de movimientos
       | hace 90 días | hoy    | exitosa         |
       | hace 91 días | hoy    | FILTRO_INVALIDO |
       | hace 5 días  | mañana | FILTRO_INVALIDO |
+      | hace 10 días | hace 11 días | FILTRO_INVALIDO |
 
+  @HU-G3-08 @api
+  Scenario: Exportar con la categoría de otro usuario es rechazado
+    Given que Carla tiene la categoría "Ajena"
+    And que inicié sesión como Ana
+    When exporto mis movimientos de la categoría de Carla
+    Then la respuesta es 422 con el código "FILTRO_INVALIDO"
+
+  @HU-G3-08 @api
+  Scenario: Exportar requiere sesión
+    When exporto mis movimientos sin token
+    Then la respuesta es 401 con el código "NO_AUTENTICADO"
+
+  # Dato semilla: la última transferencia de Ana a Carla está en "Familia" con la nota "Cumpleaños de Carla".
   @HU-G3-08 @api
   Scenario: El CSV incluye la categoría y la nota
     Given que inicié sesión como Ana
-    When exporto mis movimientos de los últimos 90 días de la categoría "Servicios"
-    Then todas las filas del CSV tienen la categoría "Servicios"
+    When exporto mis movimientos de los últimos 90 días de la categoría "Familia"
+    Then todas las filas del CSV tienen la categoría "Familia"
+    And exactamente una fila del CSV tiene la nota "Cumpleaños de Carla"
 
   @HU-G3-01 @api
   Scenario Outline: Una fecha mal formada es rechazada
     Given que inicié sesión como Ana
     When consulto mi historial con desde "<fecha>"
-    Then la respuesta es 422
+    Then la respuesta es 422 con el código "SOLICITUD_INVALIDA"
 
     Examples:
       | fecha      |
@@ -318,23 +350,23 @@ Feature: Historial de movimientos
   Scenario: La página debe ser numérica
     Given que inicié sesión como Ana
     When consulto la página "abc" de mi historial
-    Then la respuesta es 422
+    Then la respuesta es 422 con el código "SOLICITUD_INVALIDA"
 
   @HU-G3-01 @api
   Scenario: El rango incluye desde las 00:00:00 del día "desde" y excluye el día anterior
     Given que soy un usuario nuevo con saldo S/ 100.00
     And que hice una transferencia de S/ 0.01 a Bruno hace 3 días a las 23:59:59
     And que hice una transferencia de S/ 0.01 a Bruno hace 2 días a las 00:00:00
-    When consulto mi historial desde "hace 2 días" hasta "hace 1 días"
-    Then el historial indica 1 movimientos y 1 páginas
+    When consulto mi historial desde "hace 2 días" hasta "ayer"
+    Then el historial indica 1 movimiento y 1 página
 
   @HU-G3-01 @api @DEF-07
   Scenario: El rango incluye hasta las 23:59:59 del día "hasta" y excluye el día siguiente
     Given que soy un usuario nuevo con saldo S/ 100.00
-    And que hice una transferencia de S/ 0.01 a Bruno hace 1 días a las 23:59:59
+    And que hice una transferencia de S/ 0.01 a Bruno hace 1 día a las 23:59:59
     And que hice una transferencia de S/ 0.01 a Bruno hace 0 días a las 00:00:00
-    When consulto mi historial desde "hace 2 días" hasta "hace 1 días"
-    Then el historial indica 1 movimientos y 1 páginas
+    When consulto mi historial desde "hace 2 días" hasta "ayer"
+    Then el historial indica 1 movimiento y 1 página
 
   @HU-G3-07 @api
   Scenario: Una categoría inexistente al clasificar responde 404

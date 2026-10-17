@@ -10,7 +10,7 @@ Proyecto 2 del curso **CS5383 Pruebas y Verificación de Software** (UTEC). Cont
 
 | Parte | Contenido | Estado |
 |---|---|---|
-| 1 | Pruebas de API (núcleo + G3), contrato con Schemathesis, 11 defectos, análisis EP/VL mapeado a escenarios | Hecha |
+| 1 | Pruebas de API (núcleo + G3), contrato con Schemathesis, 12 defectos, análisis EP/VL mapeado a escenarios | Hecha |
 | CI | GitHub Actions: pytest + cobertura + junit | Hecha |
 | 2 | Pruebas web E2E con Page Objects (`tests/e2e/pages/`) | Pendiente (solo `.gitkeep`) |
 | 3 | Rendimiento (`tests/performance/`) | Pendiente (solo `.gitkeep`) |
@@ -49,7 +49,7 @@ QOLQE_URL=http://localhost:8000 pytest tests/api/test_nucleo.py   # contra servi
 pytest --cov=qolqe                     # cobertura
 ```
 
-Resultado de referencia (Parte 1): `239 passed, 1 skipped, 22 xfailed` + 60 subpruebas de contrato. El skip es el escenario `@concurrencia` (pertenece a la Parte 3).
+Resultado de referencia (Parte 1): `252 passed, 1 skipped, 24 xfailed` + 60 subpruebas de contrato. El skip es el escenario `@concurrencia` (pertenece a la Parte 3).
 
 ## Convenciones de las pruebas
 
@@ -81,7 +81,7 @@ Resultado de referencia (Parte 1): `239 passed, 1 skipped, 22 xfailed` + 60 subp
 
 ## Defectos hallados (todos abiertos; detalle en `docs/defectos.md`)
 
-DEF-01 redondeo comisión · 02 PIN descendente aceptado · 03 login exitoso no reinicia intentos · 04 interbancaria deja saldo negativo (Crítica) · 05 logout no invalida token (Crítica) · 06 transferencia a cuenta cerrada pierde dinero (Crítica) · 07 historial excluye el día `hasta` · 08 detalle de movimiento ajeno visible · 09 destinatario ve movimiento del emisor · 10 categoría editable con nombre duplicado · 11 (descartado: el token vence a los 30 min exactos, se acepta)
+DEF-01 redondeo comisión · 02 PIN descendente aceptado · 03 login exitoso no reinicia intentos · 04 interbancaria deja saldo negativo (Crítica) · 05 logout no invalida token (Crítica) · 06 transferencia a cuenta cerrada pierde dinero (Crítica) · 07 historial excluye el día `hasta` · 08 detalle de movimiento ajeno visible · 09 destinatario ve movimiento del emisor · 10 categoría editable con nombre duplicado · 11 (descartado: el token vence a los 30 min exactos, se acepta) · 12 dos operaciones del mismo segundo comparten código de operación · 13 el límite diario no cuenta las interbancarias
 
 ## CI
 

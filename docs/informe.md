@@ -11,7 +11,7 @@
 | Herramienta web | *(Parte 2)* |
 | Herramienta de rendimiento | *(Parte 3)* |
 
-**Alcance y nivel de prueba.** Se cubren **todas** las HU del núcleo (HU-N-01 a N-09) y de G3 (HU-G3-01 a G3-08), con 133 escenarios Gherkin (ver trazabilidad). Criterios para elegir el nivel:
+**Alcance y nivel de prueba.** Se cubren **todas** las HU del núcleo (HU-N-01 a N-09) y de G3 (HU-G3-01 a G3-08), con 141 escenarios Gherkin (ver trazabilidad). Criterios para elegir el nivel:
 
 - **API** cuando el criterio es una regla de negocio, un valor límite o un código de error: es rápido, determinista y se repite con datos independientes (`/api/pruebas/reiniciar` antes de cada escenario). Aquí se ejecutan el 100 % de los escenarios escritos, salvo uno.
 - **E2E web (Parte 2)** para lo que solo existe en la interfaz: formularios, mensajes, navegación de la paginación, descarga del CSV desde el botón y el comprobante en pantalla.
@@ -50,27 +50,27 @@
 ```bash
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements-dev.txt
-pytest tests/api                       # todo (≈1 min); los defectos conocidos salen como "xfailed"
+pytest -rx                              # todo (≈1 min); los defectos conocidos salen como "xfailed"
 pytest tests/api -m "HU-G3-01"         # una historia
 MOSTRAR_DEFECTOS=1 pytest tests/api    # los defectos fallan a la vista
 pytest tests/api --cov=qolqe           # cobertura
 QOLQE_URL=http://localhost:8000 pytest tests/api/test_nucleo.py   # contra un servidor real
 ```
 
-**Resultados** (Qolqe Wallet 1.0.0, 2026-10-12): `239 passed, 1 skipped, 22 xfailed` y 60 subpruebas de contrato. Los 22 xfailed son 22 casos que detectan los 11 defectos de la sección 5; el skipped es el escenario de concurrencia. Con `MOSTRAR_DEFECTOS=1` esos 22 fallan por el motivo descrito en `docs/defectos.md`. Cobertura de líneas de la app con estas pruebas: `api/movimientos.py` 100 %, `api/categorias.py` 100 %, `api/cuentas.py` 100 %, `api/autenticacion.py` 100 %, `reglas/nucleo.py` 100 %, `reglas/historial.py` 98 %, `api/transferencias.py` 88 %.
+**Resultados** (Qolqe Wallet 1.0.0, 2026-10-17): `252 passed, 1 skipped, 24 xfailed` y 60 subpruebas de contrato. Los 24 xfailed son 24 casos que detectan los 12 defectos de la sección 5; el skipped es el escenario de concurrencia. Con `MOSTRAR_DEFECTOS=1` esos 24 fallan por el motivo descrito en `docs/defectos.md`. Cobertura de líneas de la app con estas pruebas: `api/movimientos.py` 100 %, `api/categorias.py` 100 %, `api/cuentas.py` 100 %, `api/autenticacion.py` 100 %, `reglas/nucleo.py` 100 %, `reglas/historial.py` 98 %, `api/transferencias.py` 88 %.
 
 **Trazabilidad HU → escenarios** (cada escenario lleva su `@HU-…`; `Outline` cuenta una vez):
 
 | HU | Archivo `.feature` | Escenarios | HU | Archivo `.feature` | Escenarios |
 |---|---|---|---|---|---|
 | HU-N-01 | nucleo_registro | 10 | HU-G3-01 | historial | 22 |
-| HU-N-02 | nucleo_sesion | 12 | HU-G3-02 | historial | 4 |
-| HU-N-03 | nucleo_sesion | 2 | HU-G3-03 | categorias | 10 |
-| HU-N-04 | nucleo_cuenta | 3 | HU-G3-04 | categorias | 2 |
+| HU-N-02 | nucleo_sesion | 11 | HU-G3-02 | historial | 4 |
+| HU-N-03 | nucleo_sesion | 3 | HU-G3-03 | categorias | 10 |
+| HU-N-04 | nucleo_cuenta | 3 | HU-G3-04 | categorias | 3 |
 | HU-N-05 | nucleo_cuenta | 4 | HU-G3-05 | categorias | 8 |
 | HU-N-06 | nucleo_cuenta | 7 | HU-G3-06 | categorias | 5 |
-| HU-N-07 | nucleo_transferencias | 17 | HU-G3-07 | historial | 9 |
-| HU-N-08 | nucleo_transferencias | 8 | HU-G3-08 | historial | 6 |
+| HU-N-07 | nucleo_transferencias | 17 | HU-G3-07 | historial | 10 |
+| HU-N-08 | nucleo_transferencias | 12 | HU-G3-08 | historial | 8 |
 | HU-N-09 | nucleo_transferencias | 4 |  |  |  |
 
 ## 3. Pruebas web y CI/CD
@@ -96,6 +96,7 @@ QOLQE_URL=http://localhost:8000 pytest tests/api/test_nucleo.py   # contra un se
 | DEF-10 | Editar una categoría permite repetir el nombre de otra categoría | Baja | Abierto |
 | DEF-11 | El token deja de ser válido a los 30 minutos exactos | — | Descartado (el requisito no precisa el minuto 30; se acepta el comportamiento) |
 | DEF-12 | Dos operaciones del mismo usuario en el mismo segundo comparten el código de operación | Alta | Abierto |
+| DEF-13 | El límite diario no cuenta las transferencias interbancarias | Alta | Abierto |
 
 ## 6. Conclusiones y recomendaciones
 *(Entrega final)*

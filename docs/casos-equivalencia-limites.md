@@ -18,6 +18,7 @@ Tipo: V = válida · I = inválida. Lado: Dentro / Fuera del rango válido.
 | EQ-N01-02 | Menos de 8 dígitos | I | `4567891` | `DNI_INVALIDO` |
 | EQ-N01-03 | Más de 8 dígitos | I | `456789123` | `DNI_INVALIDO` |
 | EQ-N01-04 | Contiene caracteres no numéricos | I | `4567891A` | `DNI_INVALIDO` |
+| EQ-N01-27 | 8 dígitos, todos ceros (adicional) | V | `00000000` | Cuenta creada |
 
 **#2 · RN-02 · CA3 · Celular (formato)** · EQ
 
@@ -48,6 +49,11 @@ Tipo: V = válida · I = inválida. Lado: Dentro / Fuera del rango válido.
 | EQ-N01-17 | Todos los dígitos iguales | I | `1111` | `PIN_INVALIDO` |
 | EQ-N01-18 | Secuencia ascendente | I | `1234` | `PIN_INVALIDO` |
 | EQ-N01-19 | Secuencia descendente | I | `4321` | `PIN_INVALIDO` |
+| EQ-N01-28 | Todos los dígitos iguales, ceros (adicional) | I | `0000` | `PIN_INVALIDO` |
+| EQ-N01-29 | Secuencia ascendente desde 0 (adicional) | I | `0123` | `PIN_INVALIDO` |
+| EQ-N01-30 | Secuencia ascendente hasta 9 (adicional) | I | `6789` | `PIN_INVALIDO` |
+| EQ-N01-31 | Secuencia descendente desde 9 (adicional) | I | `9876` | `PIN_INVALIDO` |
+| EQ-N01-32 | Secuencia descendente hasta 0 (adicional) | I | `3210` | `PIN_INVALIDO` |
 
 **#6 · CA5 · Correo (opcional)** · EQ
 
@@ -65,10 +71,10 @@ Tipo: V = válida · I = inválida. Lado: Dentro / Fuera del rango válido.
 
 | ID | Variable | Frontera | Valor | Lado | Esperado |
 |---|---|---|---|---|---|
-| VL-N01-01 | largo de nombres | mín − 1 | 1 | Fuera | Error de validación |
+| VL-N01-01 | largo de nombres | mín − 1 | 1 | Fuera | 422 `SOLICITUD_INVALIDA` (validación de Pydantic; al editar el perfil es `PERFIL_INVALIDO`) |
 | VL-N01-02 | largo de nombres | mín | 2 | Dentro | Cuenta creada |
 | VL-N01-03 | largo de nombres | máx | 80 | Dentro | Cuenta creada |
-| VL-N01-04 | largo de nombres | máx + 1 | 81 | Fuera | Error de validación |
+| VL-N01-04 | largo de nombres | máx + 1 | 81 | Fuera | 422 `SOLICITUD_INVALIDA` |
 
 ### HU-N-02 · Iniciar sesión
 
@@ -104,6 +110,8 @@ Tipo: V = válida · I = inválida. Lado: Dentro / Fuera del rango válido.
 |---|---|---|---|---|---|
 | VL-N02-03 | minutos desde el bloqueo | límite − 1 | 14 | Bloqueada | 423, ni con PIN correcto |
 | VL-N02-04 | minutos desde el bloqueo | límite | 15 | Liberada | Ingresa con PIN correcto |
+| VL-N02-09 | minutos desde el bloqueo | mín (adicional) | 0 | Bloqueada | 423, ni con PIN correcto |
+| VL-N02-10 | minutos desde el bloqueo | límite + 1 (adicional) | 16 | Liberada | Ingresa con PIN correcto |
 
 **#9 · CA1 · Vigencia del token (30 minutos)** · VL
 
@@ -147,6 +155,7 @@ Tipo: V = válida · I = inválida. Lado: Dentro / Fuera del rango válido.
 | EQ-N05-02 | El propio correo con otras mayúsculas | V | propio en MAYÚSCULAS | 200 |
 | EQ-N05-03 | Formato inválido | I | `sin-arroba.pe` | `CORREO_INVALIDO` |
 | EQ-N05-04 | Usado por otra cuenta (sin distinguir mayúsculas) | I | correo ajeno en MAYÚSCULAS | 409 `CORREO_REGISTRADO` |
+| EQ-N05-05 | Usado por otra cuenta, mismo texto (adicional) | I | `bruno.diaz@correo.pe` | 409 `CORREO_REGISTRADO` |
 
 ### HU-N-06 · Cerrar mi cuenta
 
@@ -193,6 +202,7 @@ Tipo: V = válida · I = inválida. Lado: Dentro / Fuera del rango válido.
 |---|---|---|---|---|---|
 | VL-N06-01 | saldo (S/) | límite | 0.00 | Dentro | Cierre permitido |
 | VL-N06-02 | saldo (S/) | límite + 0.01 | 0.01 | Fuera | `SALDO_PENDIENTE` |
+| VL-N06-03 | saldo (S/) | valor típico (adicional) | 1500.00 | Fuera | `SALDO_PENDIENTE` |
 
 ### HU-N-07 · Transferir a otro usuario Qolqe
 
@@ -207,6 +217,11 @@ Tipo: V = válida · I = inválida. Lado: Dentro / Fuera del rango válido.
 | EQ-N07-05 | Más de 2 decimales | I | `10.005` | `MONTO_INVALIDO` |
 | EQ-N07-06 | No numérico | I | `abc` | 422 `SOLICITUD_INVALIDA` |
 | EQ-N07-11 | Vacío | I | *(sin monto)* | 422 `SOLICITUD_INVALIDA` |
+| EQ-N07-12 | Válido, borde inferior (adicional) | V | `0.01` | 201 |
+| EQ-N07-13 | Válido, borde superior (adicional) | V | `500.00` | 201 |
+| EQ-N07-14 | Válido con céntimos (adicional) | V | `10.50` | 201 |
+| EQ-N07-15 | Mayor que 500.00, un céntimo (adicional) | I | `500.01` | `MONTO_INVALIDO` |
+| EQ-N07-16 | Negativo cercano a cero (adicional) | I | `-1.00` | `MONTO_INVALIDO` |
 
 **#17 · RN-07 · CA2 · Destino** · EQ
 
@@ -223,7 +238,7 @@ Tipo: V = válida · I = inválida. Lado: Dentro / Fuera del rango válido.
 |---|---|---|---|---|---|
 | VL-N07-01 | largo de descripción | mín | 0 (omitida) | Dentro | 201 |
 | VL-N07-02 | largo de descripción | máx | 60 | Dentro | 201 |
-| VL-N07-03 | largo de descripción | máx + 1 | 61 | Fuera | Error de validación |
+| VL-N07-03 | largo de descripción | máx + 1 | 61 | Fuera | 422 `SOLICITUD_INVALIDA` |
 
 **#19 · RN-08 · Saldo vs monto + comisión** · VL *(saldo S/ 50.00, entre cuentas Qolqe, comisión 0.00)*
 
@@ -268,6 +283,12 @@ Tipo: V = válida · I = inválida. Lado: Dentro / Fuera del rango válido.
 | EQ-N08-07 | Interbancaria, 1.5 % dentro del rango | V | S/ 100.00 | Comisión 1.50 |
 | EQ-N08-08 | Interbancaria, 1.5 % mayor al máximo | V | S/ 400.00 | Comisión 5.00 (máximo) |
 | EQ-N08-09 | Interbancaria, 1.5 % apenas mayor al máximo | V | S/ 333.34 (1.5 % = 5.0001) | Comisión 5.00 (máximo) |
+| EQ-N08-10 | Interbancaria, monto mínimo (adicional) | V | S/ 0.01 | Comisión 1.00 (mínimo) |
+| EQ-N08-11 | Interbancaria, 1.5 % justo bajo el mínimo (adicional) | V | S/ 66.00 (1.5 % = 0.99) | Comisión 1.00 (mínimo) |
+| EQ-N08-12 | Interbancaria, dentro del rango (adicional) | V | S/ 300.00 | Comisión 4.50 |
+| EQ-N08-13 | Interbancaria, justo bajo el máximo (adicional) | V | S/ 332.99 (1.5 % = 4.99485) | Comisión 4.99 |
+| EQ-N08-14 | Interbancaria, redondea al máximo (adicional) | V | S/ 333.33 (1.5 % = 4.99995) | Comisión 5.00 |
+| EQ-N08-15 | Interbancaria, monto máximo por operación (adicional) | V | S/ 500.00 | Comisión 5.00 (máximo) |
 
 **#21 · RN-09 · Redondeo a 2 decimales (0.005 sube), validado por el servidor** · VL
 
@@ -275,6 +296,7 @@ Tipo: V = válida · I = inválida. Lado: Dentro / Fuera del rango válido.
 |---|---|---|---|---|---|
 | VL-N08-01 | comisión bruta (1.5 % del monto) | justo bajo 0.005 | monto 66.99 → 1.00485 | Debajo | Comisión 1.00 |
 | VL-N08-02 | comisión bruta (1.5 % del monto) | exactamente 0.005 | monto 67.00 → 1.005 | En el límite | Comisión 1.01 |
+| VL-N08-06 | comisión bruta (1.5 % del monto) | exactamente 0.005 (adicional) | monto 71.00 → 1.065 | En el límite | Comisión 1.07 |
 
 **#19 · RN-08 · HU-N-08 CA2 · Saldo vs monto + comisión (interbancaria, monto 100.00, total 101.50)** · VL
 
@@ -284,6 +306,24 @@ Tipo: V = válida · I = inválida. Lado: Dentro / Fuera del rango válido.
 | VL-N08-04 | saldo vs total | total | 101.50 | Dentro | 201, saldo 0.00 |
 | VL-N08-05 | saldo vs total | solo el monto (sin comisión) | 100.00 | Fuera | `SALDO_INSUFICIENTE` |
 
+**#19 · RN-08 · HU-N-08 CA2 · Total vs saldo fijo (saldo S/ 50.00, comisión mínima 1.00)** · VL *(adicional)*
+
+| ID | Variable | Frontera | Valor (monto) | Lado | Esperado |
+|---|---|---|---|---|---|
+| VL-N08-07 | monto + comisión vs saldo | total = saldo | 49.00 (total 50.00) | Dentro | 201 |
+| VL-N08-08 | monto + comisión vs saldo | total = saldo + 0.01 | 49.01 (total 50.01) | Fuera | `SALDO_INSUFICIENTE`, saldo intacto |
+| VL-N08-09 | monto + comisión vs saldo | muy por encima (adicional) | 60.00 | Fuera | `SALDO_INSUFICIENTE` |
+
+**#18 · RN-06 · HU-N-08 CA2 · Límite diario acumulado con interbancarias** · VL *(límite L = S/ 1000.00 de Diego; el acumulado suma transferencias a Qolqe e interbancarias; la comisión no cuenta)*
+
+| ID | Variable | Frontera | Valor | Lado | Esperado |
+|---|---|---|---|---|---|
+| VL-N08-10 | acumulado interbancario del día + monto | L − 0.01 | 500.00 + 499.98 + 0.01 (todas interbancarias) | Dentro | 201 |
+| VL-N08-11 | acumulado interbancario del día + monto | L | 500.00 + 499.99 + 0.01 (todas interbancarias) | Dentro | 201 |
+| VL-N08-12 | acumulado interbancario del día + monto | L + 0.01 | 500.00 + 500.00 + 0.01 (todas interbancarias) | Fuera | `LIMITE_DIARIO_EXCEDIDO` |
+| VL-N08-13 | acumulado mixto del día + monto | L + 0.01 | 500.00 + 500.00 interbancarias, luego 0.01 a Qolqe | Fuera | `LIMITE_DIARIO_EXCEDIDO` |
+| VL-N08-14 | acumulado mixto del día + monto | L + 0.01 | 500.00 + 500.00 a Qolqe, luego 0.01 interbancaria | Fuera | `LIMITE_DIARIO_EXCEDIDO` |
+
 ### HU-N-09 · Simular la comisión
 
 **#23 · CA1 · Tipo de transferencia** · EQ
@@ -292,7 +332,7 @@ Tipo: V = válida · I = inválida. Lado: Dentro / Fuera del rango válido.
 |---|---|---|---|---|
 | EQ-N09-01 | QOLQE | V | S/ 100.00 | Comisión 0.00, total 100.00, sin operación |
 | EQ-N09-02 | INTERBANCARIA | V | S/ 100.00 | Comisión 1.50, total 101.50, sin operación |
-| EQ-N09-03 | Tipo inexistente | I | `OTRO` | Rechazado (error de validación) |
+| EQ-N09-03 | Tipo inexistente | I | `OTRO` | 422 `SOLICITUD_INVALIDA` |
 | EQ-N09-04 | Tipo no indicado | V | *(sin campo)* | Se trata como QOLQE: comisión 0.00 |
 
 ---
@@ -311,15 +351,22 @@ Tipo: V = válida · I = inválida. Lado: Dentro / Fuera del rango válido.
 | VL-G301-04 | días del rango | mín − 1 | −1 (`desde` > `hasta`) | Fuera | `FILTRO_INVALIDO` |
 | VL-G301-05 | `hasta` | límite | H (hoy) | Dentro | 200, incluye movimientos de hoy |
 | VL-G301-06 | `hasta` | límite + 1 día | H + 1 | Fuera | `FILTRO_INVALIDO` |
+| VL-G301-21 | días del rango (sin llegar a hoy) | máx | 90 (H − 100 a H − 10) | Dentro | 200 *(adicional)* |
+| VL-G301-22 | días del rango (sin llegar a hoy) | máx + 1 | 91 (H − 101 a H − 10) | Fuera | `FILTRO_INVALIDO` *(adicional)* |
+| VL-G301-23 | días del rango (sin llegar a hoy) | máx | 90 (H − 95 a H − 5) | Dentro | 200 *(adicional)* |
+| VL-G301-27 | rango por defecto (sin `desde` ni `hasta`) | inicio | movimiento de H − 30 | Dentro | Aparece; el rango es H − 30 a H |
+| VL-G301-28 | rango por defecto (sin `desde` ni `hasta`) | inicio − 1 día | movimiento de H − 31 | Fuera | No aparece |
+
+*VL-G301-21 a 23 comprueban que el límite se mide como `hasta − desde` (informe §1) y no contra la fecha de hoy.*
 
 **#24 · CA1 · Formato de fecha** · EQ
 
 | ID | Partición | Tipo | Representante | Resultado esperado |
 |---|---|---|---|---|
 | EQ-G301-11 | Formato AAAA-MM-DD de una fecha real | V | `2026-11-10` | 200 |
-| EQ-G301-12 | Otro formato | I | `15-11-2026` | 422 |
-| EQ-G301-13 | Mes o día fuera de calendario | I | `2026-02-30` | 422 |
-| EQ-G301-14 | Texto que no es fecha | I | `ayer` | 422 |
+| EQ-G301-12 | Otro formato | I | `15-11-2026` | 422 `SOLICITUD_INVALIDA` |
+| EQ-G301-13 | Mes o día fuera de calendario | I | `2026-02-30` | 422 `SOLICITUD_INVALIDA` |
+| EQ-G301-14 | Texto que no es fecha | I | `ayer` | 422 `SOLICITUD_INVALIDA` |
 
 **#24 · CA2 · Días completos de `desde` y `hasta`** · VL *(consulta del 10 al 12; hora de Lima)*
 
@@ -359,6 +406,8 @@ Tipo: V = válida · I = inválida. Lado: Dentro / Fuera del rango válido.
 | VL-G301-09 | total de movimientos | máx de la pág. 2 | 20 | Dentro | 2 páginas |
 | VL-G301-10 | total de movimientos | máx de la pág. 2 + 1 | 21 | Fuera | 3 páginas |
 | VL-G301-13 | total de movimientos | mín | 0 | Dentro | 1 página, lista vacía |
+| VL-G301-25 | total de movimientos | mín + 1 | 1 | Dentro | 1 página *(adicional)* |
+| VL-G301-26 | total de movimientos | máx de la pág. 1 − 1 | 9 | Dentro | 1 página *(adicional)* |
 
 **#28 · R-G3-02 · Número de página (≥ 1)** · VL
 
@@ -368,7 +417,8 @@ Tipo: V = válida · I = inválida. Lado: Dentro / Fuera del rango válido.
 | VL-G301-12 | página | mín | 1 | Dentro | 200, hasta 10 movimientos |
 | VL-G301-18 | página | última | 3 (de 21 movimientos) | Dentro | 200, 1 movimiento |
 | VL-G301-19 | página | última + 1 | 4 (de 21 movimientos) | Dentro | 200, 0 movimientos |
-| VL-G301-20 | tipo de dato | no numérica | `abc` | Fuera | 422 |
+| VL-G301-20 | tipo de dato | no numérica | `abc` | Fuera | 422 `SOLICITUD_INVALIDA` |
+| VL-G301-24 | página | mín − 2 | −1 | Fuera | `FILTRO_INVALIDO` *(adicional)* |
 
 ### HU-G3-02 · Detalle de un movimiento
 
@@ -401,7 +451,8 @@ Tipo: V = válida · I = inválida. Lado: Dentro / Fuera del rango válido.
 | EQ-G303-02 | Hexadecimal fuera de la paleta | I | `#000000` | `CATEGORIA_INVALIDA` |
 | EQ-G303-03 | No es un color | I | `rojo` | `CATEGORIA_INVALIDA` |
 | EQ-G303-09 | Color de la paleta en minúsculas | V | `#e53935` | 201, se guarda como `#E53935` |
-| EQ-G303-10 | Color vacío o no enviado | I | *(sin campo)* | `CATEGORIA_INVALIDA` |
+| EQ-G303-10 | Color no enviado | I | *(sin campo)* | 422 `SOLICITUD_INVALIDA` (campo faltante, validación de Pydantic) |
+| EQ-G303-12 | Color vacío | I | `""` | `CATEGORIA_INVALIDA` |
 
 **#32 · R-G3-03 · HU-G3-05 CA1 · Unicidad del nombre** · EQ
 
@@ -420,6 +471,7 @@ Tipo: V = válida · I = inválida. Lado: Dentro / Fuera del rango válido.
 |---|---|---|---|---|---|
 | VL-G303-05 | categorías existentes al crear | máx − 1 | 9 | Dentro | 201 (queda en 10) |
 | VL-G303-06 | categorías existentes al crear | máx | 10 | Fuera | `LIMITE_CATEGORIAS` |
+| VL-G303-09 | categorías existentes al crear | máx − 2 | 8 | Dentro | 201 *(adicional)* |
 
 **HU-G3-05 · CA1 · Id de la categoría a editar** · EQ
 
@@ -447,7 +499,7 @@ Tipo: V = válida · I = inválida. Lado: Dentro / Fuera del rango válido.
 | ID | Variable | Frontera | Valor | Lado | Esperado |
 |---|---|---|---|---|---|
 | VL-G307-01 | largo de la nota | mín | 1 | Dentro | 200 |
-| VL-G307-04 | largo de la nota | mín − 1 (quitar la nota) | 0 | Dentro | 200, sin nota |
+| VL-G307-04 | largo de la nota | mín − 1 (quitar la nota) | 0 (`""`) | Dentro | 200, sin nota (`nota` queda `null`; enviar `null` también la quita) |
 | VL-G307-05 | largo de la nota | máx − 1 | 99 | Dentro | 200 |
 | VL-G307-02 | largo de la nota | máx | 100 | Dentro | 200 |
 | VL-G307-03 | largo de la nota | máx + 1 | 101 | Fuera | `NOTA_INVALIDA` |
@@ -472,3 +524,6 @@ Tipo: V = válida · I = inválida. Lado: Dentro / Fuera del rango válido.
 | EQ-G308-01 | Hay movimientos en el filtro | V | filtro con datos | CSV con encabezado y una fila por movimiento, sin paginar |
 | EQ-G308-02 | No hay movimientos en el filtro | V | filtro sin datos | CSV solo con el encabezado |
 | EQ-G308-03 | Filtro fuera de las reglas de rango | I | rango de 91 días | `FILTRO_INVALIDO` (mismas reglas que #24) |
+| EQ-G308-04 | Rango invertido (`desde` > `hasta`) | I | `desde` = H − 10, `hasta` = H − 11 | `FILTRO_INVALIDO` |
+| EQ-G308-05 | Categoría de otro usuario como filtro | I | categoría ajena | `FILTRO_INVALIDO` |
+| EQ-G308-06 | Sin sesión | I | *(sin token)* | 401 `NO_AUTENTICADO` |

@@ -13,9 +13,14 @@ scenarios("../../features/historial.feature", "../../features/categorias.feature
 
 # ── Ayudas ─────────────────────────────────────────────────────────────────────
 
+INEXISTENTE = 999999  # id de categoría que nunca se emite
+
+
 def _id_categoria(ctx, nombre):
     categorias = ctx.http.get("/api/categorias", headers=ctx.encabezados(ctx.token)).json()
-    return next((c["id"] for c in categorias if c["nombre"] == nombre), 99999)
+    ids = [c["id"] for c in categorias if c["nombre"] == nombre]
+    assert ids, f"No tengo la categoría {nombre!r}: {categorias}"
+    return ids[0]
 
 
 def _todos(ctx, **params):
@@ -57,7 +62,8 @@ def _(ctx):
     _usuario_nuevo(ctx)
 
 
-@given(parsers.parse("que hice una transferencia de S/ {monto} a Bruno hace {dias:d} días a las {hora}"))
+@given(parsers.re(r"que hice una transferencia de S/ (?P<monto>\S+) a Bruno hace (?P<dias>\d+) días? a las (?P<hora>\S+)"),
+       converters={"dias": int})
 def _(ctx, monto, dias, hora):
     """Fija el reloj en ese instante, hace la transferencia y vuelve a la hora real."""
     dia = ctx.fecha("hoy") - timedelta(days=dias)
@@ -145,6 +151,11 @@ def _(ctx, fecha):
     ctx.llamar("GET", "/api/movimientos", params={"desde": fecha})
 
 
+@when("consulto mi historial de una categoría que no existe")
+def _(ctx):
+    ctx.llamar("GET", "/api/movimientos", params={"categoria_id": INEXISTENTE})
+
+
 @when("consulto mi historial de la categoría de Carla")
 def _(ctx):
     ctx.llamar("GET", "/api/movimientos", params={"categoria_id": ctx.guardado["categoria_ajena"]})
@@ -171,7 +182,8 @@ def _(ctx):
     assert ctx.json()["movimientos"][0]["codigo_operacion"] == ctx.guardado["codigo"]
 
 
-@then(parsers.parse("el historial indica {total:d} movimientos y {paginas:d} páginas"))
+@then(parsers.re(r"el historial indica (?P<total>\d+) movimientos? y (?P<paginas>\d+) páginas?"),
+      converters={"total": int, "paginas": int})
 def _(ctx, total, paginas):
     assert ctx.respuesta.status_code == 200, ctx.respuesta.text
     datos = ctx.json()
@@ -195,8 +207,14 @@ def _(ctx, nombre):
 
 @then("los movimientos están ordenados del más reciente al más antiguo")
 def _(ctx):
-    fechas = [m["fecha"] for m in _todos(ctx, **ctx.rango())]
-    assert len(fechas) >= 20 and fechas == sorted(fechas, reverse=True)
+    """Parte de la respuesta del When (página 1) y sigue con las demás páginas del mismo filtro."""
+    assert ctx.respuesta.status_code == 200, ctx.respuesta.text
+    primera = ctx.json()["movimientos"]
+    filtro = {k: v for k, v in ctx.respuesta.request.url.params.items() if k != "pagina"}
+    todos = _todos(ctx, **filtro)
+    assert len(primera) == 10 and todos[:10] == primera and len(todos) > 10
+    fechas = [m["fecha"] for m in todos]
+    assert fechas == sorted(fechas, reverse=True)
 
 
 @then(parsers.parse('el movimiento más reciente muestra importe "{importe}", comisión "{comision}", saldo posterior "{saldo}" y tipo "{tipo}"'))
@@ -243,7 +261,7 @@ def _(ctx):
 
 @when("clasifico ese movimiento con una categoría que no existe")
 def _(ctx):
-    _clasificar(ctx, categoria_id=999999)
+    _clasificar(ctx, categoria_id=INEXISTENTE)
 
 
 @when(parsers.parse('clasifico el movimiento "{codigo}" con una nota de {n:d} caracteres'))
@@ -287,6 +305,23 @@ def _(ctx):
     assert _detalle(ctx).json()["nota"] is None
 
 
+@when(parsers.parse('cambio la nota de ese movimiento a "{nota}"'))
+def _(ctx, nota):
+    _clasificar(ctx, nota=nota)
+
+
+@then(parsers.parse('el movimiento queda con la nota "{nota}"'))
+def _(ctx, nota):
+    assert ctx.respuesta.status_code == 200, ctx.respuesta.text
+    assert _detalle(ctx).json()["nota"] == nota
+
+
+@then(parsers.parse("la nota guardada del movimiento tiene {n:d} caracteres"))
+def _(ctx, n):
+    """Lee el detalle: 0 caracteres = sin nota (null)."""
+    assert _detalle(ctx).json()["nota"] == ("n" * n if n else None)
+
+
 @then("el movimiento conserva su monto, fecha y tipo")
 def _(ctx):
     antes, ahora = ctx.guardado["original"], _detalle(ctx).json()
@@ -313,6 +348,16 @@ def _(ctx, tipo):
 @when(parsers.parse('exporto mis movimientos de los últimos 90 días de la categoría "{nombre}"'))
 def _(ctx, nombre):
     ctx.llamar("GET", "/api/movimientos/exportar", params=ctx.rango(categoria_id=_id_categoria(ctx, nombre)))
+
+
+@when("exporto mis movimientos de la categoría de Carla")
+def _(ctx):
+    ctx.llamar("GET", "/api/movimientos/exportar", params={"categoria_id": ctx.guardado["categoria_ajena"]})
+
+
+@when("exporto mis movimientos sin token")
+def _(ctx):
+    ctx.llamar("GET", "/api/movimientos/exportar", token=None)
 
 
 def _filas_csv(ctx):
@@ -351,6 +396,11 @@ def _(ctx, nombre):
     assert filas and {f[7] for f in filas} == {nombre}
 
 
+@then(parsers.parse('exactamente una fila del CSV tiene la nota "{nota}"'))
+def _(ctx, nota):
+    assert [f[8] for f in _filas_csv(ctx)[1:]].count(nota) == 1
+
+
 # ── Categorías ─────────────────────────────────────────────────────────────────
 
 @when(parsers.parse('creo la categoría "{nombre}" de color "{color}"'))
@@ -368,6 +418,11 @@ def _(ctx, nombre):
     ctx.llamar("POST", "/api/categorias", json={"nombre": nombre})
 
 
+@when(parsers.parse('creo la categoría "{nombre}" con color vacío'))
+def _(ctx, nombre):
+    ctx.llamar("POST", "/api/categorias", json={"nombre": nombre, "color": ""})
+
+
 @when(parsers.parse('renombro la categoría "{nombre}" con un nombre de {n:d} caracteres'))
 def _(ctx, nombre, n):
     ctx.llamar("PUT", f"/api/categorias/{_id_categoria(ctx, nombre)}", json={"nombre": "x" * n})
@@ -375,12 +430,12 @@ def _(ctx, nombre, n):
 
 @when("intento editar una categoría que no existe")
 def _(ctx):
-    ctx.llamar("PUT", "/api/categorias/999999", json={"nombre": "Fantasma"})
+    ctx.llamar("PUT", f"/api/categorias/{INEXISTENTE}", json={"nombre": "Fantasma"})
 
 
 @when("intento eliminar una categoría que no existe")
 def _(ctx):
-    ctx.llamar("DELETE", "/api/categorias/999999")
+    ctx.llamar("DELETE", f"/api/categorias/{INEXISTENTE}")
 
 
 @when("listo mis categorías")
@@ -445,7 +500,21 @@ def _(ctx):
 def _(ctx, nombre):
     ctx.guardado["antes"] = {m["codigo_operacion"]: m for m in _todos(ctx, **ctx.rango())}
     ctx.guardado["eliminada"] = nombre
-    ctx.llamar("DELETE", f"/api/categorias/{_id_categoria(ctx, nombre)}")
+    ctx.guardado["id_eliminada"] = _id_categoria(ctx, nombre)
+    ctx.llamar("DELETE", f"/api/categorias/{ctx.guardado['id_eliminada']}")
+
+
+@when("elimino otra vez esa categoría")
+def _(ctx):
+    """Mismo id del primer DELETE (EQ-G306-04), no un id inexistente cualquiera."""
+    assert ctx.respuesta.status_code == 204, ctx.respuesta.text
+    ctx.llamar("DELETE", f"/api/categorias/{ctx.guardado['id_eliminada']}")
+
+
+@then("la categoría de Carla sigue existiendo")
+def _(ctx):
+    ids = [c["id"] for c in ctx.http.get("/api/categorias", headers=ctx.encabezados(ctx.como("Carla"))).json()]
+    assert ctx.guardado["categoria_ajena"] in ids
 
 
 @then(parsers.parse('la categoría "{nombre}" ya no existe'))

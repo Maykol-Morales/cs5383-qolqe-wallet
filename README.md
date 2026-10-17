@@ -202,8 +202,10 @@ Pruebas de API del núcleo y de G3 con **pytest + httpx + pytest-bdd** (escenari
 
 ```bash
 pip install -r requirements-dev.txt
-pytest tests/api                      # defectos conocidos salen como "xfailed"
+pytest -rx                              # defectos conocidos salen como "xfailed"
 MOSTRAR_DEFECTOS=1 pytest tests/api   # los defectos fallan a la vista
 ```
+
+`demo.sh` alista la demo de la presentación: `./demo.sh preparar` crea `.venv` e instala dependencias; `./demo.sh ensayo` corre los pasos seguidos y mide el tiempo (`demo` espera Enter entre pasos; `SIN_CONTRATO=1` omite el paso del contrato); `./demo.sh schemathesis` (o `schemathesis todos`, con todos los checks) corre el CLI de Schemathesis contra un servidor temporal y abre el reporte HTML; `./demo.sh plan-b` ejecuta `pytest -rx` y guarda la salida en `reportes/ensayo.txt` como respaldo pregrabado.
 
 Informe en [`docs/informe.md`](docs/informe.md) y defectos encontrados en [`docs/defectos.md`](docs/defectos.md).

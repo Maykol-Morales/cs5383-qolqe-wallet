@@ -9,6 +9,7 @@ Feature: Iniciar y cerrar sesión
   Scenario: Ingreso con credenciales correctas
     When inicio sesión con el celular "987654321" y el PIN "4826"
     Then recibo un token válido por 30 minutos
+    And mi sesión aparece como activa en mis sesiones
 
   @HU-N-02 @api
   Scenario: Credenciales inválidas con mensaje genérico
@@ -73,12 +74,17 @@ Feature: Iniciar y cerrar sesión
     And consulto mi saldo
     Then la respuesta es 401 con el código "NO_AUTENTICADO"
 
-  @HU-N-03 @api @DEF-05
+  @HU-N-03 @api
   Scenario: Cerrar una sesión no afecta mis otras sesiones
     Given que inicié sesión como Ana en dos dispositivos
     When cierro mi primera sesión
+    Then mi segunda sesión sigue siendo válida
+
+  @HU-N-03 @api @DEF-05
+  Scenario: Al cerrar una de mis sesiones esa sesión deja de ser válida
+    Given que inicié sesión como Ana en dos dispositivos
+    When cierro mi primera sesión
     Then mi primera sesión ya no es válida
-    And mi segunda sesión sigue siendo válida
 
   @HU-N-02 @api
   Scenario: Un solo intento fallido no bloquea la cuenta

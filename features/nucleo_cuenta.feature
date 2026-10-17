@@ -34,7 +34,7 @@ Feature: Mi cuenta: saldo, perfil y cierre
       | con un token alterado     |
 
   @HU-N-05 @api
-  Scenario Outline: Longitud de los nombres (2 a 80 caracteres)
+  Scenario Outline: Longitud de los nombres al editar mi perfil (2 a 80 caracteres)
     When cambio mis nombres por un texto de <n> caracteres
     Then la operación es "<resultado>"
 
@@ -78,6 +78,7 @@ Feature: Mi cuenta: saldo, perfil y cierre
     And que mi saldo es S/ 0.00
     When cierro mi cuenta con el PIN "1111"
     Then la respuesta es 422 con el código "PIN_INCORRECTO"
+    And mi cuenta sigue activa
 
   @HU-N-06 @api
   Scenario Outline: Solo se cierra con saldo exactamente S/ 0.00
@@ -85,6 +86,7 @@ Feature: Mi cuenta: saldo, perfil y cierre
     And que mi saldo es S/ <saldo>
     When cierro mi cuenta con el PIN "3604"
     Then la operación es "<resultado>"
+    And mi cuenta sigue activa
 
     Examples:
       | saldo   | resultado        |
@@ -96,6 +98,7 @@ Feature: Mi cuenta: saldo, perfil y cierre
     Given que mi saldo es S/ 0.00
     When cierro mi cuenta con el PIN "4826"
     Then la respuesta es 409 con el código "SOLICITUDES_PENDIENTES"
+    And mi cuenta sigue activa
 
   @HU-N-06 @api
   Scenario: Cierre exitoso: no puedo volver a ingresar
@@ -106,18 +109,21 @@ Feature: Mi cuenta: saldo, perfil y cierre
     And Diego no puede iniciar sesión por "CUENTA_CERRADA"
 
   @HU-N-06 @api
-  Scenario: Cierre exitoso: mis sesiones se cierran
-    Given que inicié sesión como Diego
+  Scenario: Cierre exitoso: todas mis sesiones se cierran
+    Given que inicié sesión como Diego en dos dispositivos
     And que mi saldo es S/ 0.00
     When cierro mi cuenta con el PIN "3604"
-    Then mi sesión anterior ya no es válida
+    Then la respuesta es 204
+    And mi primera sesión ya no es válida
+    And mi segunda sesión ya no es válida
 
   @HU-N-06 @api @DEF-06
   Scenario: Cierre exitoso: nadie puede transferirme
     Given que inicié sesión como Diego
     And que mi saldo es S/ 0.00
     When cierro mi cuenta con el PIN "3604"
-    Then Ana no puede transferir S/ 10.00 al celular 998877665 por "DESTINO_INACTIVO"
+    Then la respuesta es 204
+    And Ana no puede transferir S/ 10.00 al celular 998877665 por "DESTINO_INACTIVO"
 
   @HU-N-06 @api
   Scenario Outline: Orden de validación del cierre: PIN, luego saldo, luego solicitudes
@@ -125,6 +131,7 @@ Feature: Mi cuenta: saldo, perfil y cierre
     And que mi saldo es S/ <saldo>
     When cierro mi cuenta con el PIN "<pin>"
     Then la operación es "<resultado>"
+    And mi cuenta sigue activa
 
     Examples:
       | usuario | pin  | saldo   | resultado        |

@@ -100,13 +100,13 @@ Feature: Registrarme
     Then la operación es "exitosa"
 
   @HU-N-01 @api
-  Scenario Outline: Longitud de los nombres (2 a 80 caracteres)
+  Scenario Outline: Longitud de los nombres al registrarme (2 a 80 caracteres)
     When me registro con nombres de <n> caracteres y el resto de datos válidos
-    Then la respuesta es <estado>
+    Then la operación es "<resultado>"
 
     Examples:
-      | n  | estado |
-      | 1  | 422    |
-      | 2  | 201    |
-      | 80 | 201    |
-      | 81 | 422    |
+      | n  | resultado          |
+      | 1  | SOLICITUD_INVALIDA |
+      | 2  | exitosa            |
+      | 80 | exitosa            |
+      | 81 | SOLICITUD_INVALIDA |

@@ -93,7 +93,7 @@ Resumen (ID, título, severidad y estado) en la sección 5 de [`informe.md`](inf
 | Severidad | Crítica |
 | Prioridad | Alta |
 | Entorno | Qolqe Wallet 1.0.0, Python 3.14, uvicorn/TestClient, Linux; reproducible por API (sin navegador) |
-| Prueba que lo detecta | `tests/api/test_nucleo.py::test_al_cerrar_sesión_el_token_deja_de_ser_válido y ::test_cerrar_una_sesión_no_afecta_mis_otras_sesiones` |
+| Prueba que lo detecta | `tests/api/test_nucleo.py::test_al_cerrar_sesión_el_token_deja_de_ser_válido y ::test_al_cerrar_una_de_mis_sesiones_esa_sesión_deja_de_ser_válida` |
 
 **Pasos para reproducir**
 1. `POST /api/auth/login` como Ana y guardar el `access_token`.
@@ -135,7 +135,7 @@ Resumen (ID, título, severidad y estado) en la sección 5 de [`informe.md`](inf
 | Severidad | Alta |
 | Prioridad | Alta |
 | Entorno | Qolqe Wallet 1.0.0, Python 3.14, uvicorn/TestClient, Linux; reproducible por API (sin navegador) |
-| Prueba que lo detecta | `tests/api/test_historial.py::test_el_historial_por_defecto_incluye_los_movimientos_de_hoy, ::test_el_rango_incluye_completo_el_día_hasta y ::test_el_filtro_por_tipo_incluye_la_recarga_de_hoy` |
+| Prueba que lo detecta | `tests/api/test_historial.py::test_el_historial_por_defecto_incluye_los_movimientos_de_hoy, ::test_el_rango_incluye_completo_el_día_hasta, ::test_el_filtro_por_tipo_incluye_la_recarga_de_hoy y ::test_el_rango_incluye_hasta_las_235959_del_día_hasta_y_excluye_el_día_siguiente` |
 
 **Pasos para reproducir**
 1. Iniciar sesión como Ana y transferir S/ 10.00 a Bruno.
@@ -233,3 +233,25 @@ Resumen (ID, título, severidad y estado) en la sección 5 de [`informe.md`](inf
 **Resultado obtenido:** ambas responden `201` con el mismo `TRF26101710000000001`. El código se arma como prefijo + fecha y hora hasta el segundo + id del usuario, sin secuencia. Consecuencia: `GET /api/movimientos/{codigo}` devuelve el primer movimiento (S/ 1.00) para las dos operaciones.
 
 **Evidencia:** `POST /api/transferencias` ×2 → `201 {"codigo_operacion":"TRF26101710000000001",...}` en ambas.
+
+## DEF-13: El límite diario no cuenta las transferencias interbancarias
+
+| Campo | Valor |
+|---|---|
+| Módulo / regla | RN-06 / HU-N-08 CA2 · `qolqe/operaciones.py::transferido_hoy_centimos` (usada en `qolqe/transacciones.py:67`) |
+| Severidad | Alta |
+| Prioridad | Alta |
+| Entorno | Qolqe Wallet 1.0.0, Python 3.14, TestClient, Linux; reproducible por API (sin navegador) |
+| Prueba que lo detecta | `tests/api/test_nucleo.py::test_una_interbancaria_que_supera_el_límite_diario_acumulado_se_rechaza y ::test_las_interbancarias_del_día_cuentan_para_el_límite_de_una_transferencia_a_qolqe` |
+
+**Pasos para reproducir**
+1. Iniciar sesión como Diego (998877665 / 3604, límite diario S/ 1000.00, saldo S/ 2500.00).
+2. `POST /api/transferencias` con `{"monto":"500.00","tipo":"INTERBANCARIA","cci":"00219300123456789012"}` dos veces.
+3. Repetir con `monto=0.01` (interbancaria) o `{"monto":"0.01","celular_destino":"912345678"}` (a Qolqe).
+4. `GET /api/limites`.
+
+**Resultado esperado:** `422 LIMITE_DIARIO_EXCEDIDO` en el paso 3: RN-06 suma las transferencias del día "a Qolqe **e interbancarias**" (1000.00 + 0.01 > 1000.00) y HU-N-08 CA2 exige aplicar RN-06. `usado_hoy` debe ser `1000.00`.
+
+**Resultado obtenido:** `201 Created` en las tres operaciones (y en la de 0.01 a Qolqe); `GET /api/limites` muestra `usado_hoy "0.00"` (o `"0.01"` en el caso mixto). Diego puede enviar a otros bancos sin tope diario mientras cada operación sea ≤ S/ 500.00. El caso inverso sí funciona: tras 500.00 + 500.00 a Qolqe, una interbancaria de 0.01 responde `422 LIMITE_DIARIO_EXCEDIDO`. Causa probable: `transferido_hoy_centimos` filtra `tipo = 'QOLQE'` al sumar las transferencias del día, así que las interbancarias nunca cuentan.
+
+**Evidencia:** 3.er `POST /api/transferencias {"monto":"0.01","tipo":"INTERBANCARIA",...}` → `201 {"tipo":"INTERBANCARIA","monto":"0.01","comision":"1.00","total":"1.01",...,"saldo":"1488.99"}`; `GET /api/limites` → `{"limite_diario":"1000.00","usado_hoy":"0.00","disponible_hoy":"1000.00",...}`

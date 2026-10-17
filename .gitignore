@@ -8,3 +8,5 @@ htmlcov/
 reportes/
 reporte-schemathesis/
 *.pptx.pdf
+.schemathesis/
+.hypothesis/

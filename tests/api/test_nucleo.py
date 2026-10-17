@@ -89,10 +89,16 @@ def _(ctx, alerta):
     assert hay == (alerta == "recibe")
 
 
-@given("que inicié sesión como Ana en dos dispositivos")
+@then("mi sesión aparece como activa en mis sesiones")
 def _(ctx):
-    ctx.guardado["tokens"] = [ctx.como("Ana"), ctx.como("Ana")]
-    ctx.token = ctx.guardado["tokens"][0]
+    sesiones = ctx.llamar("GET", "/api/seguridad/sesiones").json()
+    assert ctx.respuesta.status_code == 200 and [s["actual"] for s in sesiones] == [True], sesiones
+
+
+@given(parsers.parse("que inicié sesión como {nombre} en dos dispositivos"))
+def _(ctx, nombre):
+    ctx.guardado["tokens"] = [ctx.como(nombre), ctx.como(nombre)]
+    ctx.token, ctx.celular = ctx.guardado["tokens"][0], USUARIOS[nombre][0]
 
 
 @when("cierro mi sesión")
@@ -110,9 +116,9 @@ def _(ctx):
     assert ctx.llamar("GET", "/api/cuentas/me/saldo", token=ctx.guardado["tokens"][0]).status_code == 401
 
 
-@then("mi sesión anterior ya no es válida")
+@then("mi segunda sesión ya no es válida")
 def _(ctx):
-    assert ctx.llamar("GET", "/api/cuentas/me/saldo").status_code == 401
+    assert ctx.llamar("GET", "/api/cuentas/me/saldo", token=ctx.guardado["tokens"][1]).status_code == 401
 
 
 @then("mi segunda sesión sigue siendo válida")
@@ -190,7 +196,8 @@ def _(ctx, correo):
 
 @when(parsers.parse('envío un cambio de perfil con el DNI "{dni}" y el celular "{celular}"'))
 def _(ctx, dni, celular):
-    ctx.llamar("PUT", "/api/cuentas/me", json={"dni": dni, "celular": celular, "nombres": "Ana Torres Quispe"})
+    respuesta = ctx.llamar("PUT", "/api/cuentas/me", json={"dni": dni, "celular": celular, "nombres": "Ana Torres Quispe"})
+    assert respuesta.status_code == 200, respuesta.text
 
 
 @when(parsers.parse('cierro mi cuenta con el PIN "{pin}"'))
@@ -202,7 +209,15 @@ def _(ctx, pin):
 def _(ctx, quien, monto, celular, codigo):
     respuesta = ctx.llamar("POST", "/api/transferencias", token=ctx.como(quien),
                            json={"celular_destino": celular, "monto": monto})
+    assert respuesta.status_code == 422, respuesta.text
     assert respuesta.json()["codigo"] == codigo, respuesta.text
+
+
+@then("mi cuenta sigue activa")
+def _(ctx):
+    perfil = ctx.llamar("GET", "/api/cuentas/me")
+    assert perfil.status_code == 200 and perfil.json()["estado"] == "ACTIVA", perfil.text
+    assert ctx.llamar("GET", "/api/cuentas/me/saldo").status_code == 200
 
 
 @then(parsers.parse('{quien} no puede iniciar sesión por "{codigo}"'))
@@ -251,6 +266,11 @@ def _(ctx, monto, celular):
     assert _transferir(ctx, monto, celular_destino=celular).status_code == 201
 
 
+@given(parsers.parse("que ya transferí S/ {monto} al CCI {cci}"))
+def _(ctx, monto, cci):
+    assert _transferir(ctx, monto, tipo="INTERBANCARIA", cci=cci).status_code == 201
+
+
 @then("las dos últimas operaciones tienen códigos de operación distintos")
 def _(ctx):
     a, b = ctx.respuestas[-2:]
@@ -275,6 +295,18 @@ def _(ctx, nombre, celular):
 def _(ctx, ultimos):
     cci = ctx.json()["destinatario"]["cci"]
     assert cci.endswith(ultimos) and set(cci[:-4]) == {"*"} and len(cci) == 20
+
+
+@then(parsers.parse('el movimiento en mi historial y su detalle muestran el CCI terminado en "{ultimos}" sin revelar el resto'))
+def _(ctx, ultimos):
+    codigo = ctx.json()["codigo_operacion"]
+    reciente = ctx.llamar("GET", "/api/movimientos/recientes?limite=1").json()[0]
+    detalle = ctx.llamar("GET", f"/api/movimientos/{codigo}").json()
+    for movimiento in (reciente, detalle):
+        assert movimiento["codigo_operacion"] == codigo
+        cci = movimiento["contraparte"]
+        assert cci.endswith(ultimos) and set(cci[:-4]) == {"*"} and len(cci) == 20, movimiento
+        assert "00219300123456789012" not in str(movimiento)
 
 
 @then("Bruno y yo vemos el mismo código de operación en el historial")

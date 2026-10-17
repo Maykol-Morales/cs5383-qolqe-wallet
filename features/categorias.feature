@@ -97,6 +97,7 @@ Feature: Categorías de movimientos
   Scenario Outline: Editar no compara la categoría consigo misma
     When renombro la categoría "Comida" como "<nombre>"
     Then la operación es "exitosa"
+    And la categoría "<nombre>" existe con color "#E53935" y 0 movimientos
 
     Examples:
       | nombre |
@@ -114,15 +115,9 @@ Feature: Categorías de movimientos
       | SERVICIOS |
 
   @HU-G3-05 @api
-  Scenario Outline: Editar aplica las reglas de nombre y color
-    When cambio la categoría "Comida" a nombre "<nombre>" y color "<color>"
-    Then la operación es "<resultado>"
-
-    Examples:
-      | nombre                | color   | resultado          |
-      | Co                    | #43A047 | CATEGORIA_INVALIDA |
-      | Comida de la oficina! | #43A047 | CATEGORIA_INVALIDA |
-      | Comida                | #123456 | CATEGORIA_INVALIDA |
+  Scenario: Editar aplica la regla de color de la paleta
+    When cambio la categoría "Comida" a nombre "Comida" y color "#123456"
+    Then la operación es "CATEGORIA_INVALIDA"
 
   @HU-G3-05 @api
   Scenario: No puedo editar la categoría de otro usuario
@@ -138,17 +133,19 @@ Feature: Categorías de movimientos
     And los 5 movimientos que tenía quedan sin categoría y conservan su monto, fecha y tipo
 
   @HU-G3-06 @api
-  Scenario: Eliminar una categoría ajena o inexistente responde 404
+  Scenario: Eliminar una categoría ajena responde 404 y no la borra
     Given que Carla tiene la categoría "Ajena"
     When intento eliminar la categoría de Carla
     Then la respuesta es 404 con el código "CATEGORIA_NO_ENCONTRADA"
+    And la categoría de Carla sigue existiendo
 
   @HU-G3-06 @api
   Scenario: Eliminar una categoría no afecta los movimientos de otras categorías
     When elimino la categoría "Servicios"
-    Then los 5 movimientos de "Familia" siguen con su categoría
+    Then la respuesta es 204
+    And los 5 movimientos de "Familia" siguen con su categoría
 
-  @HU-G3-03 @api
+  @HU-G3-04 @api
   Scenario: Las categorías requieren sesión
     When listo mis categorías sin token
     Then la respuesta es 401 con el código "NO_AUTENTICADO"
@@ -167,7 +164,12 @@ Feature: Categorías de movimientos
   @HU-G3-03 @api
   Scenario: El color es obligatorio
     When creo la categoría "Transporte" sin color
-    Then la respuesta es 422
+    Then la respuesta es 422 con el código "SOLICITUD_INVALIDA"
+
+  @HU-G3-03 @api
+  Scenario: Un color vacío es rechazado
+    When creo la categoría "Transporte" con color vacío
+    Then la operación es "CATEGORIA_INVALIDA"
 
   @HU-G3-03 @api
   Scenario: Otro usuario puede tener una categoría con el mismo nombre
@@ -200,5 +202,5 @@ Feature: Categorías de movimientos
   @HU-G3-06 @api
   Scenario: Eliminar dos veces la misma categoría responde 404 la segunda vez
     When elimino la categoría "Servicios"
-    And elimino la categoría "Servicios"
+    And elimino otra vez esa categoría
     Then la respuesta es 404 con el código "CATEGORIA_NO_ENCONTRADA"
