@@ -92,3 +92,21 @@ Feature: Registrarme
       | lucia@                | CORREO_INVALIDO   |
       | ana.torres@correo.pe  | CORREO_REGISTRADO |
       | ANA.TORRES@CORREO.PE  | CORREO_REGISTRADO |
+      | fabian.rojas@correo.pe | exitosa          |
+
+  @HU-N-01 @api
+  Scenario: El correo es opcional
+    When me registro sin correo y el resto de datos válidos
+    Then la operación es "exitosa"
+
+  @HU-N-01 @api
+  Scenario Outline: Longitud de los nombres (2 a 80 caracteres)
+    When me registro con nombres de <n> caracteres y el resto de datos válidos
+    Then la respuesta es <estado>
+
+    Examples:
+      | n  | estado |
+      | 1  | 422    |
+      | 2  | 201    |
+      | 80 | 201    |
+      | 81 | 422    |

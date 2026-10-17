@@ -94,6 +94,7 @@ Feature: Transferencias
     Examples:
       | monto | resultado          | saldo_final |
       | 50.00 | exitosa            | 0.00        |
+      | 49.99 | exitosa            | 0.01        |
       | 50.01 | SALDO_INSUFICIENTE | 50.00       |
 
   @HU-N-07 @api
@@ -132,6 +133,8 @@ Feature: Transferencias
       | 300.00 | 4.50     | 304.50 |
       | 333.33 | 5.00     | 338.33 |
       | 500.00 | 5.00     | 505.00 |
+      | 66.99  | 1.00     | 67.99  |
+      | 333.34 | 5.00     | 338.34 |
 
   @HU-N-08 @api @DEF-01
   Scenario Outline: La comisión usa redondeo comercial (0.005 sube)
@@ -177,3 +180,73 @@ Feature: Transferencias
   Scenario: La simulación valida el monto
     When simulo una transferencia QOLQE de S/ 500.01
     Then la respuesta es 422 con el código "MONTO_INVALIDO"
+
+  @HU-N-07 @api
+  Scenario: El monto debe ser numérico
+    When intento transferir S/ abc al celular 912345678
+    Then la respuesta es 422
+
+  @HU-N-07 @api
+  Scenario: El monto es obligatorio
+    When intento transferir sin monto al celular 912345678
+    Then la respuesta es 422
+
+  @HU-N-07 @api
+  Scenario: Un acumulado un centavo bajo el límite diario es válido
+    Given que inicié sesión como Diego
+    And que ya transferí S/ 500.00 al celular 912345678
+    And que ya transferí S/ 499.98 al celular 912345678
+    When intento transferir S/ 0.01 al celular 912345678
+    Then la operación es "exitosa"
+
+  @HU-N-07 @api
+  Scenario Outline: El límite diario se reinicia a medianoche de Lima
+    Given que el reloj de Lima marca las 23:50:00 de hoy
+    And que inicié sesión como Diego
+    And que ya transferí S/ 500.00 al celular 912345678
+    And que ya transferí S/ 500.00 al celular 912345678
+    When el reloj de Lima marca las <hora> de <dia>
+    And intento transferir S/ 0.01 al celular 912345678
+    Then la operación es "<resultado>"
+
+    Examples:
+      | hora     | dia    | resultado              |
+      | 23:59:59 | hoy    | LIMITE_DIARIO_EXCEDIDO |
+      | 00:00:00 | mañana | exitosa                |
+
+  @HU-N-08 @api
+  Scenario: Con saldo igual al total de una interbancaria de S/ 100.00 la operación es válida
+    Given que mi saldo es S/ 101.50
+    When intento transferir S/ 100.00 al CCI 00219300123456789012
+    Then la operación es "exitosa"
+    And mi saldo es S/ 0.00
+
+  @HU-N-08 @api @DEF-04
+  Scenario Outline: Con saldo menor al total de una interbancaria de S/ 100.00 se rechaza
+    Given que mi saldo es S/ <saldo>
+    When intento transferir S/ 100.00 al CCI 00219300123456789012
+    Then la respuesta es 422 con el código "SALDO_INSUFICIENTE"
+    And mi saldo es S/ <saldo>
+
+    Examples:
+      | saldo  |
+      | 101.49 |
+      | 100.00 |
+
+  @HU-N-09 @api
+  Scenario: Un tipo de transferencia inexistente es rechazado
+    When simulo una transferencia OTRO de S/ 100.00
+    Then la respuesta es 422
+
+  @HU-N-09 @api
+  Scenario: Sin tipo la simulación se trata como transferencia entre cuentas Qolqe
+    When simulo una transferencia de S/ 100.00 sin indicar el tipo
+    Then veo comisión S/ 0.00 y total S/ 100.00
+
+  @HU-N-07 @api @DEF-12
+  Scenario: Dos transferencias en el mismo segundo tienen códigos de operación distintos
+    Given que el reloj de Lima marca las 10:00:00 de hoy
+    And que inicié sesión como Ana
+    When transfiero S/ 1.00 al celular 912345678
+    And transfiero S/ 2.00 al celular 912345678
+    Then las dos últimas operaciones tienen códigos de operación distintos

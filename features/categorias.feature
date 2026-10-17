@@ -24,6 +24,7 @@ Feature: Categorías de movimientos
     Examples:
       | n  | resultado          |
       | 2  | CATEGORIA_INVALIDA |
+      | 0  | CATEGORIA_INVALIDA |
       | 3  | exitosa            |
       | 20 | exitosa            |
       | 21 | CATEGORIA_INVALIDA |
@@ -39,6 +40,12 @@ Feature: Categorías de movimientos
       | #6D4C41 | exitosa            |
       | #000000 | CATEGORIA_INVALIDA |
       | rojo    | CATEGORIA_INVALIDA |
+      | #FDD835 | exitosa            |
+      | #43A047 | exitosa            |
+      | #00897B | exitosa            |
+      | #1E88E5 | exitosa            |
+      | #8E24AA | exitosa            |
+      | #FB8C00 | exitosa            |
 
   @HU-G3-03 @api
   Scenario Outline: El nombre es único sin distinguir mayúsculas
@@ -145,3 +152,53 @@ Feature: Categorías de movimientos
   Scenario: Las categorías requieren sesión
     When listo mis categorías sin token
     Then la respuesta es 401 con el código "NO_AUTENTICADO"
+
+  @HU-G3-03 @api
+  Scenario: Un nombre de solo espacios es rechazado
+    When creo la categoría "   " de color "#43A047"
+    Then la operación es "CATEGORIA_INVALIDA"
+
+  @HU-G3-03 @api
+  Scenario: Un color en minúsculas se acepta y se guarda en mayúsculas
+    When creo la categoría "Transporte" de color "#e53935"
+    Then la operación es "exitosa"
+    And la categoría "Transporte" existe con color "#E53935" y 0 movimientos
+
+  @HU-G3-03 @api
+  Scenario: El color es obligatorio
+    When creo la categoría "Transporte" sin color
+    Then la respuesta es 422
+
+  @HU-G3-03 @api
+  Scenario: Otro usuario puede tener una categoría con el mismo nombre
+    Given que Carla tiene la categoría "Ajena"
+    When creo la categoría "Ajena" de color "#43A047"
+    Then la operación es "exitosa"
+
+  @HU-G3-05 @api
+  Scenario Outline: Longitud del nombre al editar (3 a 20 caracteres)
+    When renombro la categoría "Comida" con un nombre de <n> caracteres
+    Then la operación es "<resultado>"
+
+    Examples:
+      | n  | resultado          |
+      | 2  | CATEGORIA_INVALIDA |
+      | 3  | exitosa            |
+      | 20 | exitosa            |
+      | 21 | CATEGORIA_INVALIDA |
+
+  @HU-G3-05 @api
+  Scenario: Editar una categoría que no existe responde 404
+    When intento editar una categoría que no existe
+    Then la respuesta es 404 con el código "CATEGORIA_NO_ENCONTRADA"
+
+  @HU-G3-06 @api
+  Scenario: Eliminar una categoría que no existe responde 404
+    When intento eliminar una categoría que no existe
+    Then la respuesta es 404 con el código "CATEGORIA_NO_ENCONTRADA"
+
+  @HU-G3-06 @api
+  Scenario: Eliminar dos veces la misma categoría responde 404 la segunda vez
+    When elimino la categoría "Servicios"
+    And elimino la categoría "Servicios"
+    Then la respuesta es 404 con el código "CATEGORIA_NO_ENCONTRADA"

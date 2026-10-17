@@ -2,6 +2,7 @@
 import csv
 import io
 import re
+from datetime import timedelta
 
 from pytest_bdd import given, parsers, scenarios, then, when
 
@@ -41,12 +42,36 @@ def _detalle(ctx):
 
 # ── Datos de partida ───────────────────────────────────────────────────────────
 
-@given(parsers.parse("que tengo {n:d} movimientos de hace un día"))
-def _(ctx, n):
-    celular, pin = "987000111", "4826"
+NUEVO = ("987000111", "4826")
+
+
+def _usuario_nuevo(ctx):
+    celular, pin = NUEVO
     assert ctx.http.post("/api/usuarios", json={"dni": "45678912", "nombres": "Lucía Fernández", "celular": celular, "pin": pin}).status_code == 201
     assert ctx.http.put("/api/pruebas/saldo", json={"celular": celular, "saldo": "100.00"}).status_code == 200
     ctx.login(celular, pin)
+
+
+@given("que soy un usuario nuevo con saldo S/ 100.00")
+def _(ctx):
+    _usuario_nuevo(ctx)
+
+
+@given(parsers.parse("que hice una transferencia de S/ {monto} a Bruno hace {dias:d} días a las {hora}"))
+def _(ctx, monto, dias, hora):
+    """Fija el reloj en ese instante, hace la transferencia y vuelve a la hora real."""
+    dia = ctx.fecha("hoy") - timedelta(days=dias)
+    assert ctx.http.put("/api/pruebas/reloj", json={"ahora": f"{dia.isoformat()}T{hora}"}).status_code == 200
+    ctx.login(*NUEVO)
+    _transferir(ctx, ctx.token, monto)
+    ctx.http.delete("/api/pruebas/reloj")
+    ctx.login(*NUEVO)
+
+
+@given(parsers.parse("que tengo {n:d} movimientos de hace un día"))
+def _(ctx, n):
+    celular, pin = NUEVO
+    _usuario_nuevo(ctx)
     for _ in range(n):
         _transferir(ctx, ctx.token, "0.01")
     ctx.avanzar(24 * 60)  # los movimientos quedan fechados "ayer"; el token vence, se vuelve a ingresar
@@ -113,6 +138,21 @@ def _(ctx, nombre):
 @when(parsers.parse('consulto mi historial de la categoría "{nombre}"'))
 def _(ctx, nombre):
     ctx.llamar("GET", "/api/movimientos", params={"categoria_id": _id_categoria(ctx, nombre)})
+
+
+@when(parsers.parse('consulto mi historial con desde "{fecha}"'))
+def _(ctx, fecha):
+    ctx.llamar("GET", "/api/movimientos", params={"desde": fecha})
+
+
+@when("consulto mi historial de la categoría de Carla")
+def _(ctx):
+    ctx.llamar("GET", "/api/movimientos", params={"categoria_id": ctx.guardado["categoria_ajena"]})
+
+
+@when(parsers.parse('consulto la página "{pagina}" de mi historial'))
+def _(ctx, pagina):
+    ctx.llamar("GET", "/api/movimientos", params={"pagina": pagina})
 
 
 @when(parsers.parse("consulto la página {pagina:d} de mi historial"))
@@ -199,6 +239,16 @@ def _(ctx, nombre):
 @when("clasifico ese movimiento con la categoría de Carla")
 def _(ctx):
     _clasificar(ctx, categoria_id=ctx.guardado["categoria_ajena"])
+
+
+@when("clasifico ese movimiento con una categoría que no existe")
+def _(ctx):
+    _clasificar(ctx, categoria_id=999999)
+
+
+@when(parsers.parse('clasifico el movimiento "{codigo}" con una nota de {n:d} caracteres'))
+def _(ctx, codigo, n):
+    ctx.llamar("PUT", f"/api/movimientos/{codigo}/clasificacion", json={"nota": "n" * n})
 
 
 @when("le quito la categoría a ese movimiento")
@@ -311,6 +361,26 @@ def _(ctx, nombre, color):
 @when(parsers.parse("creo una categoría con nombre de {n:d} caracteres"))
 def _(ctx, n):
     ctx.llamar("POST", "/api/categorias", json={"nombre": "x" * n, "color": "#43A047"})
+
+
+@when(parsers.parse('creo la categoría "{nombre}" sin color'))
+def _(ctx, nombre):
+    ctx.llamar("POST", "/api/categorias", json={"nombre": nombre})
+
+
+@when(parsers.parse('renombro la categoría "{nombre}" con un nombre de {n:d} caracteres'))
+def _(ctx, nombre, n):
+    ctx.llamar("PUT", f"/api/categorias/{_id_categoria(ctx, nombre)}", json={"nombre": "x" * n})
+
+
+@when("intento editar una categoría que no existe")
+def _(ctx):
+    ctx.llamar("PUT", "/api/categorias/999999", json={"nombre": "Fantasma"})
+
+
+@when("intento eliminar una categoría que no existe")
+def _(ctx):
+    ctx.llamar("DELETE", "/api/categorias/999999")
 
 
 @when("listo mis categorías")

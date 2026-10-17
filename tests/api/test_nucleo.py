@@ -1,4 +1,7 @@
 """Núcleo común (HU-N-01 a HU-N-09), automatizado por API. Escenarios en features/nucleo_*.feature."""
+from datetime import timedelta
+
+import jwt
 from pytest_bdd import given, parsers, scenarios, then, when
 
 from conftest import USUARIOS
@@ -16,6 +19,16 @@ def _(ctx, campo, valor):
     datos = {**VALIDOS, campo.lower(): valor}
     ctx.llamar("POST", "/api/usuarios", token=None, json=datos)
     ctx.guardado["registrado"] = (datos["celular"], datos["pin"])
+
+
+@when("me registro sin correo y el resto de datos válidos")
+def _(ctx):
+    ctx.llamar("POST", "/api/usuarios", token=None, json=VALIDOS)
+
+
+@when(parsers.parse("me registro con nombres de {n:d} caracteres y el resto de datos válidos"))
+def _(ctx, n):
+    ctx.llamar("POST", "/api/usuarios", token=None, json={**VALIDOS, "nombres": "A" * n})
 
 
 @then(parsers.parse("la cuenta nueva tiene saldo S/ {saldo} y límite diario de S/ {limite}"))
@@ -57,6 +70,11 @@ def _(ctx):
     assert ctx.respuesta.status_code == 200, ctx.respuesta.text
     assert ctx.json()["expires_in"] == 30 * 60
     assert ctx.llamar("GET", "/api/cuentas/me/saldo").status_code == 200
+
+
+@when(parsers.parse("han pasado {n:d} minutos"))
+def _(ctx, n):
+    ctx.avanzar(n)
 
 
 @then("ambas respuestas tienen el mismo mensaje")
@@ -115,6 +133,13 @@ def _(ctx, situacion):
         ctx.llamar("GET", "/api/cuentas/me/saldo", token=None)
     elif situacion == "con un token inválido":
         ctx.llamar("GET", "/api/cuentas/me/saldo", token="no.es.un.jwt")
+    elif situacion == "con un token firmado con otra clave":
+        datos = jwt.decode(ctx.token, options={"verify_signature": False})
+        ctx.llamar("GET", "/api/cuentas/me/saldo", token=jwt.encode(datos, "otra-clave-de-32-bytes-como-minimo!", algorithm="HS256"))
+    elif situacion == "con un token alterado":
+        cabecera, cuerpo, firma = ctx.token.split(".")
+        alterado = cuerpo[:-2] + ("AA" if not cuerpo.endswith("AA") else "BB")
+        ctx.llamar("GET", "/api/cuentas/me/saldo", token=f"{cabecera}.{alterado}.{firma}")
     else:
         ctx.avanzar(31)
         ctx.llamar("GET", "/api/cuentas/me/saldo")
@@ -198,6 +223,18 @@ def _(ctx, monto, celular):
     _transferir(ctx, monto, celular_destino=celular)
 
 
+@when(parsers.parse("intento transferir sin monto al celular {celular}"))
+def _(ctx, celular):
+    ctx.llamar("POST", "/api/transferencias", json={"celular_destino": celular})
+
+
+@given(parsers.parse("que el reloj de Lima marca las {hora} de {dia}"))
+@when(parsers.parse("el reloj de Lima marca las {hora} de {dia}"))
+def _(ctx, hora, dia):
+    fecha = ctx.fecha("hoy") + timedelta(days=1 if dia == "mañana" else 0)
+    assert ctx.http.put("/api/pruebas/reloj", json={"ahora": f"{fecha.isoformat()}T{hora}"}).status_code == 200
+
+
 @when(parsers.parse("transfiero S/ {monto} al CCI {cci}"))
 @when(parsers.parse("intento transferir S/ {monto} al CCI {cci}"))
 def _(ctx, monto, cci):
@@ -212,6 +249,13 @@ def _(ctx, monto, celular, n):
 @given(parsers.parse("que ya transferí S/ {monto} al celular {celular}"))
 def _(ctx, monto, celular):
     assert _transferir(ctx, monto, celular_destino=celular).status_code == 201
+
+
+@then("las dos últimas operaciones tienen códigos de operación distintos")
+def _(ctx):
+    a, b = ctx.respuestas[-2:]
+    assert a.status_code == b.status_code == 201, (a.text, b.text)
+    assert a.json()["codigo_operacion"] != b.json()["codigo_operacion"]
 
 
 @then(parsers.parse("el comprobante muestra monto S/ {monto}, comisión S/ {comision}, total S/ {total} y mi nuevo saldo S/ {saldo}"))
@@ -239,6 +283,11 @@ def _(ctx):
     de_bruno = ctx.llamar("GET", "/api/movimientos/recientes?limite=1", token=ctx.como("Bruno")).json()[0]
     assert mio["codigo_operacion"] == de_bruno["codigo_operacion"]
     assert (mio["tipo"], de_bruno["tipo"]) == ("TRANSFERENCIA_ENVIADA", "TRANSFERENCIA_RECIBIDA")
+
+
+@when(parsers.parse("simulo una transferencia de S/ {monto} sin indicar el tipo"))
+def _(ctx, monto):
+    ctx.llamar("GET", "/api/transferencias/comision", params={"monto": monto})
 
 
 @when(parsers.parse("simulo una transferencia {tipo} de S/ {monto}"))

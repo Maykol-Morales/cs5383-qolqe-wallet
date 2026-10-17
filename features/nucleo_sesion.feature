@@ -79,3 +79,34 @@ Feature: Iniciar y cerrar sesión
     When cierro mi primera sesión
     Then mi primera sesión ya no es válida
     And mi segunda sesión sigue siendo válida
+
+  @HU-N-02 @api
+  Scenario: Un solo intento fallido no bloquea la cuenta
+    Given que ya fallé 1 veces el PIN del celular 912345678
+    When inicio sesión con el celular "912345678" y el PIN "7391"
+    Then recibo un token válido por 30 minutos
+
+  @HU-N-02 @api
+  Scenario: Sin identificador de dispositivo no se envía la alerta
+    When inicio sesión con el celular "987654321" y el PIN "4826"
+    Then recibo un token válido por 30 minutos
+    And Ana no recibe un SMS de alerta de nuevo dispositivo
+
+  @HU-N-02 @api
+  Scenario Outline: El token vale 30 minutos
+    Given que inicié sesión como Ana
+    When han pasado <minutos> minutos
+    And consulto mi saldo
+    Then la operación es "<resultado>"
+
+    Examples:
+      | minutos | resultado      |
+      | 29      | exitosa        |
+      | 31      | NO_AUTENTICADO |
+
+  @HU-N-02 @api @DEF-11
+  Scenario: El token sigue válido a los 30 minutos exactos
+    Given que inicié sesión como Ana
+    When han pasado 30 minutos
+    And consulto mi saldo
+    Then la operación es "exitosa"

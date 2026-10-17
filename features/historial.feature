@@ -211,6 +211,7 @@ Feature: Historial de movimientos
       | n   | resultado     |
       | 1   | exitosa       |
       | 100 | exitosa       |
+      | 99  | exitosa       |
       | 101 | NOTA_INVALIDA |
 
   @HU-G3-07 @api
@@ -293,3 +294,57 @@ Feature: Historial de movimientos
     Given que inicié sesión como Ana
     When exporto mis movimientos de los últimos 90 días de la categoría "Servicios"
     Then todas las filas del CSV tienen la categoría "Servicios"
+
+  @HU-G3-01 @api
+  Scenario Outline: Una fecha mal formada es rechazada
+    Given que inicié sesión como Ana
+    When consulto mi historial con desde "<fecha>"
+    Then la respuesta es 422
+
+    Examples:
+      | fecha      |
+      | 15-11-2026 |
+      | 2026-02-30 |
+      | ayer       |
+
+  @HU-G3-01 @api
+  Scenario: Una categoría de otro usuario como filtro es rechazada
+    Given que Carla tiene la categoría "Ajena"
+    And que inicié sesión como Ana
+    When consulto mi historial de la categoría de Carla
+    Then la respuesta es 422 con el código "FILTRO_INVALIDO"
+
+  @HU-G3-01 @api
+  Scenario: La página debe ser numérica
+    Given que inicié sesión como Ana
+    When consulto la página "abc" de mi historial
+    Then la respuesta es 422
+
+  @HU-G3-01 @api
+  Scenario: El rango incluye desde las 00:00:00 del día "desde" y excluye el día anterior
+    Given que soy un usuario nuevo con saldo S/ 100.00
+    And que hice una transferencia de S/ 0.01 a Bruno hace 3 días a las 23:59:59
+    And que hice una transferencia de S/ 0.01 a Bruno hace 2 días a las 00:00:00
+    When consulto mi historial desde "hace 2 días" hasta "hace 1 días"
+    Then el historial indica 1 movimientos y 1 páginas
+
+  @HU-G3-01 @api @DEF-07
+  Scenario: El rango incluye hasta las 23:59:59 del día "hasta" y excluye el día siguiente
+    Given que soy un usuario nuevo con saldo S/ 100.00
+    And que hice una transferencia de S/ 0.01 a Bruno hace 1 días a las 23:59:59
+    And que hice una transferencia de S/ 0.01 a Bruno hace 0 días a las 00:00:00
+    When consulto mi historial desde "hace 2 días" hasta "hace 1 días"
+    Then el historial indica 1 movimientos y 1 páginas
+
+  @HU-G3-07 @api
+  Scenario: Una categoría inexistente al clasificar responde 404
+    Given que inicié sesión como Ana
+    And que hice una transferencia de S/ 25.00 a Bruno
+    When clasifico ese movimiento con una categoría que no existe
+    Then la respuesta es 404 con el código "CATEGORIA_NO_ENCONTRADA"
+
+  @HU-G3-07 @api
+  Scenario: Un movimiento inexistente al clasificar responde 404
+    Given que inicié sesión como Ana
+    When clasifico el movimiento "NO000000000000000000" con una nota de 10 caracteres
+    Then la respuesta es 404 con el código "MOVIMIENTO_NO_ENCONTRADO"

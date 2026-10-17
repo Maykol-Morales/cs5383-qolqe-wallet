@@ -55,7 +55,7 @@ pytest tests/api --cov=qolqe           # cobertura
 QOLQE_URL=http://localhost:8000 pytest tests/api/test_nucleo.py   # contra un servidor real
 ```
 
-**Resultados** (Qolqe Wallet 1.0.0, 2026-10-12): `181 passed, 1 skipped, 18 xfailed` y 60 subpruebas de contrato. Los 18 xfailed son 18 casos que detectan los 10 defectos de la sección 5; el skipped es el escenario de concurrencia. Con `MOSTRAR_DEFECTOS=1` esos 18 fallan por el motivo descrito en `docs/defectos.md`. Cobertura de líneas de la app con estas pruebas: `api/movimientos.py` 100 %, `api/categorias.py` 100 %, `api/cuentas.py` 100 %, `api/autenticacion.py` 100 %, `reglas/nucleo.py` 100 %, `reglas/historial.py` 98 %, `api/transferencias.py` 88 %.
+**Resultados** (Qolqe Wallet 1.0.0, 2026-10-12): `238 passed, 1 skipped, 23 xfailed` y 60 subpruebas de contrato. Los 23 xfailed son 23 casos que detectan los 12 defectos de la sección 5; el skipped es el escenario de concurrencia. Con `MOSTRAR_DEFECTOS=1` esos 18 fallan por el motivo descrito en `docs/defectos.md`. Cobertura de líneas de la app con estas pruebas: `api/movimientos.py` 100 %, `api/categorias.py` 100 %, `api/cuentas.py` 100 %, `api/autenticacion.py` 100 %, `reglas/nucleo.py` 100 %, `reglas/historial.py` 98 %, `api/transferencias.py` 88 %.
 
 **Trazabilidad HU → escenarios** (cada escenario lleva su `@HU-…`; `Outline` cuenta una vez):
 
@@ -92,6 +92,8 @@ QOLQE_URL=http://localhost:8000 pytest tests/api/test_nucleo.py   # contra un se
 | DEF-08 | El detalle de un movimiento de otro usuario es visible (200 en lugar de 404) | Alta | Abierto |
 | DEF-09 | El destinatario de una transferencia ve el movimiento del emisor en el detalle | Media | Abierto |
 | DEF-10 | Editar una categoría permite repetir el nombre de otra categoría | Baja | Abierto |
+| DEF-11 | El token deja de ser válido a los 30 minutos exactos | Baja | Abierto (por confirmar) |
+| DEF-12 | Dos operaciones del mismo usuario en el mismo segundo comparten el código de operación | Alta | Abierto |
 
 ## 6. Conclusiones y recomendaciones
 *(Entrega final)*

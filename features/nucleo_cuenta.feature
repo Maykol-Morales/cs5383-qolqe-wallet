@@ -30,6 +30,8 @@ Feature: Mi cuenta: saldo, perfil y cierre
       | sin token                 |
       | con un token inválido     |
       | con un token vencido      |
+      | con un token firmado con otra clave |
+      | con un token alterado     |
 
   @HU-N-05 @api
   Scenario Outline: Longitud de los nombres (2 a 80 caracteres)
@@ -42,6 +44,8 @@ Feature: Mi cuenta: saldo, perfil y cierre
       | 2  | exitosa        |
       | 80 | exitosa        |
       | 81 | PERFIL_INVALIDO |
+      | 3  | exitosa        |
+      | 79 | exitosa        |
 
   @HU-N-05 @api
   Scenario Outline: Cambio de correo
@@ -70,13 +74,16 @@ Feature: Mi cuenta: saldo, perfil y cierre
 
   @HU-N-06 @api
   Scenario: Cierre con PIN incorrecto
+    Given que inicié sesión como Diego
+    And que mi saldo es S/ 0.00
     When cierro mi cuenta con el PIN "1111"
     Then la respuesta es 422 con el código "PIN_INCORRECTO"
 
   @HU-N-06 @api
   Scenario Outline: Solo se cierra con saldo exactamente S/ 0.00
-    Given que mi saldo es S/ <saldo>
-    When cierro mi cuenta con el PIN "4826"
+    Given que inicié sesión como Diego
+    And que mi saldo es S/ <saldo>
+    When cierro mi cuenta con el PIN "3604"
     Then la operación es "<resultado>"
 
     Examples:
@@ -111,3 +118,17 @@ Feature: Mi cuenta: saldo, perfil y cierre
     And que mi saldo es S/ 0.00
     When cierro mi cuenta con el PIN "3604"
     Then Ana no puede transferir S/ 10.00 al celular 998877665 por "DESTINO_INACTIVO"
+
+  @HU-N-06 @api
+  Scenario Outline: Orden de validación del cierre: PIN, luego saldo, luego solicitudes
+    Given que inicié sesión como <usuario>
+    And que mi saldo es S/ <saldo>
+    When cierro mi cuenta con el PIN "<pin>"
+    Then la operación es "<resultado>"
+
+    Examples:
+      | usuario | pin  | saldo   | resultado        |
+      | Diego   | 1111 | 2500.00 | PIN_INCORRECTO   |
+      | Ana     | 1111 | 0.00    | PIN_INCORRECTO   |
+      | Ana     | 4826 | 1500.00 | SALDO_PENDIENTE  |
+      | Ana     | 1111 | 1500.00 | PIN_INCORRECTO   |
