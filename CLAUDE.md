@@ -12,6 +12,7 @@ Proyecto 2 del curso **CS5383 Pruebas y Verificación de Software** (UTEC). Cont
 |---|---|---|
 | 1 | Pruebas de API (núcleo + G3), contrato con Schemathesis, 12 defectos, análisis EP/VL mapeado a escenarios | Hecha |
 | CI | GitHub Actions: pytest + cobertura + junit | Hecha |
+| Presentación | Deck final de 13 slides, mapa visual y guion `demo.sh` | Hecha (ver "Presentación y demo") |
 | 2 | Pruebas web E2E con Page Objects (`tests/e2e/pages/`) | Pendiente (solo `.gitkeep`) |
 | 3 | Rendimiento (`tests/performance/`) | Pendiente (solo `.gitkeep`) |
 
@@ -33,6 +34,7 @@ tests/
   test_humo.py         prueba de humo
 docs/                  requisitos.md (HU, CA, RN), informe.md, defectos.md, plantilla-informe.md,
                        casos-equivalencia-limites.md (análisis EP/VL), formato-particiones.md (formatos A1/B1)
+demo.sh                guion de la demo (preparar, ensayo, demo, schemathesis, plan-b)
 IA.md                  declaración de uso de IA (actualizar al usar IA en nuevas tareas)
 ```
 
@@ -46,10 +48,11 @@ pytest -rx                             # todo (~1 min); defectos conocidos salen
 pytest tests/api -m "HU-G3-01"         # una historia (cada escenario lleva etiqueta @HU-…)
 MOSTRAR_DEFECTOS=1 pytest tests/api    # los defectos fallan a la vista
 QOLQE_URL=http://localhost:8000 pytest tests/api/test_nucleo.py   # contra servidor real
-pytest --cov=qolqe                     # cobertura
+pytest --cov=qolqe                     # cobertura (64 %)
+./demo.sh preparar | ensayo | demo | schemathesis [todos] | plan-b   # ver "Presentación y demo"
 ```
 
-Resultado de referencia (Parte 1): `252 passed, 1 skipped, 24 xfailed` + 60 subpruebas de contrato. El skip es el escenario `@concurrencia` (pertenece a la Parte 3).
+Resultado de referencia (Parte 1, 2026-10-17): `252 passed, 1 skipped, 24 xfailed` + 60 subpruebas de contrato, 141 escenarios Gherkin (G3 70, núcleo 71), 12 defectos abiertos, unos 70 s. El skip es el escenario `@concurrencia` (pertenece a la Parte 3).
 
 ## Convenciones de las pruebas
 
@@ -79,9 +82,18 @@ Resultado de referencia (Parte 1): `252 passed, 1 skipped, 24 xfailed` + 60 subp
 - API de soporte (`QOLQE_MODO_PRUEBA=1`): `/api/pruebas/{reiniciar,reloj,notificaciones,saldo,procesar-diario}`. Reloj en memoria → un solo proceso.
 - Env vars: `QOLQE_BD`, `QOLQE_MODO_PRUEBA`, `QOLQE_MINUTOS_TOKEN`, `QOLQE_CLAVE_SECRETA`.
 
-## Defectos hallados (todos abiertos; detalle en `docs/defectos.md`)
+## Defectos hallados (12 abiertos; detalle en `docs/defectos.md`)
 
 DEF-01 redondeo comisión · 02 PIN descendente aceptado · 03 login exitoso no reinicia intentos · 04 interbancaria deja saldo negativo (Crítica) · 05 logout no invalida token (Crítica) · 06 transferencia a cuenta cerrada pierde dinero (Crítica) · 07 historial excluye el día `hasta` · 08 detalle de movimiento ajeno visible · 09 destinatario ve movimiento del emisor · 10 categoría editable con nombre duplicado · 11 (descartado: el token vence a los 30 min exactos, se acepta) · 12 dos operaciones del mismo segundo comparten código de operación · 13 el límite diario no cuenta las interbancarias
+
+## Presentación y demo
+
+- **Estructura pedida por el docente**: 1) herramienta de automatización y justificación (1-2 slides), 2) módulo asignado, importancia y prioridad (1-2 slides), 3) diseño de casos funcionales y técnicos sobre una HU elegida, 4) demo en vivo (solo indicar que viene). El equipo eligió **HU-N-07** (núcleo, transferencias) y **HU-G3-01** (historial).
+- **Artifacts** (privados; Maykol los comparte desde Share): presentación https://claude.ai/artifact/Y36yMfSCkNB16EiFANs8xK (13 slides: portada, herramienta, módulo, 4 de HU-N-07, 4 de HU-G3-01, técnicos, demo) y mapa visual https://claude.ai/artifact/KASkEjLiBq5AsLbhrKifQq. Se mantienen con las fuentes en el scratchpad de la sesión (no versionadas): hay que actualizar cifras en ambos cuando cambie el repo.
+- Diseño de la presentación: fondo verde bosque / crema / dorado, Fraunces + DM Sans + JetBrains Mono; en el slide 2 se quitó Schemathesis a propósito (queda en el slide de técnicos como "Contrato OpenAPI").
+- **demo.sh**: `preparar` crea `.venv`; `ensayo` corre los 4 pasos (HU-G3-01, todo, DEF-07 con `MOSTRAR_DEFECTOS=1`, contrato) y mide tiempo; `demo` pausa con Enter; `schemathesis [todos]` levanta un servidor temporal, corre el CLI con `--seed 1` y abre el HTML en `reporte-schemathesis/` (ignorado por git); `plan-b` guarda la salida en `reportes/ensayo.txt`; `SIN_CONTRATO=1` omite el paso 4. El paso 3 sale con rc=1 a propósito (los defectos fallan a la vista): avisarlo al presentar.
+- **Corrida del CLI con todos los checks**: 44 hallazgos (23 contrato impreciso, 3 datos inválidos aceptados, 17 `Allow` ruido, 1 recurso tras crear), ninguno 5xx; clasificados en `docs/informe.md` §2. No se registran como defectos nuevos (solo es defecto lo que incumple la documentación o da 5xx).
+- **Revisión completa con agentes (Opus)**: se corrigieron datos de los slides (prioridad del núcleo, escenario del DEF-07), verdes falsos (cierre de cuenta, HU-N-03 CA2, "eliminar dos veces", notas leídas de vuelta, códigos de error explícitos) y se registró **DEF-13**. Hallazgo descartado: la fila "Página" ya es valor límite en el análisis.
 
 ## CI
 
@@ -89,7 +101,10 @@ DEF-01 redondeo comisión · 02 PIN descendente aceptado · 03 login exitoso no 
 
 ## Pendiente / notas
 
-- Entorno local de pruebas: no hay `.venv` en el repo; crear uno e instalar `requirements-dev.txt` (usar el del scratchpad de la sesión o `python -m venv .venv`, ya ignorado por git).
+- Entorno local de pruebas: `./demo.sh preparar` crea `.venv` e instala `requirements-dev.txt` (ya ignorado por git; ya creado en la máquina de Maykol).
 - Herramienta de API (**provisional**: pytest+httpx+pytest-bdd; la asignada en el sorteo está vacía). Herramientas web y de rendimiento aún sin definir en `docs/informe.md`.
-- Interpretaciones asumidas a confirmar con el docente están en `docs/informe.md` §1 (p. ej. "90 días" = `hasta − desde ≤ 90`).
+- Interpretaciones asumidas a confirmar con el docente están en `docs/informe.md` §1 (p. ej. "90 días" = `hasta − desde ≤ 90`). Además: el código de error de nombres inválidos difiere por endpoint (`SOLICITUD_INVALIDA` al registrarse, `PERFIL_INVALIDO` al editar el perfil) y el requisito no lo fija.
+- Limitaciones conocidas de las pruebas: el escenario sin `@DEF` de HU-N-03 CA2 pasa sin probar nada mientras exista DEF-05 (logout no invalida nada); los `.feature` usan `# language: en` con texto en español; el escenario `@concurrencia` no tiene pasos (Parte 3).
+- `IA.md`: el equipo lo editó a mano (quitó dos filas de la declaración); no reponer sin preguntar.
+- Flujo de commits: se commitea y se hace push solo cuando el usuario lo pide; los mensajes terminan con `Co-Authored-By: Claude`.
 - Secciones 3, 4 y 6 de `docs/informe.md` están vacías hasta las Partes 2/3 y la entrega final.
