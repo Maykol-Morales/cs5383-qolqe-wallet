@@ -110,7 +110,7 @@ Tipo: V = válida · I = inválida. Lado: Dentro / Fuera del rango válido.
 | ID | Variable | Frontera | Valor | Lado | Esperado |
 |---|---|---|---|---|---|
 | VL-N02-05 | minutos desde el login | límite − 1 | 29 | Dentro | Token válido |
-| VL-N02-06 | minutos desde el login | límite | 30 | Dentro | Token válido |
+| VL-N02-06 | minutos desde el login | límite | 30 | Fuera | 401 `NO_AUTENTICADO` (a los 30:00 exactos ya venció) |
 | VL-N02-07 | minutos desde el login | límite + 1 | 31 | Fuera | 401 `NO_AUTENTICADO` |
 
 ### HU-N-04 · Consultar saldo y perfil

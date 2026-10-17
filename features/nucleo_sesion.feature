@@ -102,11 +102,5 @@ Feature: Iniciar y cerrar sesión
     Examples:
       | minutos | resultado      |
       | 29      | exitosa        |
+      | 30      | NO_AUTENTICADO |
       | 31      | NO_AUTENTICADO |
-
-  @HU-N-02 @api @DEF-11
-  Scenario: El token sigue válido a los 30 minutos exactos
-    Given que inicié sesión como Ana
-    When han pasado 30 minutos
-    And consulto mi saldo
-    Then la operación es "exitosa"

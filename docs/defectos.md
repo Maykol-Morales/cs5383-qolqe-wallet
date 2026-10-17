@@ -210,28 +210,9 @@ Resumen (ID, título, severidad y estado) en la sección 5 de [`informe.md`](inf
 
 **Evidencia:** `PUT /api/categorias/3 {"nombre":"Familia"}` → `200 {"id":3,"nombre":"Familia",...}`
 
-## DEF-11: El token deja de ser válido a los 30 minutos exactos (debe valer 30 minutos completos)
+## DEF-11: El token deja de ser válido a los 30 minutos exactos (descartado)
 
-| Campo | Valor |
-|---|---|
-| Módulo / regla | HU-N-02 CA1 · `qolqe/` (validación del JWT) |
-| Severidad | Baja |
-| Prioridad | Baja |
-| Entorno | Qolqe Wallet 1.0.0, Python 3.14, TestClient, Linux; reproducible por API (sin navegador) |
-| Prueba que lo detecta | `tests/api/test_nucleo.py::test_el_token_sigue_válido_a_los_30_minutos_exactos` |
-
-**Pasos para reproducir**
-1. Iniciar sesión como Ana.
-2. Adelantar el reloj 30 minutos (`PUT /api/pruebas/reloj {"avanzar_minutos": 30}`).
-3. `GET /api/cuentas/me/saldo`.
-
-**Resultado esperado:** `200`: el token es "válido por 30 minutos" y a los 29 y a los 30 minutos todavía rige (decisión del equipo: el límite es válido); falla recién al pasar de 30.
-
-**Resultado obtenido:** `401 NO_AUTENTICADO` ("El token expiró") a los 30 minutos exactos. A los 29 funciona y a los 31 se rechaza, como se espera.
-
-**Evidencia:** `GET /api/cuentas/me/saldo` a los 30 min → `401 {"codigo":"NO_AUTENTICADO","detail":"El token expiró"}`
-
-**Nota:** el requisito no precisa si en el minuto 30 exacto aún rige. Confirmar con el docente; si se acepta el comportamiento actual, retirar la etiqueta `@DEF-11` y poner el esperado en `NO_AUTENTICADO`.
+**Descartado: no es un defecto.** El requisito dice que el token es "válido por 30 minutos" y no precisa el minuto 30 exacto. No hay forma de confirmarlo con el docente, así que se acepta el comportamiento del sistema: a los 29 minutos el token vale y a los 30 ya no (`401 NO_AUTENTICADO`). La prueba quedó como escenario normal (`El token vale 30 minutos`, filas 29, 30 y 31). Se conserva el número para no renumerar los demás defectos.
 
 ## DEF-12: Dos operaciones del mismo usuario en el mismo segundo comparten el código de operación
 

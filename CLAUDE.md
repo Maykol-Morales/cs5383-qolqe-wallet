@@ -10,7 +10,7 @@ Proyecto 2 del curso **CS5383 Pruebas y Verificación de Software** (UTEC). Cont
 
 | Parte | Contenido | Estado |
 |---|---|---|
-| 1 | Pruebas de API (núcleo + G3), contrato con Schemathesis, 12 defectos, análisis EP/VL mapeado a escenarios | Hecha |
+| 1 | Pruebas de API (núcleo + G3), contrato con Schemathesis, 11 defectos, análisis EP/VL mapeado a escenarios | Hecha |
 | CI | GitHub Actions: pytest + cobertura + junit | Hecha |
 | 2 | Pruebas web E2E con Page Objects (`tests/e2e/pages/`) | Pendiente (solo `.gitkeep`) |
 | 3 | Rendimiento (`tests/performance/`) | Pendiente (solo `.gitkeep`) |
@@ -49,7 +49,7 @@ QOLQE_URL=http://localhost:8000 pytest tests/api/test_nucleo.py   # contra servi
 pytest --cov=qolqe                     # cobertura
 ```
 
-Resultado de referencia (Parte 1): `238 passed, 1 skipped, 23 xfailed` + 60 subpruebas de contrato. El skip es el escenario `@concurrencia` (pertenece a la Parte 3).
+Resultado de referencia (Parte 1): `239 passed, 1 skipped, 22 xfailed` + 60 subpruebas de contrato. El skip es el escenario `@concurrencia` (pertenece a la Parte 3).
 
 ## Convenciones de las pruebas
 
@@ -65,7 +65,7 @@ Resultado de referencia (Parte 1): `238 passed, 1 skipped, 23 xfailed` + 60 subp
 `docs/casos-equivalencia-limites.md` es la base de diseño de los casos: se construyó **solo desde `requisitos.md`** (RN/HU/CA), no desde los `.feature`, y luego se contrastó con ellos.
 
 - **Una técnica por elemento** (EQ o VL; ambas solo en casos extremos). Formatos: A1 para equivalencia (`EQ-<HU>-nn`: partición, tipo V/I, representante, esperado) y B1 para límites (`VL-<HU>-nn`: variable, frontera, valor, lado, esperado). El cierre de cuenta (HU-N-06) es una tabla de decisión `DT-N06-R1…R8`.
-- Decisiones tomadas: monto de transferencia y comisión = EQ; token a 30 min, límite diario y saldo vs monto+comisión = VL; login sin `dispositivo_id` es válido (sin SMS); simulación con tipo inexistente se rechaza y sin tipo = QOLQE; categoría ajena como filtro = `FILTRO_INVALIDO`; página 0 = `FILTRO_INVALIDO`; 0 movimientos = 1 página; nombre de categoría solo con espacios = inválido; orden de validación del cierre: PIN → saldo → solicitudes; solicitud vence a las 48 h (R-G4-05); redondeo validado por el servidor.
+- Decisiones tomadas: monto de transferencia y comisión = EQ; token a 30 min (a los 30:00 exactos ya vence), límite diario y saldo vs monto+comisión = VL; login sin `dispositivo_id` es válido (sin SMS); simulación con tipo inexistente se rechaza y sin tipo = QOLQE; categoría ajena como filtro = `FILTRO_INVALIDO`; página 0 = `FILTRO_INVALIDO`; 0 movimientos = 1 página; nombre de categoría solo con espacios = inválido; orden de validación del cierre: PIN → saldo → solicitudes; solicitud vence a las 48 h (R-G4-05); redondeo validado por el servidor.
 - Monto no numérico o vacío responde 422 `SOLICITUD_INVALIDA` (validación de Pydantic), no `MONTO_INVALIDO`.
 - Referencia externa: un análisis equivalente de otro grupo en `../proyecto2/features/g3/plantilla-analisis-ep-vl.md` (fuera de este repo, solo para contrastar).
 - Al agregar un caso: primero la tabla del doc, luego el escenario/Example en `features/`, luego el paso en `tests/api/` si hace falta.
@@ -81,7 +81,7 @@ Resultado de referencia (Parte 1): `238 passed, 1 skipped, 23 xfailed` + 60 subp
 
 ## Defectos hallados (todos abiertos; detalle en `docs/defectos.md`)
 
-DEF-01 redondeo comisión · 02 PIN descendente aceptado · 03 login exitoso no reinicia intentos · 04 interbancaria deja saldo negativo (Crítica) · 05 logout no invalida token (Crítica) · 06 transferencia a cuenta cerrada pierde dinero (Crítica) · 07 historial excluye el día `hasta` · 08 detalle de movimiento ajeno visible · 09 destinatario ve movimiento del emisor · 10 categoría editable con nombre duplicado · 11 token inválido a los 30 min exactos (por confirmar).
+DEF-01 redondeo comisión · 02 PIN descendente aceptado · 03 login exitoso no reinicia intentos · 04 interbancaria deja saldo negativo (Crítica) · 05 logout no invalida token (Crítica) · 06 transferencia a cuenta cerrada pierde dinero (Crítica) · 07 historial excluye el día `hasta` · 08 detalle de movimiento ajeno visible · 09 destinatario ve movimiento del emisor · 10 categoría editable con nombre duplicado · 11 (descartado: el token vence a los 30 min exactos, se acepta)
 
 ## CI
 
