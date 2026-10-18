@@ -206,6 +206,24 @@ pytest -rx                              # defectos conocidos salen como "xfailed
 MOSTRAR_DEFECTOS=1 pytest tests/api   # los defectos fallan a la vista
 ```
 
-`demo.sh` alista la demo de la presentación: `./demo.sh preparar` crea `.venv` e instala dependencias; `./demo.sh ensayo` corre los pasos seguidos y mide el tiempo (`demo` espera Enter entre pasos; `SIN_CONTRATO=1` omite el paso del contrato); `./demo.sh schemathesis` (o `schemathesis todos`, con todos los checks) corre el CLI de Schemathesis contra un servidor temporal y abre el reporte HTML; `./demo.sh plan-b` ejecuta `pytest -rx` y guarda la salida en `reportes/ensayo.txt` como respaldo pregrabado.
+### Demo y Schemathesis
+
+`demo.py` corre la demo y Schemathesis. Funciona igual en Linux, macOS y Windows porque solo usa la biblioteca estándar de Python. Basta con tener Python 3.11+ (no hace falta Bash ni curl). En Linux/macOS, `./demo.sh <opción>` es un atajo de lo mismo.
+
+| Linux / macOS | Windows (PowerShell o CMD) | Qué hace |
+|---|---|---|
+| `python3 demo.py preparar` | `py demo.py preparar` | Crea `.venv` e instala `requirements-dev.txt` (una sola vez) |
+| `python3 demo.py ensayo` | `py demo.py ensayo` | Corre los 4 pasos seguidos y mide el tiempo: HU-G3-01, todos los escenarios, DEF-07 a la vista, contrato |
+| `python3 demo.py demo` | `py demo.py demo` | Igual que `ensayo`, pero espera Enter antes de cada paso (para la presentación en vivo) |
+| `python3 demo.py schemathesis` | `py demo.py schemathesis` | Levanta un servidor temporal, corre el CLI de Schemathesis (`--seed 1`) y abre el reporte HTML de `reporte-schemathesis/` |
+| `python3 demo.py schemathesis g3` | `py demo.py schemathesis g3` | Lo mismo, pero solo con los endpoints de G3 (movimientos y categorías) |
+| `python3 demo.py schemathesis todos` | `py demo.py schemathesis todos` | Activa todos los checks (combinable: `g3 todos`); los hallazgos están en el informe §2 |
+| `python3 demo.py plan-b` | `py demo.py plan-b` | `pytest -rx` guardando la salida en `reportes/ensayo.txt` (respaldo pregrabado) |
+
+- No hace falta activar `.venv`: el script usa sus herramientas directamente.
+- El paso 3 termina con `rc=1` a propósito, porque los defectos fallan a la vista.
+- Variables opcionales: `SIN_CONTRATO=1` omite el paso 4, `PUERTO` cambia el puerto del servidor temporal (por defecto 8765) y `VENV` cambia la carpeta del entorno. En PowerShell se definen así: `$env:SIN_CONTRATO=1; py demo.py ensayo`.
+
+El contrato también corre dentro de pytest, sin el script (en Windows, después de `.venv\Scripts\activate`): `pytest tests/api/test_contrato.py -v`.
 
 Informe en [`docs/informe.md`](docs/informe.md) y defectos encontrados en [`docs/defectos.md`](docs/defectos.md).
