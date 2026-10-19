@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Contrato OpenAPI · Schemathesis</title>
+<!-- Generado por tests/dashboard/dashboard.py: no editar el HTML de salida -->
+<style>
+:root {
+  color-scheme: light;
+  --fondo: #f6f5f1; --superficie: #fcfcfb; --borde: #e3e1da; --rejilla: #ecebe6;
+  --texto: #1b1b19; --texto-2: #52514e; --texto-3: #7a7974;
+  --acento: #1f4d3a; --acento-suave: #e4eee8;
+  --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --s4: #eda100;
+  --bien: #0ca30c; --aviso: #fab219; --critico: #d03b3b;
+  --mono: ui-monospace, "JetBrains Mono", SFMono-Regular, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme="light"])) {
+    color-scheme: dark;
+    --fondo: #121211; --superficie: #1a1a19; --borde: #2e2e2b; --rejilla: #262624;
+    --texto: #f4f3ee; --texto-2: #c3c2b7; --texto-3: #8f8e86;
+    --acento: #7fc8a1; --acento-suave: #1f2e27;
+    --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --fondo: #121211; --superficie: #1a1a19; --borde: #2e2e2b; --rejilla: #262624;
+  --texto: #f4f3ee; --texto-2: #c3c2b7; --texto-3: #8f8e86;
+  --acento: #7fc8a1; --acento-suave: #1f2e27;
+  --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--fondo); color: var(--texto); font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+header { padding: 28px 16px 0; max-width: 1180px; margin: 0 auto; }
+main { max-width: 1180px; margin: 0 auto; padding: 0 16px 64px; }
+h1 { font-size: 26px; margin: 0 0 4px; letter-spacing: -.01em; }
+h2 { font-size: 18px; margin: 0 0 4px; }
+h3 { font-size: 15px; margin: 0 0 8px; }
+p { margin: 0 0 8px; }
+.sub { color: var(--texto-2); }
+.nota { color: var(--texto-3); font-size: 13px; }
+code, .mono { font-family: var(--mono); font-size: 12.5px; }
+nav.pestanas { display: flex; gap: 4px; margin: 20px 0 0; border-bottom: 1px solid var(--borde); overflow-x: auto; }
+nav.pestanas button { background: none; border: 0; border-bottom: 2px solid transparent; padding: 10px 14px; font: inherit; color: var(--texto-2); cursor: pointer; white-space: nowrap; }
+nav.pestanas button[aria-selected="true"] { color: var(--texto); border-color: var(--acento); font-weight: 600; }
+section.vista { display: none; padding-top: 20px; }
+section.vista.activa { display: block; }
+.tarjeta { background: var(--superficie); border: 1px solid var(--borde); border-radius: 10px; padding: 18px; margin-bottom: 16px; min-width: 0; }
+.rejilla { display: grid; gap: 16px; }
+.r2 { grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); }
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 16px; }
+.kpi { background: var(--superficie); border: 1px solid var(--borde); border-radius: 10px; padding: 14px 16px; }
+.kpi .etq { color: var(--texto-2); font-size: 13px; }
+.kpi .val { font-size: 26px; font-weight: 650; letter-spacing: -.01em; }
+.kpi .det { color: var(--texto-3); font-size: 12.5px; }
+.kpi.heroe .val { font-size: 48px; line-height: 1.1; }
+.estado { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; }
+.estado::before { content: ""; width: 9px; height: 9px; border-radius: 50%; background: var(--c); }
+.estado.bien { --c: var(--bien); } .estado.aviso { --c: var(--aviso); } .estado.critico { --c: var(--critico); }
+/* barras horizontales */
+.barras { display: grid; grid-template-columns: minmax(110px, max-content) 1fr; gap: 8px 12px; align-items: center; }
+.barras .rotulo { color: var(--texto-2); font-size: 13.5px; }
+.pista { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.apilada { display: flex; gap: 2px; height: 20px; flex: 0 1 auto; min-width: 2px; }
+.seg { height: 100%; background: var(--c); }
+.seg:first-child { border-radius: 0; } .seg:last-child { border-radius: 0 4px 4px 0; }
+.valor { font-variant-numeric: tabular-nums; font-size: 13px; color: var(--texto); white-space: nowrap; }
+.leyenda { display: flex; flex-wrap: wrap; gap: 6px 16px; margin: 4px 0 12px; font-size: 13px; color: var(--texto-2); }
+.leyenda span::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 2px; background: var(--c); margin-right: 6px; vertical-align: -1px; }
+/* columnas */
+.columnas { display: flex; align-items: flex-end; gap: 10px; height: 180px; border-bottom: 1px solid var(--rejilla); padding-top: 18px; overflow-x: auto; }
+.col { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; min-width: 34px; flex: 1; }
+.col .barra { width: 100%; max-width: 24px; background: var(--s1); border-radius: 4px 4px 0 0; }
+.col .tope { font-size: 12px; font-variant-numeric: tabular-nums; margin-bottom: 3px; }
+.ejes { display: flex; gap: 10px; }
+.ejes span { flex: 1; min-width: 34px; text-align: center; font-size: 12px; color: var(--texto-2); font-family: var(--mono); }
+/* tablas */
+.tabla-env { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+th { text-align: left; font-weight: 600; color: var(--texto-2); font-size: 12.5px; border-bottom: 1px solid var(--borde); padding: 6px 8px; white-space: nowrap; }
+td { border-bottom: 1px solid var(--rejilla); padding: 7px 8px; vertical-align: top; }
+td.mono { white-space: nowrap; }
+td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; }
+tr.abre { cursor: pointer; }
+tr.abre:hover td { background: var(--acento-suave); }
+tr.detalle td { background: var(--fondo); }
+.chip { display: inline-block; font-family: var(--mono); font-size: 11.5px; padding: 1px 6px; border-radius: 4px; border: 1px solid var(--borde); margin: 1px 2px 1px 0; white-space: nowrap; }
+.chip.ambos { background: var(--acento-suave); border-color: var(--acento); }
+.chip.bdd { border-style: dashed; }
+.chip.st { color: var(--texto-3); }
+.metodo { font-family: var(--mono); font-size: 11.5px; font-weight: 700; }
+.filtros { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+.filtros input, .filtros select { font: inherit; font-size: 13.5px; padding: 6px 10px; border: 1px solid var(--borde); border-radius: 6px; background: var(--superficie); color: var(--texto); }
+.filtros input { flex: 1 1 220px; }
+.caso { border: 1px solid var(--borde); border-radius: 8px; padding: 10px 12px; margin: 8px 0; background: var(--superficie); }
+.caso pre { margin: 4px 0 0; white-space: pre-wrap; word-break: break-all; font-family: var(--mono); font-size: 12px; color: var(--texto-2); max-height: 160px; overflow: auto; }
+.aviso-lista li { margin-bottom: 4px; }
+details summary { cursor: pointer; color: var(--texto-2); font-size: 13px; }
+.clase-dot { display: inline-block; width: 9px; height: 9px; border-radius: 2px; background: var(--c); margin-right: 6px; }
+.explica { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin-top: 12px; }
+.explica div { font-size: 13px; color: var(--texto-2); border-left: 3px solid var(--c); padding-left: 10px; }
+.explica b { color: var(--texto); }
+#tip { position: fixed; pointer-events: none; background: var(--texto); color: var(--superficie); font-size: 12.5px; padding: 6px 9px; border-radius: 6px; max-width: 320px; opacity: 0; transition: opacity .1s; z-index: 9; }
+button.tema { float: right; font: inherit; font-size: 13px; background: var(--superficie); border: 1px solid var(--borde); color: var(--texto-2); border-radius: 6px; padding: 4px 10px; cursor: pointer; }
+@media (max-width: 600px) { .kpi.heroe .val { font-size: 38px; } .barras { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div id="tip" role="tooltip"></div>
+<header>
+  <button class="tema" id="tema" type="button">Tema</button>
+  <h1>Contrato OpenAPI · Schemathesis</h1>
+  <p class="sub" id="fuente"></p>
+  <nav class="pestanas" role="tablist">
+    <button role="tab" aria-selected="true" data-vista="st">Schemathesis</button>
+    <button role="tab" aria-selected="false" data-vista="cmp">Comparativa con pytest-bdd</button>
+  </nav>
+</header>
+<main>
+<section class="vista activa" id="st">
+  <div class="kpis" id="kpis-st"></div>
+  <div class="rejilla r2">
+    <div class="tarjeta"><h3>Casos por fase de generación</h3><div class="leyenda"><span style="--c:var(--s1)">positivos (datos válidos)</span><span style="--c:var(--s2)">negativos (datos que violan el esquema)</span></div><div class="barras" id="g-fases"></div></div>
+    <div class="tarjeta"><h3>Respuestas por código HTTP</h3><p class="nota">Ninguna respuesta 5xx = la API no se cae con datos generados.</p><div class="columnas" id="g-estados"></div><div class="ejes" id="g-estados-ejes"></div></div>
+  </div>
+  <div class="rejilla r2">
+    <div class="tarjeta"><h3>Checks de conformidad</h3><div class="tabla-env"><table id="t-checks"></table></div><p class="nota" id="n-checks"></p></div>
+    <div class="tarjeta"><h3>Avisos (calculados de los logs)</h3><ul class="aviso-lista" id="avisos"></ul></div>
+  </div>
+  <div class="tarjeta">
+    <h3>Restricciones del esquema que se atacaron (fase de cobertura)</h3>
+    <p class="nota">Schemathesis lee cada restricción del OpenAPI (minLength, pattern, enum, required…) y genera el valor justo en el borde o fuera de él.</p>
+    <div class="barras" id="g-cobertura"></div>
+  </div>
+  <div class="tarjeta">
+    <h2>Operaciones</h2><p class="nota">Clic en una fila para ver un caso representativo por cada respuesta distinta (petición y respuesta del log).</p>
+    <div class="filtros"><input id="f-texto" type="search" placeholder="Buscar ruta o código de error"><select id="f-modulo"></select></div>
+    <div class="tabla-env"><table id="t-ops"></table></div>
+  </div>
+  <div class="rejilla r2">
+    <div class="tarjeta"><h3>Latencia por caso (HAR)</h3><div class="barras" id="g-latencia"></div></div>
+    <div class="tarjeta"><h3>Casos más lentos</h3><div class="tabla-env"><table id="t-lentos"></table></div></div>
+  </div>
+</section>
+
+<section class="vista" id="cmp">
+  <div id="sin-bdd" class="tarjeta" hidden><p>No hay resultados de pytest-bdd. Ejecuta <code>python demo.py reporte</code> y vuelve a generar este dashboard.</p></div>
+  <div id="con-bdd">
+  <div class="kpis" id="kpis-cmp"></div>
+  <div class="tarjeta">
+    <h2>¿Qué verifica cada escenario BDD frente a Schemathesis?</h2>
+    <p class="nota">Cada escenario se clasifica por la petición de su paso <i>When</i>, que se valida contra el OpenAPI, y por lo que miran sus pasos <i>Then</i>.</p>
+    <div class="barras" id="g-clases"></div>
+    <div class="explica" id="explica"></div>
+  </div>
+  <div class="tarjeta">
+    <h2>Cobertura por operación (Núcleo + G3)</h2>
+    <div class="leyenda"><span class="chip ambos">200</span> lo obtienen ambos &nbsp; <span class="chip bdd">409</span> solo BDD &nbsp; <span class="chip st">401</span> solo Schemathesis</div>
+    <div class="tabla-env"><table id="t-matriz"></table></div>
+  </div>
+  <div class="tarjeta">
+    <h2>Candidatos a redundantes: el contrato ya lo cubre</h2>
+    <p class="nota">La petición viola una restricción del OpenAPI y el escenario solo verifica estado y código. Schemathesis generó casos negativos contra esa misma restricción (columna "evidencia"). Antes de borrar un escenario, revisa si pertenece al análisis EP/VL (<code>docs/casos-equivalencia-limites.md</code>): ahí se documenta igual, aunque la herramienta lo repita. Lo que Schemathesis no comprueba con estos checks es el <b>código de error</b> exacto (p. ej. <code>PIN_INVALIDO</code>).</p>
+    <div class="tabla-env"><table id="t-contrato"></table></div>
+  </div>
+  <div class="tarjeta">
+    <h2>Reglas de negocio: solo las cubre BDD</h2>
+    <p class="nota">La petición cumple el OpenAPI y aun así la API la rechaza. El esquema no expresa la regla, así que Schemathesis solo puede toparse con ella por azar. Columna "Schemathesis": si alguna vez obtuvo ese mismo código.</p>
+    <div class="tabla-env"><table id="t-regla"></table></div>
+  </div>
+  <div class="tarjeta">
+    <h2>Repetidos dentro de BDD</h2>
+    <p class="nota">Ejemplos de un mismo escenario con la misma respuesta y la misma restricción violada. Si son representantes de una misma partición de equivalencia, basta con uno. Si están a los dos lados de un valor límite (p. ej. 2 y 3 caracteres), no sobran.</p>
+    <div class="tabla-env"><table id="t-repetidos"></table></div>
+  </div>
+  <div class="rejilla r2">
+    <div class="tarjeta"><h2>Solo lo cubrió Schemathesis</h2><p class="nota">Respuestas (operación, estado, código) de Núcleo + G3 que ningún escenario BDD provoca.</p><div class="tabla-env"><table id="t-solo-st"></table></div></div>
+    <div class="tarjeta"><h2>Herramientas que se solapan</h2><div id="herramientas"></div></div>
+  </div>
+  </div>
+</section>
+</main>
+<script>
+const D = /*DATOS*/null;
+const $ = (s, r = document) => r.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const fmt = n => n.toLocaleString("es-PE");
+const pct = (a, b) => b ? Math.round(100 * a / b) : 0;
+const contar = (xs, f) => xs.reduce((m, x) => (m[f(x)] = (m[f(x)] || 0) + 1, m), {});
+const mediana = xs => { const s = [...xs].sort((a, b) => a - b); return s.length ? s[Math.floor(s.length / 2)] : 0; };
+const C = D.casos, E = D.escenarios, K = D.comparativa;
+
+// Tema y pestañas
+try { const t = localStorage.getItem("tema"); if (t) document.documentElement.dataset.theme = t; } catch {}
+$("#tema").onclick = () => {
+  const oscuro = getComputedStyle(document.documentElement).colorScheme === "dark";
+  document.documentElement.dataset.theme = oscuro ? "light" : "dark";
+  try { localStorage.setItem("tema", document.documentElement.dataset.theme); } catch {}
+};
+document.querySelectorAll("nav.pestanas button").forEach(b => b.onclick = () => {
+  document.querySelectorAll("nav.pestanas button").forEach(x => x.setAttribute("aria-selected", x === b));
+  document.querySelectorAll("section.vista").forEach(s => s.classList.toggle("activa", s.id === b.dataset.vista));
+});
+if (location.hash) document.querySelector(`nav.pestanas [data-vista="${location.hash.slice(1)}"]`)?.click();
+// Tooltip compartido
+const tip = $("#tip");
+document.addEventListener("mousemove", e => {
+  const t = e.target.closest("[data-tip]");
+  if (!t) { tip.style.opacity = 0; return; }
+  tip.textContent = t.dataset.tip; tip.style.opacity = 1;
+  tip.style.left = Math.min(e.clientX + 12, innerWidth - tip.offsetWidth - 8) + "px";
+  tip.style.top = (e.clientY + 14) + "px";
+});
+
+const kpi = (etq, val, det = "", heroe = false) =>
+  `<div class="kpi${heroe ? " heroe" : ""}"><div class="etq">${etq}</div><div class="val">${val}</div><div class="det">${det}</div></div>`;
+function barras(el, filas, max) {  // filas: [rótulo, [[valor, color, tip]...]]
+  max = max || Math.max(...filas.map(f => f[1].reduce((a, s) => a + s[0], 0)), 1);
+  el.innerHTML = filas.map(([rot, segs]) => {
+    const total = segs.reduce((a, s) => a + s[0], 0);
+    return `<div class="rotulo">${rot}</div><div class="pista"><div class="apilada" style="width:${Math.max(pct(total, max), 0.5)}%">${
+      segs.filter(s => s[0]).map(s => `<div class="seg" style="--c:${s[1]};flex:${s[0]}" data-tip="${esc(s[2])}"></div>`).join("")
+    }</div><span class="valor">${fmt(total)}</span></div>`;
+  }).join("");
+}
+
+// ── Schemathesis ─────────────────────────────────────────────────────────
+const f = D.fuente;
+$("#fuente").innerHTML = `Logs <code>${esc(f.vcr)}</code> (VCR) + <code>${esc(f.har)}</code> (HAR) · semilla ${esc(f.semilla)} · <details style="display:inline"><summary>comando</summary><code>${esc(f.comando)}</code></details>`;
+const documentadas = new Set(D.documentadas);
+const opsProbadas = new Set(C.filter(c => c.documentada).map(c => c.op));
+const n5xx = C.filter(c => c.estado >= 500).length;
+const fallidos = C.filter(c => c.fallos.length).length;
+const verificados = C.reduce((a, c) => a + Object.keys(c.checks).length, 0);
+$("#kpis-st").innerHTML =
+  kpi("Casos generados", fmt(C.length), `${D.duracion} s de corrida`, true) +
+  kpi("Operaciones probadas", `${opsProbadas.size}/${documentadas.size}`, "del OpenAPI (el resto se excluye a propósito)") +
+  kpi("Checks verificados", fmt(verificados), fallidos ? `<span class="estado critico">${fallidos} casos con fallos</span>` : `<span class="estado bien">0 fallos</span>`) +
+  kpi("Respuestas 5xx", n5xx, n5xx ? `<span class="estado critico">errores del servidor</span>` : `<span class="estado bien">ninguna</span>`) +
+  kpi("Latencia p95", `${D.p95} ms`, `mediana ${mediana(C.map(c => c.ms))} ms`);
+
+barras($("#g-fases"), Object.entries(D.fases).map(([k, nombre]) => {
+  const p = C.filter(c => c.fase === k && c.modo === "positive").length, n = C.filter(c => c.fase === k && c.modo === "negative").length;
+  return [nombre, [[p, "var(--s1)", `${nombre}: ${fmt(p)} positivos`], [n, "var(--s2)", `${nombre}: ${fmt(n)} negativos`]]];
+}));
+
+const porEstado = Object.entries(contar(C, c => c.estado)).sort((a, b) => a[0] - b[0]);
+const maxE = Math.max(...porEstado.map(e => e[1]));
+$("#g-estados").innerHTML = porEstado.map(([e, n]) =>
+  `<div class="col" data-tip="HTTP ${e}: ${fmt(n)} casos (${pct(n, C.length)} %)"><span class="tope">${fmt(n)}</span><div class="barra" style="height:${Math.max(pct(n, maxE), 1)}%"></div></div>`).join("");
+$("#g-estados-ejes").innerHTML = porEstado.map(([e]) => `<span>${e}</span>`).join("");
+
+const nombresChecks = [...new Set(C.flatMap(c => Object.keys(c.checks)))];
+$("#t-checks").innerHTML = `<tr><th>Check</th><th class="n">Aplicado</th><th class="n">Falla</th><th>Estado</th></tr>` + nombresChecks.map(n => {
+  const ap = C.filter(c => n in c.checks).length, fa = C.filter(c => c.checks[n] && c.checks[n] !== "SUCCESS").length;
+  return `<tr><td class="mono">${n}</td><td class="n">${fmt(ap)}</td><td class="n">${fa}</td><td>${fa ? `<span class="estado critico">falla</span>` : `<span class="estado bien">cumple</span>`}</td></tr>`;
+}).join("");
+const soloUno = C.filter(c => Object.keys(c.checks).length === 1).length;
+$("#n-checks").textContent = `${fmt(soloUno)} casos solo llevan not_a_server_error: son métodos no documentados (TRACE, OPTIONS…) que la API responde con 405 y no tienen contrato contra el cual comparar.`;
+
+// Avisos calculados: operaciones que casi nunca llegan al camino feliz
+const porOp = {};
+C.filter(c => c.documentada).forEach(c => (porOp[c.op] ||= []).push(c));
+const avisos = [];
+for (const [op, cs] of Object.entries(porOp)) {
+  const ok = cs.filter(c => c.estado < 300).length, n404 = cs.filter(c => c.estado === 404).length;
+  const pos = cs.filter(c => c.modo === "positive"), rech = pos.filter(c => c.estado >= 400).length;
+  if (!ok && n404 / cs.length >= 0.5) avisos.push([op, `<b>${D.modulos[op]}</b> · ${pct(n404, cs.length)} % de 404 y ningún 2xx: faltan datos de prueba (ids que existan)`]);
+  else if (pos.length >= 5 && rech / pos.length >= 0.9) avisos.push([op, `<b>${D.modulos[op]}</b> · rechaza el ${pct(rech, pos.length)} % de los datos "válidos": el esquema no expresa todas las reglas`]);
+}
+$("#avisos").innerHTML = avisos.length ? avisos.map(([op, t]) => `<li><span class="estado aviso"></span> <code>${esc(op)}</code> · ${t}</li>`).join("") : "<li>Sin avisos.</li>";
+
+const desc = {};
+C.filter(c => c.fase === "coverage" && c.desc).forEach(c => {
+  const d = c.desc.replace(/^[\w.]+: /, "").replace(/'[^']*'/g, "…").replace(/: (TRACE|QUERY|PATCH|OPTIONS|DELETE|PUT|POST|GET)$/, "");
+  (desc[d] ||= { n: 0, neg: 0 }).n++; if (c.modo === "negative") desc[d].neg++;
+});
+barras($("#g-cobertura"), Object.entries(desc).sort((a, b) => b[1].n - a[1].n).slice(0, 14).map(([d, v]) =>
+  [esc(d), [[v.n - v.neg, "var(--s1)", `${d}: ${v.n - v.neg} positivos`], [v.neg, "var(--s2)", `${d}: ${v.neg} negativos`]]]));
+
+// Tabla de operaciones con detalle desplegable
+const modulos = [...new Set(Object.values(D.modulos))].sort();
+$("#f-modulo").innerHTML = `<option value="">Todos los módulos</option>` + modulos.map(m => `<option>${m}</option>`).join("");
+function chipsEstados(cs) { return Object.entries(contar(cs, c => c.estado)).map(([e, n]) => `<span class="chip" data-tip="${n} casos">${e}</span>`).join(""); }
+function pintarOps() {
+  const q = $("#f-texto").value.toLowerCase(), m = $("#f-modulo").value;
+  const filas = Object.entries(porOp).filter(([op, cs]) => (!m || D.modulos[op] === m) &&
+    (!q || op.toLowerCase().includes(q) || cs.some(c => c.codigo.toLowerCase().includes(q)))).sort((a, b) => b[1].length - a[1].length);
+  $("#t-ops").innerHTML = `<tr><th>Módulo</th><th>Operación</th><th class="n">Casos</th><th class="n">Neg.</th><th>Respuestas</th><th>Códigos de error</th><th class="n">p50 ms</th><th class="n">máx ms</th></tr>` +
+    filas.map(([op, cs]) => {
+      const [met, ruta] = op.split(" "), cods = [...new Set(cs.map(c => c.codigo).filter(Boolean))];
+      return `<tr class="abre" data-op="${esc(op)}"><td>${D.modulos[op]}</td><td><span class="metodo">${met}</span> <span class="mono">${esc(ruta)}</span></td><td class="n">${cs.length}</td><td class="n">${cs.filter(c => c.modo === "negative").length}</td><td>${chipsEstados(cs)}</td><td>${cods.map(c => `<span class="chip">${esc(c)}</span>`).join("")}</td><td class="n">${mediana(cs.map(c => c.ms))}</td><td class="n">${Math.max(...cs.map(c => c.ms))}</td></tr>`;
+    }).join("");
+}
+function casoHTML(c) {
+  return `<div class="caso"><b class="mono">${c.estado}</b> ${c.codigo ? `<span class="chip">${esc(c.codigo)}</span>` : ""} <span class="nota">${esc(D.fases[c.fase])} · ${c.modo === "negative" ? "negativo" : "positivo"} · ${c.ms} ms · id ${esc(c.id)}</span>${c.desc ? `<div class="nota">${esc(c.desc)}</div>` : ""}
+    <pre>${esc(c.metodo)} ${esc(c.url)}${c.envio ? "\n" + esc(c.envio) : ""}</pre><pre>← ${esc(c.respuesta)}</pre></div>`;
+}
+$("#t-ops").addEventListener("click", e => {
+  const tr = e.target.closest("tr.abre"); if (!tr) return;
+  if (tr.nextElementSibling?.classList.contains("detalle")) { tr.nextElementSibling.remove(); return; }
+  const vistos = {};
+  porOp[tr.dataset.op].forEach(c => vistos[`${c.estado}|${c.codigo}`] ||= c);
+  tr.insertAdjacentHTML("afterend", `<tr class="detalle"><td colspan="8">${Object.values(vistos).map(casoHTML).join("")}</td></tr>`);
+});
+$("#f-texto").oninput = $("#f-modulo").onchange = pintarOps;
+pintarOps();
+
+const tramos = [[0, 5], [5, 10], [10, 25], [25, 50], [50, 100], [100, Infinity]];
+barras($("#g-latencia"), tramos.map(([a, b]) => {
+  const n = C.filter(c => c.ms >= a && c.ms < b).length;
+  return [b === Infinity ? `≥ ${a} ms` : `${a}–${b} ms`, [[n, "var(--s1)", `${fmt(n)} casos (${pct(n, C.length)} %)`]]];
+}));
+$("#t-lentos").innerHTML = `<tr><th>Operación</th><th class="n">HTTP</th><th class="n">ms</th></tr>` +
+  [...C].sort((a, b) => b.ms - a.ms).slice(0, 8).map(c => `<tr><td class="mono">${esc(c.op)}</td><td class="n">${c.estado}</td><td class="n">${c.ms}</td></tr>`).join("");
+
+// ── Comparativa ─────────────────────────────────────────────────────────
+if (!E.length) { $("#sin-bdd").hidden = false; $("#con-bdd").hidden = true; }
+else {
+  const CLASES = {
+    contrato: ["Cubierto por el contrato", "var(--s1)", "La petición ya viola el OpenAPI y el Then solo mira estado/código. Schemathesis ataca esa restricción de forma sistemática: <b>candidato a redundante</b>."],
+    regla: ["Regla de negocio", "var(--s2)", "La petición cumple el OpenAPI y la API la rechaza igual (secuencias de PIN, 90 días, saldo, límites). <b>Solo BDD</b> lo prueba a propósito."],
+    feliz: ["Éxito en un valor elegido", "var(--s3)", "Respuesta 2xx con un valor de una partición o en un límite. Schemathesis también obtiene 2xx, pero con otros valores: el dato elegido es la prueba."],
+    contenido: ["Verifica contenido", "var(--s4)", "Algún Then revisa datos de negocio (saldo, comisión, CSV, SMS, orden). Schemathesis solo valida la forma de la respuesta."],
+  };
+  const porClase = contar(E, e => e.clase);
+  const ops = K.filas, ambos = ops.filter(o => o.escenarios && o.casos_st).length;
+  $("#kpis-cmp").innerHTML =
+    kpi("Escenarios BDD", fmt(E.length), `${E.filter(e => e.defs.length).length} con defecto conocido (xfail)`, true) +
+    kpi("Candidatos a redundantes", porClase.contrato || 0, `${pct(porClase.contrato || 0, E.length)} % de los escenarios`) +
+    kpi("Operaciones Núcleo + G3", `${ambos}/${ops.length}`, "probadas por ambas herramientas") +
+    kpi("Respuestas en común", K.venn.ambos, `solo BDD ${K.venn.solo_bdd} · solo Schemathesis ${K.venn.solo_st}`);
+  barras($("#g-clases"), Object.entries(CLASES).map(([k, [n, c]]) => [`<span class="clase-dot" style="--c:${c}"></span>${n}`, [[porClase[k] || 0, c, `${n}: ${porClase[k] || 0} escenarios`]]]), E.length);
+  $("#explica").innerHTML = Object.values(CLASES).map(([n, c, t]) => `<div style="--c:${c}"><b>${n}.</b> ${t}</div>`).join("");
+
+  $("#t-matriz").innerHTML = `<tr><th>Mód.</th><th>Operación</th><th class="n">Escenarios</th><th class="n">Casos ST</th><th>Estados HTTP</th><th>Códigos de error</th></tr>` +
+    ops.map(o => {
+      const marca = (a, b) => [...new Set([...a, ...b])].sort().map(x => {
+        const enA = a.includes(x), enB = b.includes(x);
+        return `<span class="chip ${enA && enB ? "ambos" : enA ? "bdd" : "st"}" data-tip="${enA && enB ? "ambos" : enA ? "solo BDD" : "solo Schemathesis"}">${esc(x)}</span>`;
+      }).join("");
+      const [met, ruta] = o.op.split(" ");
+      return `<tr><td>${o.modulo}</td><td><span class="metodo">${met}</span> <span class="mono">${esc(ruta)}</span>${!o.casos_st ? ` <span class="nota">(sin casos en este log)</span>` : !o.st_2xx ? ` <span class="nota">(ST sin 2xx)</span>` : ""}</td><td class="n">${o.escenarios}</td><td class="n">${o.casos_st}</td><td>${marca(o.est_bdd.map(String), o.est_st.map(String))}</td><td>${marca(o.cod_bdd, o.cod_st)}</td></tr>`;
+    }).join("");
+
+  const casoPorId = Object.fromEntries(C.map(c => [c.id, c]));
+  const errorDe = e => e.cuando.find(t => t.estado >= 400) || e.cuando[0];
+  const titulo = e => `${esc(e.nombre)}${e.params ? `<div class="nota mono">${esc(e.params)}</div>` : ""}${e.defs.length ? ` <span class="chip" data-tip="defecto conocido, xfail">${e.defs.join(" ")}</span>` : ""}`;
+  $("#t-contrato").innerHTML = `<tr><th>Escenario</th><th>HU</th><th>Respuesta</th><th>Restricción violada</th><th>Evidencia en Schemathesis</th></tr>` +
+    E.filter(e => e.clase === "contrato").sort((a, b) => a.hu.localeCompare(b.hu)).map(e => {
+      const t = errorDe(e);
+      return `<tr><td>${titulo(e)}</td><td class="mono">${esc(e.hu)}</td><td><span class="mono">${t.estado}</span> <span class="chip">${esc(t.codigo)}</span></td><td>${t.viola.map(v => `<span class="chip">${esc(v)}</span>`).join("")}</td><td>${(e.evidencia || []).map(id => {
+        const c = casoPorId[id]; return `<span class="chip" data-tip="${esc(c.desc || D.fases[c.fase])} → ${c.estado} ${esc(c.codigo)} · ${esc(c.envio || c.url)}">${esc(id)}</span>`;
+      }).join("") || '<span class="nota">sin caso equivalente</span>'}</td></tr>`;
+    }).join("");
+
+  $("#t-regla").innerHTML = `<tr><th>Escenario</th><th>HU</th><th>Respuesta</th><th>Schemathesis</th></tr>` +
+    E.filter(e => e.clase === "regla").sort((a, b) => errorDe(a).codigo.localeCompare(errorDe(b).codigo)).map(e => {
+      const t = errorDe(e), visto = !e.no_vistas.length;
+      return `<tr><td>${titulo(e)}</td><td class="mono">${esc(e.hu)}</td><td><span class="mono">${t.estado}</span> <span class="chip">${esc(t.codigo)}</span></td><td>${visto ? '<span class="nota">obtuvo el mismo código con otros datos</span>' : '<span class="estado aviso">nunca lo obtuvo</span>'}</td></tr>`;
+    }).join("");
+
+  $("#t-repetidos").innerHTML = `<tr><th>Escenario</th><th>Clase</th><th class="n">Ejemplos</th><th>Valores con la misma respuesta</th><th>Respuesta</th></tr>` +
+    K.repetidos.map(g => {
+      const e0 = E[g[0]], t = errorDe(e0);
+      return `<tr><td>${esc(e0.nombre)}</td><td><span class="clase-dot" style="--c:${CLASES[e0.clase][1]}"></span>${CLASES[e0.clase][0]}</td><td class="n">${g.length}</td><td>${g.map(i => `<span class="chip">${esc(E[i].params || "(sin parámetros)")}</span>`).join("")}</td><td class="mono">${t.estado} ${esc(t.codigo)}</td></tr>`;
+    }).join("");
+
+  $("#t-solo-st").innerHTML = `<tr><th>Operación</th><th class="n">HTTP</th><th>Código</th><th class="n">Casos</th></tr>` +
+    K.solo_st.map(([op, est, cod, n]) => `<tr><td class="mono">${esc(op)}</td><td class="n">${est}</td><td class="mono">${esc(cod)}</td><td class="n">${n}</td></tr>`).join("");
+
+  const h = D.herramientas, mismosChecks = h.checks_pytest.join() === h.checks_cli.join();
+  $("#herramientas").innerHTML = `<p><b>Schemathesis dentro de pytest</b> (<code>tests/api/test_contrato.py</code>) frente al <b>CLI</b> (<code>demo.py schemathesis</code>):</p><ul>
+    <li>Checks: ${mismosChecks ? `<span class="estado aviso">los mismos ${h.checks_cli.length}</span>` : "distintos"}</li>
+    <li>Operaciones excluidas: ${h.excluidas_iguales ? '<span class="estado aviso">las mismas</span>' : "distintas"}</li>
+    <li>Ejemplos por operación: pytest ${h.ejemplos_pytest}, CLI ${h.ejemplos_cli}. Solo el CLI deja los logs VCR/HAR de este dashboard.</li></ul>
+    <p class="nota">${mismosChecks && h.excluidas_iguales ? "Comprueban lo mismo. El de pytest sirve para el CI (repetible, con derandomize); el CLI, para explorar y generar evidencia. Correr los dos en la misma demo repite el trabajo (el paso 4 de demo.py)." : ""}</p>`;
+}
+</script>
+</body>
+</html>

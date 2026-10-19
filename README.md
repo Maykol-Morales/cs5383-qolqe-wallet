@@ -215,11 +215,14 @@ MOSTRAR_DEFECTOS=1 pytest tests/api   # los defectos fallan a la vista
 | `python3 demo.py preparar` | `py demo.py preparar` | Crea `.venv` e instala `requirements-dev.txt` (una sola vez) |
 | `python3 demo.py ensayo` | `py demo.py ensayo` | Corre los 4 pasos seguidos y mide el tiempo: HU-G3-01, todos los escenarios, DEF-07 a la vista, contrato |
 | `python3 demo.py demo` | `py demo.py demo` | Igual que `ensayo`, pero espera Enter antes de cada paso (para la presentación en vivo) |
-| `python3 demo.py schemathesis` | `py demo.py schemathesis` | Levanta un servidor temporal, corre el CLI de Schemathesis (`--seed 1`) y abre el reporte HTML de `reporte-schemathesis/` |
+| `python3 demo.py schemathesis` | `py demo.py schemathesis` | Levanta un servidor temporal, corre el CLI de Schemathesis (`--seed 1`), guarda los logs VCR (YAML) y HAR (JSON) en `reporte-schemathesis/` y abre el **dashboard** `reportes/dashboard-contrato.html` |
+| `python3 demo.py dashboard` | `py demo.py dashboard` | Regenera el dashboard con el último log: fases, respuestas, checks, restricciones atacadas, operaciones con casos de ejemplo y latencia. Si antes corrió `reporte`, agrega la **comparativa con pytest-bdd**: escenarios cubiertos por el contrato (candidatos a redundantes), reglas que solo cubre BDD, ejemplos repetidos y lo que solo cubrió Schemathesis |
 | `python3 demo.py schemathesis g3` | `py demo.py schemathesis g3` | Lo mismo, pero solo con los endpoints de G3 (movimientos y categorías) |
 | `python3 demo.py schemathesis todos` | `py demo.py schemathesis todos` | Activa todos los checks (combinable: `g3 todos`); los hallazgos están en el informe §2 |
 | `python3 demo.py plan-b` | `py demo.py plan-b` | `pytest -rx` guardando la salida en `reportes/ensayo.txt` (respaldo pregrabado) |
+| `python3 demo.py reporte` | `py demo.py reporte` | `pytest -rx` y abre el reporte **Allure** (`reportes/allure/index.html`): dashboard con gráficos y tendencias, escenarios agrupados por módulo → HU, pasos Gherkin con la petición/respuesta HTTP adjunta y cada `@DEF` enlazado a su ficha con su severidad. Necesita Node (`npx`); `ensayo` y `demo` también lo generan al final |
 
+- Allure 3 se configura en `allurerc.mjs`. Los defectos conocidos (xfail) aparecen como *skipped*; se filtran por etiqueta `DEF-nn` o por severidad. `reportes/allure-historial.jsonl` guarda una línea por corrida, que es de donde salen las tendencias. Solo entran los escenarios BDD; el humo y el contrato quedan fuera.
 - No hace falta activar `.venv`: el script usa sus herramientas directamente.
 - El paso 3 termina con `rc=1` a propósito, porque los defectos fallan a la vista.
 - Variables opcionales: `SIN_CONTRATO=1` omite el paso 4, `PUERTO` cambia el puerto del servidor temporal (por defecto 8765) y `VENV` cambia la carpeta del entorno. En PowerShell se definen así: `$env:SIN_CONTRATO=1; py demo.py ensayo`.

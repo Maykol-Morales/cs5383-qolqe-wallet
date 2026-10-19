@@ -3,10 +3,13 @@
     python demo.py preparar        crea .venv e instala dependencias (una vez)
     python demo.py ensayo          corre todos los pasos seguidos y mide el tiempo
     python demo.py demo            igual, pero espera Enter entre pasos (para el vivo)
-    python demo.py schemathesis    CLI de Schemathesis contra un servidor temporal; abre el reporte HTML
+    python demo.py schemathesis    CLI de Schemathesis contra un servidor temporal; abre el dashboard
     python demo.py schemathesis todos   ídem con todos los checks (44 hallazgos, ver informe §2)
     python demo.py schemathesis g3      solo endpoints de G3 (movimientos y categorías); combinable: g3 todos
+    python demo.py dashboard       regenera reportes/dashboard-contrato.html con el último log de Schemathesis
+                                   (y la comparativa con pytest-bdd si antes corrió `reporte`)
     python demo.py plan-b          pytest -rx guardando la salida en reportes/ensayo.txt (pregrabada)
+    python demo.py reporte         pytest -rx y abre el reporte Allure (dashboard + escenarios); requiere Node (npx)
 
 En Windows, si `python` no existe, usar `py demo.py ...`. El paso 4 (contrato) repite lo que ya
 corre en el paso 2: es opcional, SIN_CONTRATO=1 lo omite. PUERTO y VENV cambian puerto y entorno.
@@ -54,13 +57,33 @@ def paso(titulo, comando, env=None, pausa=False):
 
 def pasos(pausa=False):
     paso("1. Escenarios de la historia HU-G3-01", ["pytest", "tests/api", "-m", "HU-G3-01", "-v"], pausa=pausa)
-    paso("2. Todos los escenarios", ["pytest", "-rx"], pausa=pausa)
+    paso("2. Todos los escenarios", ["pytest", "-rx", *ALLURE], pausa=pausa)
     if paso("3. Un defecto a la vista (DEF-07)", ["pytest", "tests/api", "-m", "DEF-07"],
             env={"MOSTRAR_DEFECTOS": "1"}, pausa=pausa):
         print("(esperado: los defectos fallan a la vista)")
     if os.environ.get("SIN_CONTRATO") != "1":
         paso("4. Contrato OpenAPI (Schemathesis dentro de pytest)",
              ["pytest", "tests/api/test_contrato.py", "-v"], pausa=pausa)
+    allure()
+
+
+ALLURE = ["--alluredir=reportes/allure-results", "--clean-alluredir"]
+
+
+def allure():
+    """Genera reportes/allure/ (config en allurerc.mjs; acumula historial entre corridas) y lo abre."""
+    npx = shutil.which("npx")
+    if not npx:
+        return print("Sin Node (npx): no se genera el reporte Allure. Resultados crudos en reportes/allure-results/")
+    subprocess.call([npx, "-y", "allure@3.21.0", "generate", "--clean", "reportes/allure-results"], cwd=RAIZ, env=ENV)
+    indice = RAIZ / "reportes" / "allure" / "index.html"
+    print(f"Reporte Allure: {indice}")
+    webbrowser.open(indice.as_uri())
+
+
+def reporte():
+    subprocess.call([herramienta("pytest"), "-rx", *ALLURE], cwd=RAIZ, env=ENV)
+    allure()
 
 
 def schemathesis_cli(args):
@@ -104,14 +127,20 @@ def schemathesis_cli(args):
                 "--seed", "1", "--max-examples", "30", "--checks", checks, *incluir,
                 "--exclude-path-regex",
                 "/api/auth/logout|/api/seguridad/sesiones|/api/pruebas/reloj|/api/pruebas/reiniciar|/api/cuentas/me/cierre",
-                "--report", "html", "--report-dir", "reporte-schemathesis"], cwd=RAIZ, env=ENV)
+                "--report", "html,vcr,har", "--report-dir", "reporte-schemathesis"], cwd=RAIZ, env=ENV)
         finally:
             servidor.terminate()
             servidor.wait()  # en Windows la BD sigue bloqueada hasta que el proceso muere
     reportes = sorted((RAIZ / "reporte-schemathesis").glob("*/index.html"), key=lambda p: p.stat().st_mtime)
     if reportes:
-        print(f"Reporte: {reportes[-1]}")
-        webbrowser.open(reportes[-1].as_uri())
+        print(f"Reporte de Schemathesis: {reportes[-1]}")
+    dashboard()
+
+
+def dashboard():
+    """Dashboard propio con los logs VCR + HAR y la comparativa con pytest-bdd (si hay resultados Allure)."""
+    if subprocess.call([herramienta("python"), "tests/dashboard/dashboard.py"], cwd=RAIZ, env=ENV) == 0:
+        webbrowser.open((RAIZ / "reportes" / "dashboard-contrato.html").as_uri())
 
 
 def preparar():
@@ -140,5 +169,7 @@ if __name__ == "__main__":
         "demo": lambda: pasos(pausa=True),
         "schemathesis": lambda: schemathesis_cli(resto),
         "plan-b": plan_b,
+        "reporte": reporte,
+        "dashboard": dashboard,
     }
     acciones.get(orden, lambda: print(__doc__))()

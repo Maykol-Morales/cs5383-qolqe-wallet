@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, "parte-*"]
     tags: ["parte-*", "final"]
   pull_request:
   workflow_dispatch:
@@ -27,8 +27,13 @@ jobs:
       # salen como xfailed (-rx los lista); si se corrigen pasan a XPASS y el job falla (strict).
       - name: Ejecutar pruebas
         run: >
-          pytest -rx --junitxml=reportes/junit.xml
+          pytest -rx --junitxml=reportes/junit.xml --alluredir=reportes/allure-results
           --cov=qolqe --cov-report=xml:reportes/cobertura.xml --cov-report=term
+
+      # Dashboard Allure 3 (allurerc.mjs) en reportes/allure/index.html, dentro del artefacto
+      - name: Reporte Allure
+        if: always()
+        run: npx -y allure@3.21.0 generate --clean reportes/allure-results
 
       - name: Resumen
         if: always()

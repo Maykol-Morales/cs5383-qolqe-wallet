@@ -11,7 +11,8 @@ Proyecto 2 del curso **CS5383 Pruebas y Verificación de Software** (UTEC). Cont
 | Parte | Contenido | Estado |
 |---|---|---|
 | 1 | Pruebas de API (núcleo + G3), contrato con Schemathesis, 12 defectos, análisis EP/VL mapeado a escenarios | Hecha |
-| CI | GitHub Actions: pytest + cobertura + junit | Hecha |
+| CI | GitHub Actions: pytest + cobertura + junit + reporte Allure | Hecha |
+| Reportes | Allure 3 (`demo.py reporte`) y dashboard de Schemathesis + comparativa con BDD (`demo.py schemathesis` / `dashboard`) | Hecha |
 | Presentación | Deck final de 13 slides, mapa visual y guion `demo.py` | Hecha (ver "Presentación y demo") |
 | 2 | Pruebas web E2E con Page Objects (`tests/e2e/pages/`) | Pendiente (solo `.gitkeep`) |
 | 3 | Rendimiento (`tests/performance/`) | Pendiente (solo `.gitkeep`) |
@@ -92,14 +93,14 @@ DEF-01 redondeo comisión · 02 PIN descendente aceptado · 03 login exitoso no 
 - **Estructura pedida por el docente**: 1) herramienta de automatización y justificación (1-2 slides), 2) módulo asignado, importancia y prioridad (1-2 slides), 3) diseño de casos funcionales y técnicos sobre una HU elegida, 4) demo en vivo (solo indicar que viene). El equipo eligió **HU-N-07** (núcleo, transferencias) y **HU-G3-01** (historial).
 - **Artifacts** (privados; Maykol los comparte desde Share): presentación https://claude.ai/artifact/Y36yMfSCkNB16EiFANs8xK (13 slides: portada, herramienta, módulo, 4 de HU-N-07, 4 de HU-G3-01, técnicos, demo) y mapa visual https://claude.ai/artifact/KASkEjLiBq5AsLbhrKifQq. Se mantienen con las fuentes en el scratchpad de la sesión (no versionadas): hay que actualizar cifras en ambos cuando cambie el repo.
 - Diseño de la presentación: fondo verde bosque / crema / dorado, Fraunces + DM Sans + JetBrains Mono; en el slide 2 se quitó Schemathesis a propósito (queda en el slide de técnicos como "Contrato OpenAPI").
-- **demo.py** (solo stdlib; corre en Windows sin Bash ni curl; `demo.sh` solo lo invoca; documentado en README §7): `preparar` crea `.venv`; `ensayo` corre los 4 pasos (HU-G3-01, todo, DEF-07 con `MOSTRAR_DEFECTOS=1`, contrato) y mide tiempo; `demo` pausa con Enter; `schemathesis [g3] [todos]` levanta un servidor temporal, corre el CLI con `--seed 1` y abre el HTML en `reporte-schemathesis/` (ignorado por git); `plan-b` guarda la salida en `reportes/ensayo.txt`; `SIN_CONTRATO=1` omite el paso 4. El paso 3 sale con rc=1 a propósito (los defectos fallan a la vista): avisarlo al presentar.
+- **demo.py** (solo stdlib; corre en Windows sin Bash ni curl; `demo.sh` solo lo invoca; documentado en README §7): `preparar` crea `.venv`; `ensayo` corre los 4 pasos (HU-G3-01, todo, DEF-07 con `MOSTRAR_DEFECTOS=1`, contrato) y mide tiempo; `demo` pausa con Enter; `schemathesis [g3] [todos]` levanta un servidor temporal, corre el CLI con `--seed 1` y abre el HTML en `reporte-schemathesis/` (ignorado por git); `plan-b` guarda la salida en `reportes/ensayo.txt`; `SIN_CONTRATO=1` omite el paso 4; `reporte` (y el final de `ensayo`/`demo`) genera el reporte **Allure 3** (`npx allure@3.21.0`, sin Java; config `allurerc.mjs`; hooks en `tests/api/conftest.py`: epic = módulo, story = HU, `@DEF` → issue + severidad leída de `docs/defectos.md`, petición/respuesta HTTP adjunta por paso) en `reportes/allure/index.html`. `schemathesis` guarda logs VCR+HAR y abre `reportes/dashboard-contrato.html`, generado por `tests/dashboard/dashboard.py` + `plantilla.html` (`demo.py dashboard` lo regenera). Su pestaña de comparativa valida contra el OpenAPI (`jsonschema_rs`) la petición del paso When de cada escenario BDD (sale de los adjuntos de Allure, que marcan "con/sin token") y lo clasifica como contrato (candidato a redundante), regla de negocio, éxito en valor elegido o contenido. Corrida del 2026-10-19: 3432 casos, 0 fallos; 274 escenarios = 44 contrato, 59 regla, 63 éxito, 108 contenido; `test_contrato.py` y el CLI usan los mismos checks y exclusiones. El paso 3 sale con rc=1 a propósito (los defectos fallan a la vista): avisarlo al presentar.
 - **Corrida `schemathesis g3`** (2026-10-17): 9/69 operaciones (movimientos y categorías), 1212 casos, todos pasan; aviso de Schemathesis: `GET /api/movimientos` y `POST /api/categorias` validan más de lo que documenta el OpenAPI (mismo tipo que "contrato impreciso", no es defecto).
 - **Corrida del CLI con todos los checks**: 44 hallazgos (23 contrato impreciso, 3 datos inválidos aceptados, 17 `Allow` ruido, 1 recurso tras crear), ninguno 5xx; clasificados en `docs/informe.md` §2. No se registran como defectos nuevos (solo es defecto lo que incumple la documentación o da 5xx).
 - **Revisión completa con agentes (Opus)**: se corrigieron datos de los slides (prioridad del núcleo, escenario del DEF-07), verdes falsos (cierre de cuenta, HU-N-03 CA2, "eliminar dos veces", notas leídas de vuelta, códigos de error explícitos) y se registró **DEF-13**. Hallazgo descartado: la fila "Página" ya es valor límite en el análisis.
 
 ## CI
 
-`.github/workflows/ci.yml`: en push a `main`, tags `parte-*`/`final`, PRs y manual → Python 3.12, `pytest -rx` con junit y cobertura, resumen en el step summary, artefacto `reportes/`.
+`.github/workflows/ci.yml`: en push a `main`/`parte-*`, tags `parte-*`/`final`, PRs y manual → Python 3.12, `pytest -rx` con junit y cobertura, resumen en el step summary, artefacto `reportes/`.
 
 ## Pendiente / notas
 
@@ -108,5 +109,7 @@ DEF-01 redondeo comisión · 02 PIN descendente aceptado · 03 login exitoso no 
 - Interpretaciones asumidas a confirmar con el docente están en `docs/informe.md` §1 (p. ej. "90 días" = `hasta − desde ≤ 90`). Además: el código de error de nombres inválidos difiere por endpoint (`SOLICITUD_INVALIDA` al registrarse, `PERFIL_INVALIDO` al editar el perfil) y el requisito no lo fija.
 - Limitaciones conocidas de las pruebas: el escenario sin `@DEF` de HU-N-03 CA2 pasa sin probar nada mientras exista DEF-05 (logout no invalida nada); los `.feature` usan `# language: en` con texto en español; el escenario `@concurrencia` no tiene pasos (Parte 3).
 - `IA.md`: el equipo lo editó a mano (quitó dos filas de la declaración); no reponer sin preguntar.
+- Ramas: `parte-1` (antes `main`, rama por defecto en GitHub) tiene la Parte 1 + reportes; `parte-2` sale de ella para las pruebas web E2E.
+- Stash pendiente `stash@{0}` (pytest-html + vcr/har en el viejo `demo.sh`): obsoleto, reemplazado por Allure y el dashboard; se puede descartar.
 - Flujo de commits: se commitea y se hace push solo cuando el usuario lo pide; los mensajes terminan con `Co-Authored-By: Claude`.
 - Secciones 3, 4 y 6 de `docs/informe.md` están vacías hasta las Partes 2/3 y la entrega final.

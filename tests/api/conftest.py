@@ -5,10 +5,13 @@ Con QOLQE_URL=http://localhost:8000 las mismas pruebas corren contra un servidor
 Defectos conocidos: los escenarios con la etiqueta @DEF-nn son xfail(strict) para que el
 pipeline quede verde mientras el defecto exista; con MOSTRAR_DEFECTOS=1 fallan a la vista.
 """
+import json
 import os
+import re
 import tempfile
 from datetime import date, datetime, timedelta
 
+import allure
 import httpx
 import pytest
 from pytest_bdd import given, parsers, then
@@ -119,6 +122,54 @@ def pytest_collection_modifyitems(config, items):
                 item.add_marker(pytest.mark.xfail(strict=True, reason=f"Defecto conocido {marca.name} (docs/defectos.md)"))
             if marca.name == "concurrencia":
                 item.add_marker(pytest.mark.skip(reason="Concurrencia: se cubre con la herramienta de rendimiento (Parte 3)"))
+
+
+# ── Reporte Allure: módulo → HU, severidad y enlace de cada DEF, petición/respuesta por paso ──
+
+DEFECTOS_MD = "https://github.com/Maykol-Morales/cs5383-qolqe-wallet/blob/main/docs/defectos.md"
+SEVERIDAD = {"Crítica": "blocker", "Alta": "critical", "Media": "normal", "Baja": "minor"}
+with open(os.path.join(os.path.dirname(__file__), "../../docs/defectos.md"), encoding="utf-8") as _f:
+    DEFECTOS = {  # "DEF-07": ("El historial excluye…", "Alta")
+        m[0]: (m[1], m[2]) for m in re.findall(r"^## (DEF-\d+): (.+?)\n(?:(?!## ).*\n)*?\| Severidad \| (\w+)", _f.read(), re.M)}
+
+
+@pytest.hookimpl(trylast=True)  # después de que allure-pytest-bdd cree el resultado
+def pytest_bdd_before_scenario(request, feature, scenario):
+    allure.dynamic.epic("Núcleo" if "nucleo_" in feature.rel_filename else "G3 · Historial y categorías")
+    for etiqueta in sorted(scenario.tags | feature.tags):
+        if etiqueta.startswith("HU-"):
+            allure.dynamic.story(etiqueta)
+        elif etiqueta in DEFECTOS:
+            titulo, severidad = DEFECTOS[etiqueta]
+            allure.dynamic.issue(DEFECTOS_MD, f"{etiqueta}: {titulo}")
+            allure.dynamic.severity(SEVERIDAD[severidad])
+    request.node._respuestas_vistas = 0
+
+
+@pytest.hookimpl(tryfirst=True)  # antes de que allure cierre el paso
+def pytest_bdd_after_step(request, feature, scenario, step, step_func, step_func_args):
+    _adjuntar_http(request)
+
+
+@pytest.hookimpl(tryfirst=True)
+def pytest_bdd_step_error(request, feature, scenario, step, step_func, step_func_args, exception):
+    _adjuntar_http(request)
+
+
+def _adjuntar_http(request):
+    """Adjunta al paso las peticiones HTTP que hizo desde el paso anterior."""
+    respuestas = request.getfixturevalue("ctx").respuestas
+    for r in respuestas[getattr(request.node, "_respuestas_vistas", 0):]:
+        try:
+            cuerpo = json.dumps(r.json(), ensure_ascii=False, indent=2)
+        except ValueError:
+            cuerpo = r.text
+        enviado = r.request.content.decode("utf-8", "replace")
+        token = " · con token" if "authorization" in r.request.headers else " · sin token"
+        allure.attach(f"{r.request.method} {r.request.url}{token}\n{enviado}\n\n← {r.status_code}\n{cuerpo}",
+                      name=f"{r.request.method} {r.request.url.path} → {r.status_code}",
+                      attachment_type=allure.attachment_type.TEXT)
+    request.node._respuestas_vistas = len(respuestas)
 
 
 # ── Pasos comunes ──────────────────────────────────────────────────────────────
