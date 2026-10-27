@@ -1,0 +1,304 @@
+{
+    "version": 1,
+    "entries": {
+        "La IA crea \"Viajes\" y clasifica el último movimiento › #1": {
+            "instruction": "Inicia sesión con el celular {{celular}} y el PIN {{pin}}",
+            "platform": "web",
+            "steps": [
+                {
+                    "action": "fill",
+                    "args": {
+                        "target": "[data-testid=\"input-celular\"]",
+                        "text": "{{celular}}"
+                    },
+                    "code": "await $('[data-testid=\"input-celular\"]').setValue('{{celular}}')",
+                    "target": {
+                        "selector": "[data-testid=\"input-celular\"]",
+                        "role": "textbox",
+                        "name": "Celular",
+                        "candidates": [
+                            "[data-testid=\"input-celular\"]",
+                            "role/textbox[name=\"Celular\"]",
+                            "aria/Celular",
+                            "#celular",
+                            "input[name=\"celular\"]",
+                            "#form-login > div:nth-of-type(1) > input"
+                        ]
+                    }
+                },
+                {
+                    "action": "fill",
+                    "args": {
+                        "target": "[data-testid=\"input-pin\"]",
+                        "text": "{{pin}}"
+                    },
+                    "code": "await $('[data-testid=\"input-pin\"]').setValue('{{pin}}')",
+                    "target": {
+                        "selector": "[data-testid=\"input-pin\"]",
+                        "role": "textbox",
+                        "name": "PIN",
+                        "candidates": [
+                            "[data-testid=\"input-pin\"]",
+                            "role/textbox[name=\"PIN\"]",
+                            "aria/PIN",
+                            "#pin",
+                            "input[name=\"pin\"]",
+                            "#form-login > div:nth-of-type(2) > input"
+                        ]
+                    }
+                },
+                {
+                    "action": "click",
+                    "args": {
+                        "target": "[data-testid=\"boton-ingresar\"]"
+                    },
+                    "code": "await $('[data-testid=\"boton-ingresar\"]').click()",
+                    "target": {
+                        "selector": "[data-testid=\"boton-ingresar\"]",
+                        "role": "button",
+                        "name": "Ingresando...",
+                        "candidates": [
+                            "[data-testid=\"boton-ingresar\"]",
+                            "role/button[name=\"Ingresando...\"]",
+                            "aria/Ingresando...",
+                            "#boton-ingresar",
+                            "button=Ingresando...",
+                            "#form-login > button"
+                        ]
+                    },
+                    "effect": {
+                        "requests": [
+                            "GET /api/cuentas/me/saldo → 2xx",
+                            "GET /api/movimientos/recientes → 2xx",
+                            "GET /api/solicitudes → 2xx",
+                            "POST /api/auth/login → 2xx"
+                        ],
+                        "navigation": "/inicio",
+                        "changed": [
+                            "alert",
+                            "region \"Ingresa a tu billetera\""
+                        ]
+                    }
+                }
+            ],
+            "model": "anthropic:claude-sonnet-5",
+            "recordedAt": "2026-10-27T02:21:54.257Z"
+        },
+        "La IA crea \"Viajes\" y clasifica el último movimiento › #2": {
+            "instruction": "Ve a la sección Movimientos",
+            "platform": "web",
+            "steps": [
+                {
+                    "action": "click",
+                    "args": {
+                        "target": "[data-testid=\"nav-historial\"]"
+                    },
+                    "code": "await $('[data-testid=\"nav-historial\"]').click()",
+                    "target": {
+                        "selector": "[data-testid=\"nav-historial\"]",
+                        "role": "link",
+                        "name": "Movimientos",
+                        "candidates": [
+                            "[data-testid=\"nav-historial\"]",
+                            "role/link[name=\"Movimientos\"]",
+                            "aria/Movimientos",
+                            "a=Movimientos",
+                            "#menu > a:nth-of-type(5)"
+                        ]
+                    },
+                    "effect": {
+                        "requests": [
+                            "GET /api/categorias → 2xx",
+                            "GET /api/movimientos → 2xx"
+                        ],
+                        "navigation": "/historial"
+                    }
+                }
+            ],
+            "model": "anthropic:claude-sonnet-5",
+            "recordedAt": "2026-10-27T02:21:59.942Z"
+        },
+        "La IA crea \"Viajes\" y clasifica el último movimiento › #3": {
+            "instruction": "Crea una categoría llamada \"Viajes\" con el color azul #1E88E5",
+            "platform": "web",
+            "steps": [
+                {
+                    "action": "click",
+                    "args": {
+                        "target": "[data-testid=\"color-6\"]"
+                    },
+                    "code": "await $('[data-testid=\"color-6\"]').click()",
+                    "target": {
+                        "selector": "[data-testid=\"color-6\"]",
+                        "role": "radio",
+                        "name": "#1E88E5",
+                        "candidates": [
+                            "[data-testid=\"color-6\"]",
+                            "role/radio[name=\"#1E88E5\"]",
+                            "[data-testid=\"paleta-colores\"] > label:nth-of-type(6) > input"
+                        ]
+                    }
+                },
+                {
+                    "action": "fill",
+                    "args": {
+                        "target": "[data-testid=\"input-categoria-nombre\"]",
+                        "text": "Viajes"
+                    },
+                    "code": "await $('[data-testid=\"input-categoria-nombre\"]').setValue('Viajes')",
+                    "target": {
+                        "selector": "[data-testid=\"input-categoria-nombre\"]",
+                        "role": "textbox",
+                        "name": "Nombre",
+                        "candidates": [
+                            "[data-testid=\"input-categoria-nombre\"]",
+                            "role/textbox[name=\"Nombre\"]",
+                            "aria/Nombre",
+                            "#categoria-nombre",
+                            "#form-categoria > div > div:nth-of-type(1) > input"
+                        ]
+                    }
+                },
+                {
+                    "action": "click",
+                    "args": {
+                        "target": "[data-testid=\"boton-crear-categoria\"]"
+                    },
+                    "code": "await $('[data-testid=\"boton-crear-categoria\"]').click()",
+                    "target": {
+                        "selector": "[data-testid=\"boton-crear-categoria\"]",
+                        "role": "button",
+                        "name": "Crear categoría",
+                        "candidates": [
+                            "[data-testid=\"boton-crear-categoria\"]",
+                            "role/button[name=\"Crear categoría\"]",
+                            "aria/Crear categoría",
+                            "#boton-crear-categoria",
+                            "button=Crear categoría",
+                            "#form-categoria > button"
+                        ]
+                    },
+                    "effect": {
+                        "requests": [
+                            "GET /api/categorias → 2xx",
+                            "POST /api/categorias → 2xx"
+                        ],
+                        "changed": [
+                            "alert",
+                            "main \"Movimientos\"",
+                            "page",
+                            "region \"Detalle del movimiento\"",
+                            "region \"Mis categorías 4 de 10\"",
+                            "status"
+                        ]
+                    }
+                }
+            ],
+            "model": "anthropic:claude-sonnet-5",
+            "recordedAt": "2026-10-27T02:22:09.033Z"
+        },
+        "La IA crea \"Viajes\" y clasifica el último movimiento › #4": {
+            "instruction": "Abre el movimiento más reciente y clasifícalo en \"Viajes\" con la nota \"Pasaje a Cusco\"",
+            "platform": "web",
+            "steps": [
+                {
+                    "action": "click",
+                    "args": {
+                        "target": "[data-testid=\"tabla-movimientos\"] > tbody > tr:nth-of-type(1)"
+                    },
+                    "code": "await $('[data-testid=\"tabla-movimientos\"] > tbody > tr:nth-of-type(1)').click()",
+                    "target": {
+                        "selector": "[data-testid=\"tabla-movimientos\"] > tbody > tr:nth-of-type(1)",
+                        "role": "row",
+                        "name": "25/10/2026 14:03 Pago de servicio Pago Electro Andina Servicios -S/ 136.00",
+                        "candidates": [
+                            "[data-testid=\"tabla-movimientos\"] > tbody > tr:nth-of-type(1)"
+                        ]
+                    },
+                    "effect": {
+                        "requests": [
+                            "GET /api/movimientos/:id → 2xx"
+                        ],
+                        "changed": [
+                            "alert",
+                            "region \"Detalle del movimiento\""
+                        ]
+                    }
+                },
+                {
+                    "action": "select",
+                    "args": {
+                        "target": "[data-testid=\"select-clasificar-categoria\"]",
+                        "value": "Viajes"
+                    },
+                    "code": "await $('[data-testid=\"select-clasificar-categoria\"]').selectByVisibleText('Viajes')",
+                    "target": {
+                        "selector": "[data-testid=\"select-clasificar-categoria\"]",
+                        "role": "combobox",
+                        "name": "Categoría",
+                        "candidates": [
+                            "[data-testid=\"select-clasificar-categoria\"]",
+                            "#clasificar-categoria",
+                            "#form-clasificar > div > div:nth-of-type(1) > select"
+                        ]
+                    }
+                },
+                {
+                    "action": "fill",
+                    "args": {
+                        "target": "[data-testid=\"input-nota\"]",
+                        "text": "Pasaje a Cusco"
+                    },
+                    "code": "await $('[data-testid=\"input-nota\"]').setValue('Pasaje a Cusco')",
+                    "target": {
+                        "selector": "[data-testid=\"input-nota\"]",
+                        "role": "textbox",
+                        "name": "Nota",
+                        "candidates": [
+                            "[data-testid=\"input-nota\"]",
+                            "role/textbox[name=\"Nota\"]",
+                            "aria/Nota",
+                            "#clasificar-nota",
+                            "#form-clasificar > div > div:nth-of-type(2) > input"
+                        ]
+                    }
+                },
+                {
+                    "action": "click",
+                    "args": {
+                        "target": "[data-testid=\"boton-clasificar\"]"
+                    },
+                    "code": "await $('[data-testid=\"boton-clasificar\"]').click()",
+                    "target": {
+                        "selector": "[data-testid=\"boton-clasificar\"]",
+                        "role": "button",
+                        "name": "Guardar clasificación",
+                        "candidates": [
+                            "[data-testid=\"boton-clasificar\"]",
+                            "role/button[name=\"Guardar clasificación\"]",
+                            "aria/Guardar clasificación",
+                            "button=Guardar clasificación",
+                            "#form-clasificar > button"
+                        ]
+                    },
+                    "effect": {
+                        "requests": [
+                            "GET /api/categorias → 2xx",
+                            "GET /api/movimientos → 2xx",
+                            "GET /api/movimientos/:id → 2xx",
+                            "PUT /api/movimientos/:id/clasificacion → 2xx"
+                        ],
+                        "changed": [
+                            "alert",
+                            "main \"Movimientos\"",
+                            "region \"Detalle del movimiento\"",
+                            "region \"Mis categorías 4 de 10\""
+                        ]
+                    }
+                }
+            ],
+            "model": "anthropic:claude-sonnet-5",
+            "recordedAt": "2026-10-27T02:22:22.485Z"
+        }
+    }
+}

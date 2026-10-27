@@ -11,7 +11,7 @@ Proyecto 2 del curso **CS5383 Pruebas y Verificación de Software** (UTEC). Cont
 | Parte | Contenido | Estado |
 |---|---|---|
 | 1 | Pruebas de API (núcleo + G3), contrato con Schemathesis, 12 defectos, análisis EP/VL mapeado a escenarios | Hecha |
-| CI | GitHub Actions: pytest + cobertura + junit + reporte Allure | Hecha |
+| CI | GitHub Actions eliminado el 2026-10-26 (no es el que se usará; hacía lentos los push) | Pendiente de definir |
 | Reportes | Allure 3 (`demo.py reporte`) y dashboard de Schemathesis + comparativa con BDD (`demo.py schemathesis` / `dashboard`) | Hecha |
 | Presentación | Deck final de 13 slides, mapa visual y guion `demo.py` | Hecha (ver "Presentación y demo") |
 | 2 | Pruebas web E2E: WebdriverIO 10 + Cucumber + Page Objects + Allure en `tests/e2e/` (migrado del repo `cs5383-webdriverio`) | Happy path G3 hecho; falta ampliar escenarios e informe §3 |
@@ -63,9 +63,9 @@ Resultado de referencia (Parte 1, 2026-10-17): `252 passed, 1 skipped, 24 xfaile
 ## Convenciones de las pruebas
 
 - **Fuente de verdad = `.feature`**; `pytest-bdd` los enlaza con pasos Python. Etiquetas: `@HU-…` (historia), `@DEF-nn` (defecto conocido), `@concurrencia`.
-- **Defectos conocidos**: los escenarios `@DEF-nn` son `xfail(strict)`. Si un defecto se corrige pasa a XPASS y el CI falla — es intencional.
+- **Defectos conocidos**: los escenarios `@DEF-nn` son `xfail(strict)`. Si un defecto se corrige pasa a XPASS y pytest falla — es intencional.
 - **Aislamiento**: cada escenario reinicia datos con `POST /api/pruebas/reiniciar` (propiedad *Independent* de FIRST). Por defecto la app corre in-process (TestClient) con BD temporal; con `QOLQE_URL` va contra un servidor real.
-- **Contrato**: `test_contrato.py` levanta uvicorn en subproceso y corre Schemathesis (15 ejemplos/operación; `CONTRATO_EJEMPLOS` lo cambia; CI usa modo determinista `derandomize`).
+- **Contrato**: `test_contrato.py` levanta uvicorn en subproceso y corre Schemathesis (15 ejemplos/operación; `CONTRATO_EJEMPLOS` lo cambia; siempre en modo determinista `derandomize`).
 - Todo nuevo defecto: reproducirlo primero contra la API, agregarlo a `docs/defectos.md` (formato DEF-nn) y a la tabla de la sección 5 de `docs/informe.md`.
 - Documentación e idioma: **español** (código, escenarios, docs, commits).
 
@@ -88,9 +88,9 @@ Resultado de referencia (Parte 1, 2026-10-17): `252 passed, 1 skipped, 24 xfaile
 - API de soporte (`QOLQE_MODO_PRUEBA=1`): `/api/pruebas/{reiniciar,reloj,notificaciones,saldo,procesar-diario}`. Reloj en memoria → un solo proceso.
 - Env vars: `QOLQE_BD`, `QOLQE_MODO_PRUEBA`, `QOLQE_MINUTOS_TOKEN`, `QOLQE_CLAVE_SECRETA`.
 
-## Defectos hallados (12 abiertos; detalle en `docs/defectos.md`)
+## Defectos hallados (13 abiertos; detalle en `docs/defectos.md`)
 
-DEF-01 redondeo comisión · 02 PIN descendente aceptado · 03 login exitoso no reinicia intentos · 04 interbancaria deja saldo negativo (Crítica) · 05 logout no invalida token (Crítica) · 06 transferencia a cuenta cerrada pierde dinero (Crítica) · 07 historial excluye el día `hasta` · 08 detalle de movimiento ajeno visible · 09 destinatario ve movimiento del emisor · 10 categoría editable con nombre duplicado · 11 (descartado: el token vence a los 30 min exactos, se acepta) · 12 dos operaciones del mismo segundo comparten código de operación · 13 el límite diario no cuenta las interbancarias
+DEF-01 redondeo comisión · 02 PIN descendente aceptado · 03 login exitoso no reinicia intentos · 04 interbancaria deja saldo negativo (Crítica) · 05 logout no invalida token (Crítica) · 06 transferencia a cuenta cerrada pierde dinero (Crítica) · 07 historial excluye el día `hasta` · 08 detalle de movimiento ajeno visible · 09 destinatario ve movimiento del emisor · 10 categoría editable con nombre duplicado · 11 (descartado: el token vence a los 30 min exactos, se acepta) · 12 dos operaciones del mismo segundo comparten código de operación · 13 el límite diario no cuenta las interbancarias · 14 (UI, Parte 2) historial vacío de noche si el celular no está en hora de Lima
 
 ## Presentación y demo
 
@@ -104,7 +104,7 @@ DEF-01 redondeo comisión · 02 PIN descendente aceptado · 03 login exitoso no 
 
 ## CI
 
-`.github/workflows/ci.yml` tiene dos jobs: `pruebas-api` y `pruebas-web` (Parte 2, matriz Windows + Linux; en Windows también ensaya `npm run demo`). En push a `main`/`parte-*`, tags `parte-*`/`final`, PRs y manual → Python 3.12, `pytest -rx` con junit y cobertura, resumen en el step summary, artefacto `reportes/`.
+No hay pipeline: `.github/workflows/ci.yml` (jobs `pruebas-api` y `pruebas-web`, Windows + Linux) se borró el 2026-10-26 porque no es el CI/CD que se usará y alargaba los push. Está en el historial de git (commit `a9cd175`) por si sirve de base.
 
 ## Pendiente / notas
 
@@ -114,7 +114,7 @@ DEF-01 redondeo comisión · 02 PIN descendente aceptado · 03 login exitoso no 
 - Limitaciones conocidas de las pruebas: el escenario sin `@DEF` de HU-N-03 CA2 pasa sin probar nada mientras exista DEF-05 (logout no invalida nada); los `.feature` usan `# language: en` con texto en español; el escenario `@concurrencia` no tiene pasos (Parte 3).
 - `IA.md`: el equipo lo editó a mano (quitó dos filas de la declaración); no reponer sin preguntar.
 - Ramas: `parte-1` (rama por defecto en GitHub; `main` ya se borró) tiene la Parte 1 + reportes; `parte-2` sale de ella para las pruebas web E2E. `ejemplo-webdriverio` (Sebastián) fue el primer ejemplo; lo reemplaza `tests/e2e/`, migrado del repo `git@github.com:Maykol-Morales/cs5383-webdriverio.git` (historia independiente, remoto local `wdio`).
-- Parte 2 · notas de WebdriverIO: el escenario `@ia` (`browser.act()`) se salta sin `ANTHROPIC_API_KEY` ni caché en `features/__act__/`; las esperas sobre la UI se resolvieron recargando la página y esperando el PUT con `browser.mock` (condiciones de carrera vistas en la CI de Windows). `wdio.conf.js` fija la zona horaria del navegador en `America/Lima` (BiDi): la UI arma desde/hasta con la hora del navegador y el servidor rechaza `hasta` futuro en hora de Lima, así que en un runner UTC de noche el historial salía vacío.
+- Parte 2 · notas de WebdriverIO: `browser.act()` (`@ia`) tiene su caché commiteada en `tests/e2e/features/__act__/`, así que `npm run test:ia` la repite sin clave (0 tokens, ~12 s); grabar de nuevo (`npm run test:ia:regrabar`, ~140k tokens, ~45 s) usa la clave de `tests/e2e/.env` (ignorado; Maykol tiene una). Sonnet 5 exige `temperature: 1` (fijado en `wdio.conf.js`). `npm run demo` con clave graba en vivo, muestra la caché y repite; sin clave solo repite. DEF-14 (`features/historial-zona-horaria.feature`) va aparte: `npm run test:defectos` debe fallar mientras exista. Presentación del laboratorio: https://claude.ai/artifact/LSnrwobCbcGrUv6VPg2Qu2 (slide 7 = ciclo de `browser.act`). las esperas sobre la UI se resolvieron recargando la página y esperando el PUT con `browser.mock` (condiciones de carrera vistas en la CI de Windows). `wdio.conf.js` fija la zona horaria del navegador en `America/Lima` (BiDi): la UI arma desde/hasta con la hora del navegador y el servidor rechaza `hasta` futuro en hora de Lima, así que en un runner UTC de noche el historial salía vacío.
 - Stash pendiente `stash@{0}` (pytest-html + vcr/har en el viejo `demo.sh`): obsoleto, reemplazado por Allure y el dashboard; se puede descartar.
 - Flujo de commits: se commitea y se hace push solo cuando el usuario lo pide; los mensajes terminan con `Co-Authored-By: Claude`.
 - Secciones 3, 4 y 6 de `docs/informe.md` están vacías hasta las Partes 2/3 y la entrega final.

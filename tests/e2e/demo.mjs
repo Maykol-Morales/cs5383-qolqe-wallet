@@ -7,17 +7,19 @@ import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { createInterface } from 'node:readline/promises'
 
+try { process.loadEnvFile() } catch {} // ANTHROPIC_API_KEY desde .env, si existe
 const URL = 'http://localhost:8000'
 const RAIZ = resolve('../..') // raíz del repo: qolqe/ y .venv/ están allí
 const SPEC = 'features/clasificar.feature'
 const SPEC_IA = 'features/clasificar-ia.feature'
+const CACHE_IA = 'features/__act__/clasificar-ia.feature.json'
 const original = readFileSync(SPEC, 'utf8')
 const rl = createInterface({ input: process.stdin, output: process.stdout })
 
 // Si la entrada se cierra (stdin redirigido o CI), la demo sigue sin esperar.
 const paso = (titulo) => rl.question(`\n\x1b[1;31m▸ ${titulo}\x1b[0m\n  [Enter] `).catch(() => {})
 // Un solo string con shell: npx es npx.cmd en Windows.
-const wdio = (spec, env = {}) => spawnSync(`npx wdio run wdio.conf.js --spec ${spec}`,
+const wdio = (spec, env = {}, flags = '') => spawnSync(`npx wdio run wdio.conf.js --spec ${spec} ${flags}`,
     { stdio: 'inherit', shell: true, env: { ...process.env, ...env } })
 const npx = (comando) => spawnSync(`npx ${comando}`, { stdio: 'inherit', shell: true })
 const abrir = { win32: 'start ""', darwin: 'open' }[process.platform] ?? 'xdg-open'
@@ -50,12 +52,23 @@ await paso('IA: browser.act() escribe los pasos en lenguaje natural')
 console.log(readFileSync(SPEC_IA, 'utf8').split('\n').slice(8).join('\n'))
 console.log(readFileSync('steps/ia.steps.js', 'utf8').split('\n').slice(13, 19).join('\n'))
 if (process.env.ANTHROPIC_API_KEY) {
+    // -s (--updateSnapshots) obliga a grabar de nuevo aunque haya caché: ~45 s y ~140k tokens.
     await paso('IA en vivo: el modelo maneja Chrome y graba los pasos en features/__act__/')
-    wdio(SPEC_IA, { HEADED: '1' })
+    if (wdio(SPEC_IA, { HEADED: '1' }, '-s').status !== 0) {
+        console.log('  La grabación falló: se restaura la caché del repositorio.')
+        spawnSync(`git checkout -- ${CACHE_IA}`, { stdio: 'inherit', shell: true })
+    }
+}
+if (existsSync(CACHE_IA)) {
+    await paso('La caché: lo que eligió el modelo, con selectores estables')
+    for (const { instruction, steps } of Object.values(JSON.parse(readFileSync(CACHE_IA, 'utf8')).entries)) {
+        console.log(`\n  \x1b[1m${instruction}\x1b[0m`)
+        for (const { code } of steps) console.log(`    ${code}`)
+    }
+    await paso('Repetir desde la caché: sin modelo, sin clave y sin tokens')
+    wdio(SPEC_IA, { HEADED: '1', ANTHROPIC_API_KEY: '' })
 } else {
-    console.log('\n  Sin ANTHROPIC_API_KEY: el escenario @ia se marca como skipped.')
-    console.log('  Con la clave: la 1ª corrida graba los pasos con el modelo y las siguientes')
-    console.log('  los repiten desde features/__act__/ sin modelo y sin tokens.')
+    console.log('\n  Sin ANTHROPIC_API_KEY ni caché: el escenario @ia se marca como skipped.')
     wdio(SPEC_IA) // queda como "skipped" en el reporte
 }
 

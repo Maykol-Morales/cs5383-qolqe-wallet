@@ -1,5 +1,8 @@
 import { mkdirSync } from 'node:fs'
 
+// ANTHROPIC_API_KEY (para browser.act) puede venir de tests/e2e/.env, ignorado por git.
+try { process.loadEnvFile() } catch {}
+
 export const baseUrl = process.env.QOLQE_URL ?? 'http://localhost:8000'
 
 export const config = {
@@ -29,19 +32,20 @@ export const config = {
     }]],
 
     // IA: browser.act() pide los pasos al modelo una vez y los repite desde features/__act__/
-    services: [['ai', { model: process.env.WDIO_AI_MODEL ?? 'anthropic:claude-sonnet-5' }]],
+    // Sonnet 5 rechaza temperature distinta de 1; @wdio/ai-service manda otra por defecto.
+    services: [['ai', { model: process.env.WDIO_AI_MODEL ?? { provider: 'anthropic', model: 'claude-sonnet-5', temperature: 1 } }]],
     logLevel: 'warn',
 
-    // Qolqe valida las fechas en hora de Lima, pero la UI arma el rango desde/hasta con la hora del
-    // navegador: en un runner en UTC, de noche en Lima, "hasta" es mañana y el historial sale vacío.
-    before: async () => {
-        await browser.emulationSetTimezoneOverride({ timezone: 'America/Lima', userContexts: ['default'] })
-    },
-
-    // Fixture: cada escenario parte de los datos semilla de Qolqe (ver README del SUT).
+    // Fixture: cada escenario parte de los datos semilla de Qolqe (ver README del SUT), con su reloj
+    // en la hora real (antes de reiniciar: la semilla usa ese reloj) y el navegador en hora de Lima. Qolqe valida las fechas en hora de Lima, pero la UI
+    // arma desde/hasta con la hora del navegador: en un runner UTC, de noche en Lima, el historial sale
+    // vacío (DEF-14, features/historial-zona-horaria.feature).
     beforeScenario: async () => {
-        const res = await fetch(`${baseUrl}/api/pruebas/reiniciar`, { method: 'POST' })
-        if (!res.ok) throw new Error(`No se pudo reiniciar Qolqe: HTTP ${res.status}`)
+        for (const [ruta, method] of [['reloj', 'DELETE'], ['reiniciar', 'POST']]) {
+            const res = await fetch(`${baseUrl}/api/pruebas/${ruta}`, { method })
+            if (!res.ok) throw new Error(`No se pudo preparar Qolqe (${ruta}): HTTP ${res.status}`)
+        }
+        await browser.emulationSetTimezoneOverride({ timezone: 'America/Lima', userContexts: ['default'] })
     },
     // Evidencia: captura del paso que falló, en evidencia/ y adjunta en el reporte Allure.
     afterStep: async (step, scenario, { error }) => {

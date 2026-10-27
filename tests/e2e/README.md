@@ -1,7 +1,5 @@
 # Parte 2 · Pruebas web E2E con WebdriverIO
 
-[![CI](https://github.com/Maykol-Morales/cs5383-qolqe-wallet/actions/workflows/ci.yml/badge.svg?branch=parte-2)](https://github.com/Maykol-Morales/cs5383-qolqe-wallet/actions/workflows/ci.yml)
-
 Laboratorio de automatización web de **CS5383 Pruebas y Verificación de Software** (UTEC, Clase 11).
 **Grupo 3 · Sebastian y Maykol** · Herramienta: **WebdriverIO 10** · Módulo: **G3 Historial y categorías**.
 
@@ -35,7 +33,7 @@ En Windows, instale Python marcando **"Add python.exe to PATH"**. Compruebe en u
 
 ## 1. Instalación
 
-Probado en **Windows** y Linux (ver la insignia de CI). Los comandos no necesitan activar la `.venv`, así se evita el bloqueo de scripts de PowerShell.
+Probado en **Windows** y Linux. Los comandos no necesitan activar la `.venv`, así se evita el bloqueo de scripts de PowerShell.
 
 Desde la raíz del repo, una sola vez:
 
@@ -54,7 +52,7 @@ npm run demo
 Funciona igual en Windows, Linux y macOS. Avanza con Enter:
 
 1. Levanta Qolqe (desde la raíz del repo) en http://localhost:8000 si no está corriendo, con una base de datos temporal, y lo apaga al terminar.
-2. Muestra el escenario de IA (`browser.act()`) escrito en lenguaje natural; sin clave queda *skipped*.
+2. Muestra el escenario de IA (`browser.act()`) escrito en lenguaje natural. Con clave en `.env`, el modelo maneja Chrome y **vuelve a grabar** los pasos en vivo (~45 s, ~140k tokens); si falla, restaura la caché del repo. Luego muestra la caché (los comandos que eligió el modelo) y **repite** el escenario desde ella, sin clave y sin tokens (~11 s). Sin clave, solo repite desde la caché.
 3. Muestra el escenario Gherkin y lo corre con Chrome visible.
 4. Cambia el escenario a "cuenta 2 movimientos" para mostrar que la prueba falla y deja una captura en `evidencia/`.
 5. Genera el reporte Allure y lo abre en el navegador.
@@ -114,7 +112,6 @@ Antes de cada escenario se reinician los datos de Qolqe (`POST /api/pruebas/rein
 | Consola (`spec`) | la terminal | cada paso Given/When/Then con ✓ o ✖ |
 | **Allure** | `npm run reporte` → `reportes/allure/index.html` (un solo archivo, se abre con doble clic) | escenarios agrupados por épica e historia (`@epic=`, `@story=`), severidad, pasos con su duración y la **captura adjunta** del paso que falló |
 | Evidencia | `evidencia/*.png` | captura del navegador cuando un paso falla |
-| CI | pestaña *Actions* de GitHub, job `pruebas-web` de `ci.yml` | corre en Windows y Linux y publica el reporte Allure como artefacto descargable |
 
 Las etiquetas del `.feature` alimentan el reporte: `@HU-G3-03` filtra en Cucumber y `@story=HU-G3-03` agrupa en Allure. El reporte acumula el historial de corridas en `reportes/allure-historial.jsonl`.
 
@@ -122,13 +119,17 @@ Las etiquetas del `.feature` alimentan el reporte: `@HU-G3-03` filtra en Cucumbe
 
 `features/clasificar-ia.feature` repite el mismo flujo, pero sus pasos (`steps/ia.steps.js`) usan `browser.act()` de `@wdio/ai-service`: la acción se escribe como intención en lenguaje natural. La primera ejecución usa un modelo para manejar el navegador y graba los comandos en `features/__act__/`; las siguientes los repiten sin modelo y sin tokens. `act` solo ejecuta: los pasos `Then` siguen verificando con `expect` en código.
 
-Necesita una clave de API, que este repositorio **no incluye**. Sin clave ni caché, el escenario `@ia` se marca como *skipped*:
+La caché `features/__act__/clasificar-ia.feature.json` **está en el repositorio**: `npm run test:ia` la repite sin clave y los datos sensibles quedan como placeholders (`{{celular}}`, `{{pin}}`), no se envían al modelo ni se guardan. Grabación de referencia (2026-10-26, Claude Sonnet 5): 4 llamadas a `act`, ~138k tokens y 42 s; la repetición, 0 tokens y 12 s.
+
+Para grabar de nuevo hace falta una clave de API, que el repositorio **no incluye**. Póngala en `tests/e2e/.env` (ignorado por git; lo leen `wdio.conf.js` y `demo.mjs`):
 
 ```bash
-export ANTHROPIC_API_KEY=...       # PowerShell: $env:ANTHROPIC_API_KEY="..."
-npm run test:ia                    # 1ª vez: graba · siguientes: repite desde la caché
-npm run test:ia:regrabar           # vuelve a grabar
+echo "ANTHROPIC_API_KEY=..." > .env   # o con un editor, para no dejarla en el historial de la terminal
+npm run test:ia:regrabar           # el modelo graba de nuevo (-s = --updateSnapshots)
+npm run test:ia                    # repite desde la caché
 ```
+
+Sin clave ni caché, el escenario `@ia` se marca como *skipped*. Claude Sonnet 5 solo acepta `temperature: 1`, por eso `wdio.conf.js` la fija (el servicio manda otra por defecto). Otro modelo: `WDIO_AI_MODEL=proveedor:modelo`.
 
 ## Estructura
 
@@ -137,9 +138,12 @@ tests/e2e/                    (qolqe/ y docs/requisitos.md están en la raíz de
   features/                   ¿QUÉ se prueba? escenarios en Gherkin
     clasificar.feature        happy path G3
     clasificar-ia.feature     mismo flujo con pasos de IA (@ia)
+    historial-zona-horaria.feature   DEF-14 (npm run test:defectos; debe fallar)
+    __act__/                  caché de browser.act() grabada por el modelo
   steps/                      traduce cada paso Given / When / Then a código
     clasificar.steps.js       llama a los Page Objects y verifica con expect
     ia.steps.js               pasos con browser.act()
+    historial.steps.js        reloj de Qolqe y del navegador para DEF-14
   pages/                      ¿CÓMO se usa la pantalla? Page Objects
     login.page.js             ingresarComo(celular, pin)
     historial.page.js         abrir, crearCategoria, abrirPrimerMovimiento, clasificar

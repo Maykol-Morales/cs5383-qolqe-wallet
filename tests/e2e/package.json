@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "scripts": {
     "test": "wdio run wdio.conf.js --spec features/clasificar.feature",
+    "test:defectos": "wdio run wdio.conf.js --spec features/historial-zona-horaria.feature",
     "test:ia": "wdio run wdio.conf.js --spec features/clasificar-ia.feature",
     "test:ia:regrabar": "wdio run wdio.conf.js --spec features/clasificar-ia.feature -s",
     "demo": "node demo.mjs",

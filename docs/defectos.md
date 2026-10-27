@@ -1,6 +1,6 @@
 # Reporte de defectos
 
-Defectos encontrados al ejecutar las pruebas de la Parte 1 contra Qolqe Wallet 1.0.0 (`qolqe/` sin modificar). Cada defecto tiene una prueba en `tests/api/` marcada con su etiqueta `@DEF-nn` en los `.feature`; esas pruebas están como `xfail(strict)` para que el pipeline siga verde mientras el defecto exista. Con `MOSTRAR_DEFECTOS=1 pytest tests/api` fallan a la vista; cuando se corrija un defecto la prueba pasa a XPASS y el pipeline avisa para retirar la marca.
+Defectos encontrados al ejecutar las pruebas de las Partes 1 y 2 contra Qolqe Wallet 1.0.0 (`qolqe/` sin modificar). Cada defecto tiene una prueba en `tests/api/` marcada con su etiqueta `@DEF-nn` en los `.feature`; esas pruebas están como `xfail(strict)` para que el pipeline siga verde mientras el defecto exista. Con `MOSTRAR_DEFECTOS=1 pytest tests/api` fallan a la vista; cuando se corrija un defecto la prueba pasa a XPASS y el pipeline avisa para retirar la marca. Los defectos de la UI (Parte 2, desde DEF-14) se prueban con WebdriverIO en `tests/e2e/`: `npm test` no los corre y `npm run test:defectos` los muestra fallando; si uno pasa, se corrigió y hay que retirar su marca.
 
 Resumen (ID, título, severidad y estado) en la sección 5 de [`informe.md`](informe.md).
 
@@ -255,3 +255,24 @@ Resumen (ID, título, severidad y estado) en la sección 5 de [`informe.md`](inf
 **Resultado obtenido:** `201 Created` en las tres operaciones (y en la de 0.01 a Qolqe); `GET /api/limites` muestra `usado_hoy "0.00"` (o `"0.01"` en el caso mixto). Diego puede enviar a otros bancos sin tope diario mientras cada operación sea ≤ S/ 500.00. El caso inverso sí funciona: tras 500.00 + 500.00 a Qolqe, una interbancaria de 0.01 responde `422 LIMITE_DIARIO_EXCEDIDO`. Causa probable: `transferido_hoy_centimos` filtra `tipo = 'QOLQE'` al sumar las transferencias del día, así que las interbancarias nunca cuentan.
 
 **Evidencia:** 3.er `POST /api/transferencias {"monto":"0.01","tipo":"INTERBANCARIA",...}` → `201 {"tipo":"INTERBANCARIA","monto":"0.01","comision":"1.00","total":"1.01",...,"saldo":"1488.99"}`; `GET /api/limites` → `{"limite_diario":"1000.00","usado_hoy":"0.00","disponible_hoy":"1000.00",...}`
+
+## DEF-14: De noche en Lima, con el celular en otra zona horaria, el historial sale vacío
+
+| Campo | Valor |
+|---|---|
+| Módulo / regla | R-G3-01 y requisitos §1 ("un día va de 00:00 a 23:59 en hora de Lima") / HU-G3-01 · `qolqe/web/static/app.js:1049-1052` (`paginas.historial`) |
+| Severidad | Media |
+| Prioridad | Media |
+| Entorno | Qolqe Wallet 1.0.0, uvicorn, Chrome 156, WebdriverIO 10, Linux; detectado en la CI de GitHub Actions (navegador en UTC). Solo en la UI: la API se comporta según el requisito |
+| Prueba que lo detecta | `tests/e2e/features/historial-zona-horaria.feature` (`npm run test:defectos` en `tests/e2e/`). No es pytest: debe fallar mientras el defecto exista |
+
+**Pasos para reproducir**
+1. Poner el celular (navegador) en una zona horaria adelantada respecto de Lima, p. ej. UTC.
+2. Entre las 19:00 y las 23:59 de Lima, iniciar sesión como Ana (987654321 / 4826).
+3. Abrir **Movimientos**.
+
+**Resultado esperado:** la lista muestra los movimientos de los últimos 30 días hasta hoy, incluidos los de hoy (R-G3-01); "hoy" es el día en hora de Lima (requisitos §1).
+
+**Resultado obtenido:** la lista sale vacía con la alerta "La fecha 'hasta' no puede ser futura". La UI arma el rango por defecto con la fecha del celular (`new Date()` + `getTimezoneOffset`), así que `hasta` es el día siguiente al de Lima y el servidor responde `422 FILTRO_INVALIDO`. Pasa con cualquier celular cuya fecha local se adelante a la de Lima (otra zona horaria o reloj adelantado).
+
+**Evidencia:** a las 21:00 de Lima del 2026-10-26, `GET /api/movimientos?desde=2026-09-26&hasta=2026-10-27` → `422 {"codigo":"FILTRO_INVALIDO","detail":"La fecha 'hasta' no puede ser futura"}` (con `hasta=2026-10-26` responde 200). Captura: [`evidencia/DEF-14.png`](evidencia/DEF-14.png). Control: el mismo escenario con el navegador en `America/Lima` pasa.
