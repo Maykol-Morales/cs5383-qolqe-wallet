@@ -32,6 +32,12 @@ export const config = {
     services: [['ai', { model: process.env.WDIO_AI_MODEL ?? 'anthropic:claude-sonnet-5' }]],
     logLevel: 'warn',
 
+    // Qolqe valida las fechas en hora de Lima, pero la UI arma el rango desde/hasta con la hora del
+    // navegador: en un runner en UTC, de noche en Lima, "hasta" es mañana y el historial sale vacío.
+    before: async () => {
+        await browser.emulationSetTimezoneOverride({ timezone: 'America/Lima', userContexts: ['default'] })
+    },
+
     // Fixture: cada escenario parte de los datos semilla de Qolqe (ver README del SUT).
     beforeScenario: async () => {
         const res = await fetch(`${baseUrl}/api/pruebas/reiniciar`, { method: 'POST' })
