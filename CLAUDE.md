@@ -14,7 +14,7 @@ Proyecto 2 del curso **CS5383 Pruebas y Verificación de Software** (UTEC). Cont
 | CI | GitHub Actions: pytest + cobertura + junit + reporte Allure | Hecha |
 | Reportes | Allure 3 (`demo.py reporte`) y dashboard de Schemathesis + comparativa con BDD (`demo.py schemathesis` / `dashboard`) | Hecha |
 | Presentación | Deck final de 13 slides, mapa visual y guion `demo.py` | Hecha (ver "Presentación y demo") |
-| 2 | Pruebas web E2E con Page Objects (`tests/e2e/pages/`) | Pendiente (solo `.gitkeep`) |
+| 2 | Pruebas web E2E: WebdriverIO 10 + Cucumber + Page Objects + Allure en `tests/e2e/` (migrado del repo `cs5383-webdriverio`) | Happy path G3 hecho; falta ampliar escenarios e informe §3 |
 | 3 | Rendimiento (`tests/performance/`) | Pendiente (solo `.gitkeep`) |
 
 ## Estructura
@@ -33,6 +33,8 @@ tests/
   api/conftest.py      fixtures (http, Contexto) y pasos comunes
   api/test_{nucleo,historial,contrato}.py   pasos pytest-bdd + contrato Schemathesis
   test_humo.py         prueba de humo
+  e2e/                 Parte 2, proyecto Node propio: features/, steps/, pages/ (Page Objects), wdio.conf.js,
+                       allurerc.mjs, demo.mjs; npm se corre dentro de tests/e2e/ (README propio)
 docs/                  requisitos.md (HU, CA, RN), informe.md, defectos.md, plantilla-informe.md,
                        casos-equivalencia-limites.md (análisis EP/VL), formato-particiones.md (formatos A1/B1)
 demo.py                guion de la demo, multiplataforma (preparar, ensayo, demo, schemathesis, plan-b)
@@ -52,6 +54,8 @@ MOSTRAR_DEFECTOS=1 pytest tests/api    # los defectos fallan a la vista
 QOLQE_URL=http://localhost:8000 pytest tests/api/test_nucleo.py   # contra servidor real
 pytest --cov=qolqe                     # cobertura (64 %)
 python demo.py preparar | ensayo | demo | schemathesis [g3] [todos] | plan-b   # Windows: py demo.py …; ver "Presentación y demo"
+cd tests/e2e && npm install && npm run demo   # Parte 2: levanta Qolqe desde la raíz, flujo, mutación, Allure
+npm test                               # (en tests/e2e, con Qolqe en :8000) escenarios web; HEADED=1 muestra Chrome
 ```
 
 Resultado de referencia (Parte 1, 2026-10-17): `252 passed, 1 skipped, 24 xfailed` + 60 subpruebas de contrato, 141 escenarios Gherkin (G3 70, núcleo 71), 12 defectos abiertos, unos 70 s. El skip es el escenario `@concurrencia` (pertenece a la Parte 3).
@@ -100,7 +104,7 @@ DEF-01 redondeo comisión · 02 PIN descendente aceptado · 03 login exitoso no 
 
 ## CI
 
-`.github/workflows/ci.yml`: en push a `main`/`parte-*`, tags `parte-*`/`final`, PRs y manual → Python 3.12, `pytest -rx` con junit y cobertura, resumen en el step summary, artefacto `reportes/`.
+`.github/workflows/ci.yml` tiene dos jobs: `pruebas-api` y `pruebas-web` (Parte 2, matriz Windows + Linux; en Windows también ensaya `npm run demo`). En push a `main`/`parte-*`, tags `parte-*`/`final`, PRs y manual → Python 3.12, `pytest -rx` con junit y cobertura, resumen en el step summary, artefacto `reportes/`.
 
 ## Pendiente / notas
 
@@ -109,7 +113,8 @@ DEF-01 redondeo comisión · 02 PIN descendente aceptado · 03 login exitoso no 
 - Interpretaciones asumidas a confirmar con el docente están en `docs/informe.md` §1 (p. ej. "90 días" = `hasta − desde ≤ 90`). Además: el código de error de nombres inválidos difiere por endpoint (`SOLICITUD_INVALIDA` al registrarse, `PERFIL_INVALIDO` al editar el perfil) y el requisito no lo fija.
 - Limitaciones conocidas de las pruebas: el escenario sin `@DEF` de HU-N-03 CA2 pasa sin probar nada mientras exista DEF-05 (logout no invalida nada); los `.feature` usan `# language: en` con texto en español; el escenario `@concurrencia` no tiene pasos (Parte 3).
 - `IA.md`: el equipo lo editó a mano (quitó dos filas de la declaración); no reponer sin preguntar.
-- Ramas: `parte-1` (antes `main`, rama por defecto en GitHub) tiene la Parte 1 + reportes; `parte-2` sale de ella para las pruebas web E2E.
+- Ramas: `parte-1` (rama por defecto en GitHub; `main` ya se borró) tiene la Parte 1 + reportes; `parte-2` sale de ella para las pruebas web E2E. `ejemplo-webdriverio` (Sebastián) fue el primer ejemplo; lo reemplaza `tests/e2e/`, migrado del repo `git@github.com:Maykol-Morales/cs5383-webdriverio.git` (historia independiente, remoto local `wdio`).
+- Parte 2 · notas de WebdriverIO: el escenario `@ia` (`browser.act()`) se salta sin `ANTHROPIC_API_KEY` ni caché en `features/__act__/`; las esperas sobre la UI se resolvieron recargando la página y esperando el PUT con `browser.mock` (condiciones de carrera vistas en la CI de Windows).
 - Stash pendiente `stash@{0}` (pytest-html + vcr/har en el viejo `demo.sh`): obsoleto, reemplazado por Allure y el dashboard; se puede descartar.
 - Flujo de commits: se commitea y se hace push solo cuando el usuario lo pide; los mensajes terminan con `Co-Authored-By: Claude`.
 - Secciones 3, 4 y 6 de `docs/informe.md` están vacías hasta las Partes 2/3 y la entrega final.

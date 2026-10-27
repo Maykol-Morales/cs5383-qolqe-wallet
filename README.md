@@ -230,3 +230,16 @@ MOSTRAR_DEFECTOS=1 pytest tests/api   # los defectos fallan a la vista
 El contrato también corre dentro de pytest, sin el script (en Windows, después de `.venv\Scripts\activate`): `pytest tests/api/test_contrato.py -v`.
 
 Informe en [`docs/informe.md`](docs/informe.md) y defectos encontrados en [`docs/defectos.md`](docs/defectos.md).
+
+---
+
+## 8. Pruebas web E2E (G3) — Parte 2
+
+**WebdriverIO 10 + Cucumber**, Page Objects y reporte Allure, en [`tests/e2e/`](tests/e2e/README.md). Automatiza el *happy path* de HU-G3-03 y HU-G3-07: crear una categoría y clasificar el último movimiento. Necesita Node 22.19+.
+
+```bash
+python demo.py preparar     # una vez: .venv con Qolqe
+cd tests/e2e && npm install
+npm run demo                # levanta Qolqe, corre el flujo con Chrome visible, una mutación que falla y el reporte
+npm test                    # solo los escenarios (con Qolqe ya corriendo en :8000)
+```

@@ -1,0 +1,4 @@
+node_modules/
+evidencia/
+.wdio/
+reportes/
