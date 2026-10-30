@@ -10,6 +10,9 @@
                                    (y la comparativa con pytest-bdd si antes corrió `reporte`)
     python demo.py plan-b          pytest -rx guardando la salida en reportes/ensayo.txt (pregrabada)
     python demo.py reporte         pytest -rx y abre el reporte Allure (dashboard + escenarios); requiere Node (npx)
+    python demo.py ci lanzar       Parte 2: lanza el pipeline en parte-2 y abre el run (al empezar la exposición)
+    python demo.py ci              Parte 2: espera el último run y abre Pages, Allure web y la matriz (requiere gh;
+                                   sin gh abre lo último publicado)
 
 En Windows, si `python` no existe, usar `py demo.py ...`. El paso 4 (contrato) repite lo que ya
 corre en el paso 2: es opcional, SIN_CONTRATO=1 lo omite. PUERTO y VENV cambian puerto y entorno.
@@ -143,6 +146,32 @@ def dashboard():
         webbrowser.open((RAIZ / "reportes" / "dashboard-contrato.html").as_uri())
 
 
+PAGES = "https://maykol-morales.github.io/cs5383-qolqe-wallet/"
+
+
+def ci(args):
+    """Demo de la Parte 2: run real del pipeline, reporte publicado y matriz. Sin gh, abre lo último publicado."""
+    gh = shutil.which("gh")
+    if gh:
+        if "lanzar" in args:
+            subprocess.check_call([gh, "workflow", "run", "pruebas.yml", "--ref", "parte-2"], cwd=RAIZ)
+            time.sleep(5)  # ponytail: GitHub tarda unos segundos en listar el run nuevo
+        run = json.loads(subprocess.check_output(
+            [gh, "run", "list", "--workflow", "pruebas.yml", "--branch", "parte-2", "--limit", "1",
+             "--json", "databaseId,number,url,status,conclusion"], cwd=RAIZ))[0]
+        print(f"Run #{run['number']}: {run['status']} {run['conclusion'] or ''}\n{run['url']}", flush=True)
+        webbrowser.open(run["url"])
+        if "lanzar" in args:
+            return print("El pipeline tarda ~7 min. En el slide de la demo: python demo.py ci")
+        if run["status"] != "completed":
+            subprocess.call([gh, "run", "watch", str(run["databaseId"]), "--exit-status"], cwd=RAIZ)
+    else:
+        print("Sin gh: se abre el último reporte publicado (plan B).")
+    for ruta in ("", "web/", "trazabilidad.html"):
+        print(PAGES + ruta)
+        webbrowser.open(PAGES + ruta)
+
+
 def preparar():
     if not VENV.exists():
         subprocess.check_call([sys.executable, "-m", "venv", str(VENV)])
@@ -171,5 +200,6 @@ if __name__ == "__main__":
         "plan-b": plan_b,
         "reporte": reporte,
         "dashboard": dashboard,
+        "ci": lambda: ci(resto),
     }
     acciones.get(orden, lambda: print(__doc__))()

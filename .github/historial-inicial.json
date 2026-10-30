@@ -1,0 +1,5 @@
+[{"run": "1", "fecha": "2026-10-30", "sha": "c6f5632", "pasa": 2, "defecto": 19, "falla": 128, "otro": 1, "segundos": 126},
+ {"run": "2", "fecha": "2026-10-30", "sha": "ab2c1c1", "pasa": 129, "defecto": 20, "falla": 0, "otro": 1, "segundos": 251},
+ {"run": "3", "fecha": "2026-10-30", "sha": "52901a0", "pasa": 129, "defecto": 20, "falla": 0, "otro": 1, "segundos": 218},
+ {"run": "4", "fecha": "2026-10-30", "sha": "52901a0", "pasa": 129, "defecto": 20, "falla": 0, "otro": 1, "segundos": 253},
+ {"run": "5", "fecha": "2026-10-30", "sha": "52901a0", "pasa": 129, "defecto": 20, "falla": 0, "otro": 1, "segundos": 211}]

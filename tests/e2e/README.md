@@ -27,7 +27,7 @@ Flujo de una ejecución: **escenario → paso → Page Object → WebdriverIO �
 
 Sin esperas fijas: los Page Objects esperan con `expect`/`waitUntil` (p. ej. a que la tabla quite su esqueleto de carga). El CSV se descarga con `fetch` + `<a download>`; Chrome lo guarda en `reportes/descargas/` (`prefs` en `wdio.conf.js`).
 
-**Presentación:** https://claude.ai/artifact/LSnrwobCbcGrUv6VPg2Qu2
+**Presentación (Parte 2, por rúbrica):** https://claude.ai/artifact/2XaeAeRaotLkVMBYRKECns
 
 Migrado desde el laboratorio [`cs5383-webdriverio`](https://github.com/Maykol-Morales/cs5383-webdriverio). Todo vive en esta carpeta (`tests/e2e/`); el sistema bajo prueba es el `qolqe/` de la raíz del repo y la `.venv` es la misma de la Parte 1. **Todos los comandos `npm` se corren dentro de `tests/e2e/`.**
 

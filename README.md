@@ -208,7 +208,7 @@ MOSTRAR_DEFECTOS=1 pytest tests/api   # los defectos fallan a la vista
 
 ### Demo y Schemathesis
 
-`demo.py` corre la demo y Schemathesis. Funciona igual en Linux, macOS y Windows porque solo usa la biblioteca estándar de Python. Basta con tener Python 3.11+ (no hace falta Bash ni curl). En Linux/macOS, `./demo.sh <opción>` es un atajo de lo mismo.
+`demo.py` corre la demo y Schemathesis. Funciona igual en Linux, macOS y Windows porque solo usa la biblioteca estándar de Python. Basta con tener Python 3.11+ (no hace falta Bash ni curl). En Linux/macOS, `./demo.sh <opción>` hace lo mismo, pero antes crea la `.venv`, instala `tests/e2e/node_modules` si faltan y revisa que `gh` tenga sesión.
 
 | Linux / macOS | Windows (PowerShell o CMD) | Qué hace |
 |---|---|---|
@@ -256,7 +256,7 @@ api (pytest-bdd + contrato Schemathesis, Allure, CLI de Schemathesis)
      └─ reportes (matriz de trazabilidad + sitio)  └─ publicar (GitHub Pages; solo push a parte-2/main o manual)
 ```
 
-Quality gate: todo pasa salvo los defectos conocidos (`@DEF-nn`, xfail estricto; si un defecto se corrige, el pipeline falla). Cada job deja un resumen y su artefacto. Reportes publicados en **https://maykol-morales.github.io/cs5383-qolqe-wallet/**: portada con datos del run, matriz HU → caso → resultado (`trazabilidad.html`, copia en [`docs/trazabilidad.md`](docs/trazabilidad.md)), Allure de API (`api/`) y web (`web/`), Schemathesis (`schemathesis/`) y dashboard de contrato (`contrato/`).
+Quality gate: todo pasa salvo los defectos conocidos (`@DEF-nn`, xfail estricto; si un defecto se corrige, el pipeline falla). Cada job deja un resumen y su artefacto. Reportes publicados en **https://maykol-morales.github.io/cs5383-qolqe-wallet/**: portada con datos del run, **dashboard** (`dashboard.html`: casos web × 3 corridas, tiempos por suite, casos por HU, defectos vigilados, tendencia entre runs desde `historial.json` y cobertura), matriz HU → caso → resultado (`trazabilidad.html`, copia en [`docs/trazabilidad.md`](docs/trazabilidad.md)), Allure de API (`api/`) y web (`web/`), Schemathesis (`schemathesis/`) y dashboard de contrato (`contrato/`).
 
 Generar la matriz y el sitio localmente (queda en `sitio/`, ignorado por git):
 
@@ -264,3 +264,14 @@ Generar la matriz y el sitio localmente (queda en `sitio/`, ignorado por git):
 pytest -rx --junitxml=reportes/junit-api.xml
 python .github/scripts/reportes.py sitio
 ```
+
+Demo en vivo (requiere `gh` autenticado; sin `gh` abre lo último publicado):
+
+```bash
+./demo.sh                  # deja todo listo y dice qué falta (.venv, node_modules, gh)
+./demo.sh lanzar           # al empezar la exposición: dispara el pipeline en parte-2 y abre el run (~7 min)
+./demo.sh mostrar          # en el slide de la demo: espera el run y abre Pages, Allure web y la matriz
+./demo.sh web              # plan B local: Qolqe + E2E con Chrome visible + Allure, sin gastar tokens (GRABAR=1 regraba act)
+```
+
+En Windows: `py demo.py ci lanzar` y `py demo.py ci`.
