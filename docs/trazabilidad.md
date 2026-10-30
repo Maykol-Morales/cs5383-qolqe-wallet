@@ -1,6 +1,6 @@
 # Matriz de trazabilidad · HU → caso → nivel → resultado
 
-Generada por `.github/scripts/reportes.py` desde los JUnit del run local (commit `4960809`, 2026-10-30 18:44 UTC).
+Generada por `.github/scripts/reportes.py` desde los JUnit del [run #2](https://github.com/Maykol-Morales/cs5383-qolqe-wallet/actions/runs/41112455417) (commit `ab2c1c1`, 2026-10-30 19:12 UTC).
 No se edita a mano: el pipeline la regenera y la publica en https://maykol-morales.github.io/cs5383-qolqe-wallet/trazabilidad.html.
 
 - **Caso**: `CP-Wnn` (web, etiqueta del `.feature`) o `CP-A-<feature>-nn` (API, n.º de escenario en su `.feature`).
@@ -129,9 +129,9 @@ No se edita a mano: el pipeline la regenera y la publica en https://maykol-moral
 | HU-G3-01 | CP-A-historial-41 | API | El rango incluye desde las 00:00:00 del día "desde" y excluye el día anterior | pasa | — |
 | HU-G3-01 | CP-A-historial-42 | API | El rango incluye hasta las 23:59:59 del día "hasta" y excluye el día siguiente | defecto conocido (1 ejec.) | [DEF-07](defectos.md#def-07-el-historial-excluye-el-día-completo-del-límite-superior-hasta-incluidos-los-movimientos-de-hoy) |
 | HU-G3-01 | — | Web E2E | De noche en Lima, con el celular en hora UTC, el historial muestra los últimos 30 días | defecto conocido (1 ejec.) | [DEF-14](defectos.md#def-14-de-noche-en-lima-con-el-celular-en-otra-zona-horaria-el-historial-sale-vacío) |
-| HU-G3-01 | CP-W02 | Web E2E | CP-W02 · Filtrar el historial por tipo "Recargas" | pasa | — |
-| HU-G3-01 | CP-W03 | Web E2E | CP-W03 · Filtrar el historial por tipo "Pagos de servicios" | pasa | — |
-| HU-G3-01 | CP-W04 | Web E2E | CP-W04 · Paginar el historial de 10 en 10 con Siguiente y Anterior | pasa | — |
+| HU-G3-01 | CP-W02 | Web E2E | CP-W02 · Filtrar el historial por tipo "Recargas" | pasa 3/3 | — |
+| HU-G3-01 | CP-W03 | Web E2E | CP-W03 · Filtrar el historial por tipo "Pagos de servicios" | pasa 3/3 | — |
+| HU-G3-01 | CP-W04 | Web E2E | CP-W04 · Paginar el historial de 10 en 10 con Siguiente y Anterior | pasa 3/3 | — |
 | HU-G3-02 | CP-A-historial-18 | API | Detalle de mi propio movimiento | pasa | — |
 | HU-G3-02 | CP-A-historial-19 | API | El destinatario ve su lado de la transferencia en el detalle | defecto conocido (1 ejec.) | [DEF-09](defectos.md#def-09-el-destinatario-de-una-transferencia-ve-el-movimiento-del-emisor-en-el-detalle) |
 | HU-G3-02 | CP-A-historial-20 | API | Un código inexistente | pasa | — |
@@ -147,7 +147,7 @@ No se edita a mano: el pipeline la regenera y la publica en https://maykol-moral
 | HU-G3-03 | CP-A-categorias-21 | API | Un color vacío es rechazado | pasa | — |
 | HU-G3-03 | CP-A-categorias-22 | API | Otro usuario puede tener una categoría con el mismo nombre | pasa | — |
 | HU-G3-03 | CP-W90 | Web E2E (IA) | CP-W90 · La IA crea "Viajes" y clasifica el último movimiento | pasa | — |
-| HU-G3-03 | CP-W01 | Web E2E | CP-W01 · Clasificar el último movimiento en una categoría nueva | pasa 2/2 | — |
+| HU-G3-03 | CP-W01 | Web E2E | CP-W01 · Clasificar el último movimiento en una categoría nueva | pasa 3/3 | — |
 | HU-G3-04 | CP-A-categorias-06 | API | Mis categorías en orden alfabético con su cantidad de movimientos | pasa | — |
 | HU-G3-04 | CP-A-categorias-07 | API | Solo veo mis categorías | pasa | — |
 | HU-G3-04 | CP-A-categorias-17 | API | Las categorías requieren sesión | pasa | — |
@@ -175,7 +175,7 @@ No se edita a mano: el pipeline la regenera y la publica en https://maykol-moral
 | HU-G3-07 | CP-A-historial-43 | API | Una categoría inexistente al clasificar responde 404 | pasa | — |
 | HU-G3-07 | CP-A-historial-44 | API | Un movimiento inexistente al clasificar responde 404 | pasa | — |
 | HU-G3-07 | CP-W90 | Web E2E (IA) | CP-W90 · La IA crea "Viajes" y clasifica el último movimiento | pasa | — |
-| HU-G3-07 | CP-W01 | Web E2E | CP-W01 · Clasificar el último movimiento en una categoría nueva | pasa 2/2 | — |
+| HU-G3-07 | CP-W01 | Web E2E | CP-W01 · Clasificar el último movimiento en una categoría nueva | pasa 3/3 | — |
 | HU-G3-08 | CP-A-historial-30 | API | Exportar con el encabezado y formato esperados | pasa | — |
 | HU-G3-08 | CP-A-historial-31 | API | Exportar no pagina | pasa | — |
 | HU-G3-08 | CP-A-historial-32 | API | Sin movimientos el archivo contiene solo el encabezado | pasa | — |
@@ -184,6 +184,6 @@ No se edita a mano: el pipeline la regenera y la publica en https://maykol-moral
 | HU-G3-08 | CP-A-historial-35 | API | Exportar con la categoría de otro usuario es rechazado | pasa | — |
 | HU-G3-08 | CP-A-historial-36 | API | Exportar requiere sesión | pasa | — |
 | HU-G3-08 | CP-A-historial-37 | API | El CSV incluye la categoría y la nota | pasa | — |
-| HU-G3-08 | CP-W05 | Web E2E | CP-W05 · Exportar a CSV el historial filtrado por recargas | pasa | — |
+| HU-G3-08 | CP-W05 | Web E2E | CP-W05 · Exportar a CSV el historial filtrado por recargas | pasa 3/3 | — |
 | — | test_contrato_openapi | API | Contrato OpenAPI (Schemathesis, 1 prueba + subpruebas) | pasa 61/61 | — |
 | — | test_la_app_responde | API | test_la_app_responde | pasa | — |
