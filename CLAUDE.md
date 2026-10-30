@@ -11,7 +11,7 @@ Proyecto 2 del curso **CS5383 Pruebas y Verificación de Software** (UTEC). Cont
 | Parte | Contenido | Estado |
 |---|---|---|
 | 1 | Pruebas de API (núcleo + G3), contrato con Schemathesis, 12 defectos, análisis EP/VL mapeado a escenarios | Hecha |
-| CI | GitHub Actions eliminado el 2026-10-26 (no es el que se usará; hacía lentos los push) | Pendiente de definir |
+| CI | `.github/workflows/pruebas.yml`: api → web (3 corridas) → reportes → Pages; matriz `docs/trazabilidad.md` | Hecha (falta activar Pages) |
 | Reportes | Allure 3 (`demo.py reporte`) y dashboard de Schemathesis + comparativa con BDD (`demo.py schemathesis` / `dashboard`) | Hecha |
 | Presentación | Deck final de 13 slides, mapa visual y guion `demo.py` | Hecha (ver "Presentación y demo") |
 | 2 | Pruebas web E2E: WebdriverIO 10 + Cucumber + Page Objects + Allure en `tests/e2e/` (migrado del repo `cs5383-webdriverio`) | Happy path G3 hecho; falta ampliar escenarios e informe §3 |
@@ -104,7 +104,13 @@ DEF-01 redondeo comisión · 02 PIN descendente aceptado · 03 login exitoso no 
 
 ## CI
 
-No hay pipeline: `.github/workflows/ci.yml` (jobs `pruebas-api` y `pruebas-web`, Windows + Linux) se borró el 2026-10-26 porque no es el CI/CD que se usará y alargaba los push. Está en el historial de git (commit `a9cd175`) por si sirve de base.
+`.github/workflows/pruebas.yml` (push a `main`/`parte-1`/`parte-2`, tags `parte-*`/`final`, PR, manual; solo ubuntu, cache pip/npm):
+- `api`: `pytest -rx` (humo + BDD + contrato Schemathesis; `@DEF` = xfail strict) → `reportes/junit-api.xml`, Allure, cobertura; luego `demo.py schemathesis` (solo reporte, `BROWSER=true`) → `reportes/schemathesis/` y `reportes/dashboard-contrato.html`.
+- `web` (needs api): Qolqe en :8000, `npm test` × 3 (cada JUnit se aparta a `tests/e2e/reportes/junit-corrida-N/`), `npm run test:ia` desde la caché sin clave (`ANTHROPIC_API_KEY=""`), DEF-14 invertido (falla esperada; si pasa, el job falla) con sus resultados Allure apartados.
+- `reportes` (needs api+web): `.github/scripts/reportes.py sitio` → `docs/trazabilidad.md` + `sitio/` (portada, `trazabilidad.html`, `api/`, `web/`, `schemathesis/`, `contrato/`). `publicar`: `deploy-pages` solo en push a `parte-2`/`main` o manual → https://maykol-morales.github.io/cs5383-qolqe-wallet/
+- Mapeo: cada prueba BDD de la API lleva la propiedad JUnit `escenario` (hook en `tests/api/conftest.py`); los casos web por el `CP Wnn` del nombre (el reporter quita la puntuación). IDs API: `CP-A-<feature>-nn` por orden en el `.feature`. El script avisa (`::warning::`) de escenarios sin ejecución.
+- Local: `pytest -rx --junitxml=reportes/junit-api.xml && python .github/scripts/reportes.py sitio` (regenera la matriz; `resumen TITULO xml...` = tabla del step summary).
+- El `ci.yml` anterior (Windows + Linux, borrado el 2026-10-26 por lento) está en el commit `a9cd175`.
 
 ## Pendiente / notas
 

@@ -243,3 +243,24 @@ cd tests/e2e && npm install
 npm run demo                # levanta Qolqe, corre el flujo con Chrome visible, una mutación que falla y el reporte
 npm test                    # solo los escenarios (con Qolqe ya corriendo en :8000)
 ```
+
+---
+
+## 9. Pipeline de CI (GitHub Actions + Pages)
+
+[`.github/workflows/pruebas.yml`](.github/workflows/pruebas.yml) corre en cada push a `main`/`parte-*`, tags, PR y a mano:
+
+```
+api (pytest-bdd + contrato Schemathesis, Allure, CLI de Schemathesis)
+ └─ web (WebdriverIO: npm test × 3 seguidas, @ia desde la caché, DEF-14 como falla esperada)
+     └─ reportes (matriz de trazabilidad + sitio)  └─ publicar (GitHub Pages; solo push a parte-2/main o manual)
+```
+
+Quality gate: todo pasa salvo los defectos conocidos (`@DEF-nn`, xfail estricto; si un defecto se corrige, el pipeline falla). Cada job deja un resumen y su artefacto. Reportes publicados en **https://maykol-morales.github.io/cs5383-qolqe-wallet/**: portada con datos del run, matriz HU → caso → resultado (`trazabilidad.html`, copia en [`docs/trazabilidad.md`](docs/trazabilidad.md)), Allure de API (`api/`) y web (`web/`), Schemathesis (`schemathesis/`) y dashboard de contrato (`contrato/`).
+
+Generar la matriz y el sitio localmente (queda en `sitio/`, ignorado por git):
+
+```bash
+pytest -rx --junitxml=reportes/junit-api.xml
+python .github/scripts/reportes.py sitio
+```

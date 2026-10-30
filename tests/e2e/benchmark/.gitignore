@@ -1,0 +1,4 @@
+# Datos crudos (trazas de los agentes, logs) y caché de act generada por el benchmark: no se versionan.
+# Los números quedan en resultados.json.
+crudo/
+__act__/

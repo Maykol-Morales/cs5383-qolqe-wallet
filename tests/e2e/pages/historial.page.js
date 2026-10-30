@@ -5,6 +5,23 @@ class HistorialPage {
     fila(codigo) { return $(`[data-testid=fila-movimiento][data-codigo="${codigo}"]`) }
     // Selector, no elemento: expect lo vuelve a buscar en cada reintento aunque Qolqe repinte la lista.
     categoria(nombre) { return $(`//li[@data-testid="categoria"][contains(., "${nombre}")]`) }
+    get indicador() { return $('[data-testid=indicador-pagina]') }
+    get siguiente() { return $('[data-testid=boton-siguiente]') }
+
+    // Desde/hasta van por JS: lo que se teclea en un <input type=date> depende del idioma del navegador.
+    async filtrar({ diasAtras, tipo }) {
+        if (diasAtras) await browser.execute((d) => {
+            document.querySelector('[data-testid=input-desde]').value = new Date(Date.now() - d * 86400000).toLocaleDateString('en-CA')
+        }, diasAtras)
+        if (tipo) await $('[data-testid=select-tipo]').selectByVisibleText(tipo)
+        await this.cambiarA('boton-buscar')
+    }
+
+    // Buscar, Siguiente o Anterior: la tabla muestra un esqueleto hasta que llega la respuesta.
+    async cambiarA(testid) {
+        await $(`[data-testid=${testid}]`).click()
+        await expect($('[data-testid=tabla-movimientos] .esqueleto')).not.toBeExisting()
+    }
 
     async abrir() {
         await $('aria/Movimientos').click()

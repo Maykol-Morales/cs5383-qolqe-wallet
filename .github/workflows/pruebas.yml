@@ -1,0 +1,178 @@
+# Pipeline de pruebas: api → web → reportes → publicar (GitHub Pages).
+# Quality gate: todo pasa salvo los defectos conocidos (@DEF-nn: xfail estricto en pytest, paso invertido en web).
+# Reportes: https://maykol-morales.github.io/cs5383-qolqe-wallet/  (matriz, Allure API/web, Schemathesis)
+name: Pruebas
+
+on:
+  push:
+    branches: [main, parte-1, parte-2]
+    tags: ["parte-*", "final"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  api:
+    name: API + contrato (pytest-bdd, Schemathesis)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env: { PYTHONUTF8: "1" }
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with: { python-version: "3.12", cache: pip, cache-dependency-path: requirements-dev.txt }
+      - uses: actions/setup-node@v5   # npx allure (Allure 3, sin Java)
+        with: { node-version: "22" }
+
+      # .venv en la raíz: demo.py busca sus herramientas allí
+      - name: Instalar
+        run: python -m venv .venv && .venv/bin/pip install -q -r requirements-dev.txt
+
+      # Humo + BDD (núcleo y G3) + contrato Schemathesis dentro de pytest (test_contrato.py, determinista).
+      # Los @DEF-nn salen xfailed; si un defecto se corrige pasa a XPASS y el job falla (strict).
+      - name: pytest
+        run: >
+          .venv/bin/python -m pytest -rx --junitxml=reportes/junit-api.xml
+          --alluredir=reportes/allure-results --cov=qolqe --cov-report=xml:reportes/cobertura.xml --cov-report=term
+
+      # Solo reporte (el gate de contrato es test_contrato.py): CLI con --seed 1 sobre todas las operaciones
+      # y el dashboard VCR+HAR con la comparativa contra los escenarios BDD (~50 s). BROWSER=true: no abre nada.
+      - name: Schemathesis CLI + dashboard
+        if: ${{ !cancelled() }}
+        env: { BROWSER: "true" }
+        run: |
+          .venv/bin/python demo.py schemathesis
+          mkdir -p reportes/schemathesis && cp -r reporte-schemathesis/html-*/. reportes/schemathesis/   # runner limpio: un solo html-*
+
+      - name: Reporte Allure
+        if: ${{ !cancelled() }}
+        run: npx -y allure@3.21.0 generate --clean reportes/allure-results
+
+      - name: Resumen
+        if: ${{ !cancelled() }}
+        run: python .github/scripts/reportes.py resumen "API (pytest-bdd + contrato)" reportes/junit-api.xml >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with: { name: api, path: reportes/ }
+
+  web:
+    name: Web E2E (WebdriverIO, 3 corridas)
+    needs: api
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run: { working-directory: tests/e2e }
+    env:
+      QOLQE_URL: http://localhost:8000
+      ANTHROPIC_API_KEY: ""   # sin secretos: @ia repite browser.act desde la caché commiteada (0 tokens)
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with: { python-version: "3.12", cache: pip, cache-dependency-path: requirements.txt }
+      - uses: actions/setup-node@v5
+        with: { node-version: "22", cache: npm, cache-dependency-path: tests/e2e/package-lock.json }
+
+      - name: Instalar
+        run: |
+          python -m venv ../../.venv && ../../.venv/bin/pip install -q -r ../../requirements.txt
+          npm ci
+
+      - name: Levantar Qolqe
+        working-directory: .
+        run: |
+          QOLQE_MODO_PRUEBA=1 QOLQE_BD="$RUNNER_TEMP/qolqe.db" nohup .venv/bin/python -m uvicorn qolqe.main:app --port 8000 \
+            > "$RUNNER_TEMP/qolqe.log" 2>&1 &
+          curl -sf --retry 30 --retry-connrefused --retry-delay 1 localhost:8000/api/salud || { cat "$RUNNER_TEMP/qolqe.log"; exit 1; }
+
+      # "Pasa 3 veces seguidas": cada corrida parte de datos semilla (beforeScenario reinicia Qolqe).
+      # El reporter JUnit siempre escribe en reportes/junit/e2e-<cid>.xml: se aparta tras cada corrida.
+      - name: E2E × 3 (npm test)
+        run: |
+          for i in 1 2 3; do
+            echo "::group::Corrida $i"
+            npm test
+            mv reportes/junit reportes/junit-corrida-$i
+            echo "::endgroup::"
+          done
+
+      - name: Escenario @ia desde la caché (npm run test:ia)
+        run: npm run test:ia && mv reportes/junit reportes/junit-ia
+
+      # DEF-14 debe fallar mientras exista, como un xfail estricto de pytest: si pasa, el defecto se corrigió
+      # y el job falla para retirar @DEF-14. Se invierte en vez de continue-on-error para que una corrección
+      # no pase inadvertida; el grep exige que la falla sea del escenario (un error al lanzar Chrome no deja
+      # <failure> en el JUnit). Sus resultados Allure se apartan (el reporte web muestra en rojo solo lo
+      # inesperado); su JUnit sí va a la matriz, como "defecto conocido".
+      - name: DEF-14 (falla esperada)
+        run: |
+          mv reportes/allure-results reportes/allure-results-ok
+          if npm run test:defectos; then echo "::error::DEF-14 pasó: el defecto se corrigió, retirar @DEF-14"; exit 1; fi
+          grep -q '<failure' reportes/junit/*.xml
+          mv reportes/junit reportes/junit-def14
+          rm -rf reportes/allure-results && mv reportes/allure-results-ok reportes/allure-results
+
+      - name: Reporte Allure
+        if: ${{ !cancelled() }}
+        run: npm run reporte
+
+      - name: Resumen
+        if: ${{ !cancelled() }}
+        working-directory: .
+        run: |
+          shopt -s nullglob
+          python .github/scripts/reportes.py resumen "Web E2E (3 corridas + @ia)" tests/e2e/reportes/junit-{corrida-*,ia}/*.xml tests/e2e/reportes/junit/*.xml >> "$GITHUB_STEP_SUMMARY"
+          python .github/scripts/reportes.py resumen "Web E2E · DEF-14 (falla esperada)" tests/e2e/reportes/junit-def14/*.xml >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: web
+          path: |
+            tests/e2e/reportes/
+            tests/e2e/evidencia/
+
+  reportes:
+    name: Trazabilidad y sitio
+    needs: [api, web]
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/download-artifact@v4
+        with: { name: api, path: reportes }
+      - uses: actions/download-artifact@v4
+        continue-on-error: true   # si api falló, web no corre y no hay artefacto
+        with: { name: web, path: tests/e2e }
+
+      # docs/trazabilidad.md (HU → caso → nivel → resultado) + sitio/ con portada, matriz y reportes
+      - name: Matriz y sitio
+        run: python .github/scripts/reportes.py sitio sitio >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: trazabilidad
+          path: |
+            docs/trazabilidad.md
+            sitio/
+      - uses: actions/upload-pages-artifact@v4
+        with: { path: sitio }
+
+  # Despliegue aparte: el environment github-pages solo se usa al publicar (push a parte-2/main o manual),
+  # así los PR y las demás ramas no chocan con sus reglas de protección.
+  publicar:
+    name: Publicar en GitHub Pages
+    needs: reportes
+    if: ${{ !cancelled() && needs.reportes.result == 'success' && (github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && (github.ref == 'refs/heads/parte-2' || github.ref == 'refs/heads/main'))) }}
+    runs-on: ubuntu-latest
+    permissions: { pages: write, id-token: write }
+    concurrency: { group: pages, cancel-in-progress: false }
+    environment:
+      name: github-pages
+      url: ${{ steps.despliegue.outputs.page_url }}
+    steps:
+      - id: despliegue
+        uses: actions/deploy-pages@v4

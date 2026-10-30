@@ -126,7 +126,7 @@ def pytest_collection_modifyitems(config, items):
 
 # ── Reporte Allure: módulo → HU, severidad y enlace de cada DEF, petición/respuesta por paso ──
 
-DEFECTOS_MD = "https://github.com/Maykol-Morales/cs5383-qolqe-wallet/blob/main/docs/defectos.md"
+DEFECTOS_MD = "https://github.com/Maykol-Morales/cs5383-qolqe-wallet/blob/parte-2/docs/defectos.md"
 SEVERIDAD = {"Crítica": "blocker", "Alta": "critical", "Media": "normal", "Baja": "minor"}
 with open(os.path.join(os.path.dirname(__file__), "../../docs/defectos.md"), encoding="utf-8") as _f:
     DEFECTOS = {  # "DEF-07": ("El historial excluye…", "Alta")
@@ -144,6 +144,8 @@ def pytest_bdd_before_scenario(request, feature, scenario):
             allure.dynamic.issue(DEFECTOS_MD, f"{etiqueta}: {titulo}")
             allure.dynamic.severity(SEVERIDAD[severidad])
     request.node._respuestas_vistas = 0
+    # Trazabilidad (.github/scripts/reportes.py): el JUnit lleva el escenario de origen de cada prueba
+    request.node.user_properties.append(("escenario", f"{os.path.basename(feature.filename)}::{scenario.name}"))
 
 
 @pytest.hookimpl(tryfirst=True)  # antes de que allure cierre el paso

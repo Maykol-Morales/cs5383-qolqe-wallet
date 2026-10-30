@@ -3,10 +3,10 @@
 Laboratorio de automatización web de **CS5383 Pruebas y Verificación de Software** (UTEC, Clase 11).
 **Grupo 3 · Sebastian y Maykol** · Herramienta: **WebdriverIO 10** · Módulo: **G3 Historial y categorías**.
 
-Automatiza un *happy path* de Qolqe Wallet con **BDD (Cucumber + Gherkin)**, el patrón **Page Object + Fixture** y reportería con **Allure**:
+Automatiza tres caminos E2E de Qolqe Wallet con **BDD (Cucumber + Gherkin)**, el patrón **Page Object + Fixture** y reportería con **Allure** y **JUnit**. El principal:
 
 ```gherkin
-Scenario: Clasificar el último movimiento en una categoría nueva
+Scenario: CP-W01 · Clasificar el último movimiento en una categoría nueva
   Given que inicié sesión como Ana
   And estoy en la sección Movimientos
   When creo la categoría "Viajes" de color "#1E88E5"
@@ -15,7 +15,17 @@ Scenario: Clasificar el último movimiento en una categoría nueva
   And la categoría "Viajes" cuenta 1 movimientos
 ```
 
-Cubre HU-G3-03 (crear categoría) y HU-G3-07 (clasificar movimiento). Flujo de una ejecución: **escenario → paso → Page Object → WebdriverIO → navegador**.
+Flujo de una ejecución: **escenario → paso → Page Object → WebdriverIO → navegador**.
+
+| Caso | Historia | Escenario (`npm test` corre `@e2e and not @DEF-14`) |
+|---|---|---|
+| CP-W01 | HU-G3-03, HU-G3-07 | `clasificar.feature`: crear "Viajes" y clasificar el último movimiento |
+| CP-W02, CP-W03 | HU-G3-01 | `historial.feature` (Outline): filtrar por Recargas / Pagos de servicios; todas las filas son de ese tipo |
+| CP-W04 | HU-G3-01 | `historial.feature`: últimos 60 días → "Página 1 de 2", Siguiente, Anterior, Siguiente deshabilitado al final |
+| CP-W05 | HU-G3-08 | `historial.feature`: filtrar por Recargas y exportar; encabezado exacto y mismos códigos que la tabla |
+| CP-W90 | HU-G3-03, HU-G3-07 | `clasificar-ia.feature` (`@ia`, `npm run test:ia`): CP-W01 con `browser.act()` |
+
+Sin esperas fijas: los Page Objects esperan con `expect`/`waitUntil` (p. ej. a que la tabla quite su esqueleto de carga). El CSV se descarga con `fetch` + `<a download>`; Chrome lo guarda en `reportes/descargas/` (`prefs` en `wdio.conf.js`).
 
 **Presentación:** https://claude.ai/artifact/LSnrwobCbcGrUv6VPg2Qu2
 
@@ -72,7 +82,7 @@ Qolqe queda en http://localhost:8000; la API está documentada en http://localho
 **Terminal 2: en `tests/e2e/`, correr los escenarios y ver el reporte**
 
 ```bash
-npm test             # corre features/clasificar.feature
+npm test             # corre los escenarios @e2e (CP-W01…W05), sin @DEF-14 ni @ia
 npm run reporte      # genera reportes/allure/index.html
 ```
 
@@ -87,15 +97,22 @@ Para ver el navegador, active `HEADED` antes de `npm test`:
 Resultado esperado:
 
 ```
-Clasificar el último movimiento en una categoría nueva
+CP-W01 · Clasificar el último movimiento en una categoría nueva
    ✓ Given que inicié sesión como Ana
    ✓ And estoy en la sección Movimientos
    ✓ When creo la categoría "Viajes" de color "#1E88E5"
    ✓ And clasifico mi movimiento más reciente en "Viajes" con la nota "Pasaje a Cusco"
    ✓ Then la fila del movimiento muestra la categoría "Viajes" y la nota "Pasaje a Cusco"
    ✓ And la categoría "Viajes" cuenta 1 movimientos
-6 passing (5.1s)
+6 passing (1.4s)
+...
+CP-W05 · Exportar a CSV el historial filtrado por recargas
+   ...
+24 passing (2.7s)
+Spec Files:	 2 passed, 2 skipped, 4 total (100% completed) in 00:00:08
 ```
+
+(`passing` cuenta pasos; los 2 *skipped* son `clasificar-ia` y `historial-zona-horaria`, que el filtro de etiquetas deja fuera.)
 
 Antes de cada escenario se reinician los datos de Qolqe (`POST /api/pruebas/reiniciar`), así que se puede ejecutar las veces que se quiera. Si una prueba falla, la captura queda en `evidencia/`.
 
@@ -111,6 +128,7 @@ Antes de cada escenario se reinician los datos de Qolqe (`POST /api/pruebas/rein
 |---|---|---|
 | Consola (`spec`) | la terminal | cada paso Given/When/Then con ✓ o ✖ |
 | **Allure** | `npm run reporte` → `reportes/allure/index.html` (un solo archivo, se abre con doble clic) | escenarios agrupados por épica e historia (`@epic=`, `@story=`), severidad, pasos con su duración y la **captura adjunta** del paso que falló |
+| **JUnit** | `reportes/junit/e2e-<cid>.xml` (uno por `.feature`) | un `testcase` por escenario; el nombre empieza con el caso (`CP W02 …`, el reporter quita la puntuación) para la trazabilidad en la CI |
 | Evidencia | `evidencia/*.png` | captura del navegador cuando un paso falla |
 
 Las etiquetas del `.feature` alimentan el reporte: `@HU-G3-03` filtra en Cucumber y `@story=HU-G3-03` agrupa en Allure. El reporte acumula el historial de corridas en `reportes/allure-historial.jsonl`.
@@ -136,18 +154,19 @@ Sin clave ni caché, el escenario `@ia` se marca como *skipped*. Claude Sonnet 5
 ```
 tests/e2e/                    (qolqe/ y docs/requisitos.md están en la raíz del repo)
   features/                   ¿QUÉ se prueba? escenarios en Gherkin
-    clasificar.feature        happy path G3
+    clasificar.feature        CP-W01: crear categoría y clasificar (HU-G3-03, HU-G3-07)
+    historial.feature         CP-W02…W05: filtros, paginación (HU-G3-01) y exportar CSV (HU-G3-08)
     clasificar-ia.feature     mismo flujo con pasos de IA (@ia)
     historial-zona-horaria.feature   DEF-14 (npm run test:defectos; debe fallar)
     __act__/                  caché de browser.act() grabada por el modelo
   steps/                      traduce cada paso Given / When / Then a código
     clasificar.steps.js       llama a los Page Objects y verifica con expect
     ia.steps.js               pasos con browser.act()
-    historial.steps.js        reloj de Qolqe y del navegador para DEF-14
+    historial.steps.js        filtros, paginación, CSV y el reloj de DEF-14
   pages/                      ¿CÓMO se usa la pantalla? Page Objects
     login.page.js             ingresarComo(celular, pin)
-    historial.page.js         abrir, crearCategoria, abrirPrimerMovimiento, clasificar
-  wdio.conf.js                navegador, Cucumber, Allure, IA y fixture
+    historial.page.js         abrir, filtrar, cambiarA (página), crearCategoria, abrirPrimerMovimiento, clasificar
+  wdio.conf.js                navegador (y carpeta de descargas), Cucumber, Allure, JUnit, IA y fixture
   allurerc.mjs                configuración del reporte Allure 3 (independiente del de la Parte 1)
   demo.mjs                    guion de la demo en vivo (npm run demo)
 ```

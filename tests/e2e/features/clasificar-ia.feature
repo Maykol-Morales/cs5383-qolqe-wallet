@@ -6,8 +6,8 @@ Feature: Clasificar mis movimientos con pasos de IA (browser.act)
   las siguientes los repiten sin modelo. Las verificaciones siguen siendo código.
   Sin ANTHROPIC_API_KEY ni caché, el escenario se omite.
 
-  @HU-G3-03 @HU-G3-07 @story=HU-G3-03 @story=HU-G3-07 @severity=critical
-  Scenario: La IA crea "Viajes" y clasifica el último movimiento
+  @HU-G3-03 @HU-G3-07 @CP-W90 @story=HU-G3-03 @story=HU-G3-07 @severity=critical
+  Scenario: CP-W90 · La IA crea "Viajes" y clasifica el último movimiento
     Given la IA inicia sesión como Ana y abre Movimientos
     When la IA crea la categoría "Viajes" de color azul
     And la IA clasifica el movimiento más reciente en "Viajes" con la nota "Pasaje a Cusco"

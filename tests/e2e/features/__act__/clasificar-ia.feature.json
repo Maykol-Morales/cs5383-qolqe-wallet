@@ -1,7 +1,7 @@
 {
     "version": 1,
     "entries": {
-        "La IA crea \"Viajes\" y clasifica el último movimiento › #1": {
+        "CP-W90 · La IA crea \"Viajes\" y clasifica el último movimiento › #1": {
             "instruction": "Inicia sesión con el celular {{celular}} y el PIN {{pin}}",
             "platform": "web",
             "steps": [
@@ -56,13 +56,13 @@
                     "target": {
                         "selector": "[data-testid=\"boton-ingresar\"]",
                         "role": "button",
-                        "name": "Ingresando...",
+                        "name": "Ingresar",
                         "candidates": [
                             "[data-testid=\"boton-ingresar\"]",
-                            "role/button[name=\"Ingresando...\"]",
-                            "aria/Ingresando...",
+                            "role/button[name=\"Ingresar\"]",
+                            "aria/Ingresar",
                             "#boton-ingresar",
-                            "button=Ingresando...",
+                            "button=Ingresar",
                             "#form-login > button"
                         ]
                     },
@@ -82,9 +82,9 @@
                 }
             ],
             "model": "anthropic:claude-sonnet-5",
-            "recordedAt": "2026-10-27T02:21:54.257Z"
+            "recordedAt": "2026-10-30T18:38:48.930Z"
         },
-        "La IA crea \"Viajes\" y clasifica el último movimiento › #2": {
+        "CP-W90 · La IA crea \"Viajes\" y clasifica el último movimiento › #2": {
             "instruction": "Ve a la sección Movimientos",
             "platform": "web",
             "steps": [
@@ -116,29 +116,12 @@
                 }
             ],
             "model": "anthropic:claude-sonnet-5",
-            "recordedAt": "2026-10-27T02:21:59.942Z"
+            "recordedAt": "2026-10-30T18:38:53.353Z"
         },
-        "La IA crea \"Viajes\" y clasifica el último movimiento › #3": {
+        "CP-W90 · La IA crea \"Viajes\" y clasifica el último movimiento › #3": {
             "instruction": "Crea una categoría llamada \"Viajes\" con el color azul #1E88E5",
             "platform": "web",
             "steps": [
-                {
-                    "action": "click",
-                    "args": {
-                        "target": "[data-testid=\"color-6\"]"
-                    },
-                    "code": "await $('[data-testid=\"color-6\"]').click()",
-                    "target": {
-                        "selector": "[data-testid=\"color-6\"]",
-                        "role": "radio",
-                        "name": "#1E88E5",
-                        "candidates": [
-                            "[data-testid=\"color-6\"]",
-                            "role/radio[name=\"#1E88E5\"]",
-                            "[data-testid=\"paleta-colores\"] > label:nth-of-type(6) > input"
-                        ]
-                    }
-                },
                 {
                     "action": "fill",
                     "args": {
@@ -156,6 +139,23 @@
                             "aria/Nombre",
                             "#categoria-nombre",
                             "#form-categoria > div > div:nth-of-type(1) > input"
+                        ]
+                    }
+                },
+                {
+                    "action": "click",
+                    "args": {
+                        "target": "[data-testid=\"color-6\"]"
+                    },
+                    "code": "await $('[data-testid=\"color-6\"]').click()",
+                    "target": {
+                        "selector": "[data-testid=\"color-6\"]",
+                        "role": "radio",
+                        "name": "#1E88E5",
+                        "candidates": [
+                            "[data-testid=\"color-6\"]",
+                            "role/radio[name=\"#1E88E5\"]",
+                            "[data-testid=\"paleta-colores\"] > label:nth-of-type(6) > input"
                         ]
                     }
                 },
@@ -195,9 +195,9 @@
                 }
             ],
             "model": "anthropic:claude-sonnet-5",
-            "recordedAt": "2026-10-27T02:22:09.033Z"
+            "recordedAt": "2026-10-30T18:39:03.126Z"
         },
-        "La IA crea \"Viajes\" y clasifica el último movimiento › #4": {
+        "CP-W90 · La IA crea \"Viajes\" y clasifica el último movimiento › #4": {
             "instruction": "Abre el movimiento más reciente y clasifícalo en \"Viajes\" con la nota \"Pasaje a Cusco\"",
             "platform": "web",
             "steps": [
@@ -210,7 +210,7 @@
                     "target": {
                         "selector": "[data-testid=\"tabla-movimientos\"] > tbody > tr:nth-of-type(1)",
                         "role": "row",
-                        "name": "25/10/2026 14:03 Pago de servicio Pago Electro Andina Servicios -S/ 136.00",
+                        "name": "29/10/2026 14:03 Pago de servicio Pago Electro Andina Servicios -S/ 136.00",
                         "candidates": [
                             "[data-testid=\"tabla-movimientos\"] > tbody > tr:nth-of-type(1)"
                         ]
@@ -298,7 +298,7 @@
                 }
             ],
             "model": "anthropic:claude-sonnet-5",
-            "recordedAt": "2026-10-27T02:22:22.485Z"
+            "recordedAt": "2026-10-30T18:39:11.646Z"
         }
     }
 }
