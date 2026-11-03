@@ -87,7 +87,8 @@ console.log(existsSync('evidencia') ? readdirSync('evidencia').map((f) => `  evi
 await paso('Reporte Allure: escenarios, pasos, historias y la captura de la falla')
 npx('allure generate --clean reportes/allure-results')
 const reporte = join(process.cwd(), 'reportes', 'allure', 'index.html')
-if (!process.env.CI) spawnSync(`${abrir} "${reporte}"`, { shell: true })
+// Sin esperar: xdg-open no vuelve hasta cerrar el navegador si este no estaba abierto.
+if (!process.env.CI) spawn(`${abrir} "${reporte}"`, { shell: true, detached: true, stdio: 'ignore' }).unref()
 console.log(`  ${reporte}`)
 
 terminar()

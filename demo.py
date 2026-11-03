@@ -152,6 +152,7 @@ PAGES = "https://maykol-morales.github.io/cs5383-qolqe-wallet/"
 def ci(args):
     """Demo de la Parte 2: run real del pipeline, reporte publicado y matriz. Sin gh, abre lo último publicado."""
     gh = shutil.which("gh")
+    os.environ.setdefault("GH_REPO", "Maykol-Morales/cs5383-qolqe-wallet")  # hay dos remotos (origin y wdio)
     if gh:
         if "lanzar" in args:
             subprocess.check_call([gh, "workflow", "run", "pruebas.yml", "--ref", "parte-2"], cwd=RAIZ)

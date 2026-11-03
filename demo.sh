@@ -18,7 +18,8 @@ preparar() {
   fi
   echo "  ✓ Python (.venv)"
   if command -v npm >/dev/null; then
-    [[ -d tests/e2e/node_modules ]] || (cd tests/e2e && npm ci)
+    # npm ci también si package-lock.json cambió (p. ej. tras un pull) desde la última instalación
+    [[ tests/e2e/node_modules/.package-lock.json -nt tests/e2e/package-lock.json ]] || (cd tests/e2e && npm ci)
     echo "  ✓ Node (tests/e2e)"
   else
     echo "  ✗ Node: sin npm no corre el plan B web"
