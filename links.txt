@@ -1,0 +1,17 @@
+Qolqe Wallet · G3 (Sebastian y Maykol) · CS5383
+
+Repositorio
+  https://github.com/Maykol-Morales/cs5383-qolqe-wallet
+  Pipeline (Actions): https://github.com/Maykol-Morales/cs5383-qolqe-wallet/actions/workflows/pruebas.yml
+  Último run (#8):    https://github.com/Maykol-Morales/cs5383-qolqe-wallet/actions/runs/41149739988
+
+Reportes (GitHub Pages)
+  Portada + quality gate: https://maykol-morales.github.io/cs5383-qolqe-wallet/
+  Dashboard:              https://maykol-morales.github.io/cs5383-qolqe-wallet/dashboard.html
+  Trazabilidad:           https://maykol-morales.github.io/cs5383-qolqe-wallet/trazabilidad.html
+  Allure web:             https://maykol-morales.github.io/cs5383-qolqe-wallet/web/
+
+Artifacts (privados: compartir desde Share)
+  Deck Parte 2 (17 slides): https://claude.ai/artifact/2XaeAeRaotLkVMBYRKECns
+  Deck Parte 1 (13 slides): https://claude.ai/artifact/Y36yMfSCkNB16EiFANs8xK
+  Mapa visual:              https://claude.ai/artifact/KASkEjLiBq5AsLbhrKifQq
