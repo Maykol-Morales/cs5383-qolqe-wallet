@@ -48,6 +48,14 @@ class Contexto:
         self.celular = None
         self.respuestas = []
         self.guardado = {}
+        self.antes = None  # estado de la cuenta justo antes de la primera petición que escribe
+
+    def estado(self, token):
+        """Lo que la cuenta puede observar de sí misma (para comprobar que un rechazo no cambió nada)."""
+        def leer(ruta):
+            return self.http.get(ruta, headers=self.encabezados(token)).json()
+        return {"perfil": leer("/api/cuentas/me"), "saldo": leer("/api/cuentas/me/saldo")["saldo"],
+                "categorias": leer("/api/categorias"), "movimientos": leer("/api/movimientos")["total"]}
 
     @property
     def respuesta(self):
@@ -61,6 +69,8 @@ class Contexto:
 
     def llamar(self, metodo, ruta, token="__actual__", **kwargs):
         token = self.token if token == "__actual__" else token
+        if metodo != "GET" and token and self.antes is None:
+            self.antes = self.estado(token)
         respuesta = self.http.request(metodo, ruta, headers=self.encabezados(token), **kwargs)
         self.respuestas.append(respuesta)
         return respuesta
@@ -208,6 +218,18 @@ def _(ctx, resultado):
         assert ctx.respuesta.status_code in (200, 201), ctx.respuesta.text
     else:
         assert ctx.respuesta.status_code >= 400 and ctx.json()["codigo"] == resultado, ctx.respuesta.text
+
+
+@then("no se persiste ningún cambio si la operación fue rechazada")
+def _(ctx):
+    """Regla de negocio que el contrato no comprueba: un rechazo no deja datos a medias."""
+    if ctx.respuesta.status_code < 400:
+        return
+    if ctx.antes is not None:
+        assert ctx.estado(ctx.token) == ctx.antes
+    else:  # registro: la cuenta no debe existir
+        datos = json.loads(ctx.respuesta.request.content)
+        assert ctx.http.post("/api/auth/login", json={"celular": datos["celular"], "pin": datos["pin"]}).status_code != 200
 
 
 @then(parsers.parse('{nombre} recibe un SMS que contiene "{texto}"'))
