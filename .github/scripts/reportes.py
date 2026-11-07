@@ -5,8 +5,9 @@
 
 Rutas que lee `sitio` (relativas a la raíz del repo, las mismas que dejan los jobs api y web):
   reportes/junit-api.xml               pytest; cada prueba BDD lleva la propiedad `escenario` (tests/api/conftest.py)
+  reporte-schemathesis/junit-contrato.xml   CLI de Schemathesis (job contrato): un testcase por operación
   tests/e2e/reportes/junit*/*.xml      WebdriverIO; el caso se reconoce por el `CP-Wnn` del nombre del escenario
-  reportes/allure/, reportes/schemathesis/, reportes/dashboard-contrato.html, tests/e2e/reportes/allure/
+  reportes/allure/, reporte-schemathesis/html/, reportes/dashboard-contrato.html, tests/e2e/reportes/allure/
 Avisa (::warning::) si un escenario no tiene ejecución o una ejecución no tiene escenario: así se nota el desfase.
 """
 import glob
@@ -22,6 +23,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 RAIZ = Path(__file__).resolve().parents[2]
+CONTRATO = RAIZ / "reporte-schemathesis/junit-contrato.xml"
 REPO = os.environ.get("GITHUB_REPOSITORY", "Maykol-Morales/cs5383-qolqe-wallet")
 
 
@@ -138,7 +140,7 @@ def casos_con_resultados():
     # pruebas omitidas antes del hook de pytest-bdd (@concurrencia) no llevan la propiedad: nombre como pytest-bdd
     python = lambda n: "test_" + re.sub(r"^\d+_*", "", re.sub(r"\W", "", n.replace(" ", "_"))).lower()
     por_nombre = {python(c["plantilla"]): c for c in casos if c["nivel"] == "API"}
-    extras = {}  # pruebas sin .feature (contrato Schemathesis, humo)
+    extras = {}  # pruebas sin .feature (humo, contrato Schemathesis)
     for tc in pruebas(RAIZ / "reportes/junit-api.xml"):
         prop = tc.find("properties/property[@name='escenario']")
         if prop is not None:
@@ -148,8 +150,7 @@ def casos_con_resultados():
         elif tc.get("classname", "").startswith("tests."):
             nombre = tc.get("name").split("[")[0]
             clave = f"extra::{nombre}"
-            extras.setdefault(clave, {"id": nombre, "nombre": "Contrato OpenAPI (Schemathesis, 1 prueba + subpruebas)"
-                                      if "contrato" in nombre else nombre, "nivel": "API", "hu": ["—"], "defs": [],
+            extras.setdefault(clave, {"id": nombre, "nombre": nombre, "nivel": "API", "hu": ["—"], "defs": [],
                                       "clave": clave, "ejecuciones": [], "archivo": tc.get("classname")})
             por_clave.setdefault(clave, extras[clave])
         else:
@@ -158,6 +159,11 @@ def casos_con_resultados():
             por_clave[clave]["ejecuciones"].append(estado(tc))
         else:
             aviso(f"Prueba API sin escenario: {tc.get('classname')}::{tc.get('name')}")
+    contrato = pruebas(CONTRATO)
+    if contrato:
+        extras["extra::contrato"] = {"id": "contrato", "nombre": f"Contrato OpenAPI (CLI de Schemathesis, {len(contrato)} operaciones)",
+                                     "nivel": "API", "hu": ["—"], "defs": [], "clave": "extra::contrato",
+                                     "ejecuciones": [estado(tc) for tc in contrato], "archivo": CONTRATO.name}
     for archivo in sorted(glob.glob(str(RAIZ / "tests/e2e/reportes/junit*/*.xml"))):
         for tc in pruebas(archivo):
             m = re.match(r"CP W(\d+)\b", tc.get("name", ""))
@@ -411,8 +417,7 @@ def tiempos():
     """[(etiqueta, segundos)] por suite, sumando el `time` de cada testcase del JUnit."""
     suma = lambda tcs: sum(float(tc.get("time") or 0) for tc in tcs)
     api = pruebas(RAIZ / "reportes/junit-api.xml")
-    filas = [("API · escenarios BDD", suma(t for t in api if "contrato" not in t.get("name", ""))),
-             ("API · contrato Schemathesis", suma(t for t in api if "contrato" in t.get("name", "")))]
+    filas = [("Contrato · Schemathesis CLI", suma(pruebas(CONTRATO))), ("API · escenarios BDD", suma(api))]
     nombres = {"junit-corrida-1": "Web · corrida 1", "junit-corrida-2": "Web · corrida 2", "junit-corrida-3": "Web · corrida 3",
                "junit-ia": "Web · @ia desde la caché", "junit-def14": "Web · DEF-14 (falla esperada)"}
     for carpeta, et in nombres.items():
@@ -608,7 +613,7 @@ def sitio(destino):
     (destino / "dashboard.html").write_text(html_dashboard(casos, run, url_def, anclas, destino), encoding="utf-8")
 
     copias = {"api/index.html": "reportes/allure/index.html", "web/index.html": "tests/e2e/reportes/allure/index.html",
-              "schemathesis": "reportes/schemathesis", "contrato/index.html": "reportes/dashboard-contrato.html"}
+              "schemathesis": "reporte-schemathesis/html", "contrato/index.html": "reportes/dashboard-contrato.html"}
     for dst, src in copias.items():
         src, dst = RAIZ / src, destino / dst
         if src.is_dir():
