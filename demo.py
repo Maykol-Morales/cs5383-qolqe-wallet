@@ -3,7 +3,8 @@
     python demo.py preparar        crea .venv e instala dependencias (una vez)
     python demo.py ensayo          corre todos los pasos seguidos y mide el tiempo
     python demo.py demo            igual, pero espera Enter entre pasos (para el vivo)
-    python demo.py schemathesis    CLI de Schemathesis contra un servidor temporal; abre el dashboard
+    python demo.py schemathesis    contrato OpenAPI: CLI de Schemathesis contra un servidor temporal (única
+                                   ejecución del contrato; en el CI es el primer job y su gate); abre el dashboard
     python demo.py schemathesis todos   ídem con todos los checks (44 hallazgos, ver informe §2)
     python demo.py schemathesis g3      solo endpoints de G3 (movimientos y categorías); combinable: g3 todos
     python demo.py dashboard       regenera reportes/dashboard-contrato.html con el último log de Schemathesis
@@ -14,8 +15,8 @@
     python demo.py ci              Parte 2: espera el último run y abre Pages, Allure web y la matriz (requiere gh;
                                    sin gh abre lo último publicado)
 
-En Windows, si `python` no existe, usar `py demo.py ...`. El paso 4 (contrato) repite lo que ya
-corre en el paso 2: es opcional, SIN_CONTRATO=1 lo omite. PUERTO y VENV cambian puerto y entorno.
+En Windows, si `python` no existe, usar `py demo.py ...`. El paso 4 (contrato, ~50 s) es opcional:
+SIN_CONTRATO=1 lo omite. PUERTO y VENV cambian puerto y entorno.
 """
 import json
 import os
@@ -65,8 +66,13 @@ def pasos(pausa=False):
             env={"MOSTRAR_DEFECTOS": "1"}, pausa=pausa):
         print("(esperado: los defectos fallan a la vista)")
     if os.environ.get("SIN_CONTRATO") != "1":
-        paso("4. Contrato OpenAPI (Schemathesis dentro de pytest)",
-             ["pytest", "tests/api/test_contrato.py", "-v"], pausa=pausa)
+        print("\n=== 4. Contrato OpenAPI (CLI de Schemathesis)", flush=True)
+        if pausa:
+            try:
+                input("(Enter para ejecutar) ")
+            except EOFError:
+                pass
+        schemathesis_cli([])
     allure()
 
 
@@ -125,19 +131,22 @@ def schemathesis_cli(args):
                 headers={"Content-Type": "application/json"})
             token = json.load(urllib.request.urlopen(login))["access_token"]
             # Se excluyen operaciones que invalidan la sesión o el reloj compartidos
-            subprocess.call([
+            rc = subprocess.call([
                 schemathesis, "run", f"{base}/openapi.json", "-H", f"Authorization: Bearer {token}",
                 "--seed", "1", "--max-examples", "30", "--checks", checks, *incluir,
                 "--exclude-path-regex",
                 "/api/auth/logout|/api/seguridad/sesiones|/api/pruebas/reloj|/api/pruebas/reiniciar|/api/cuentas/me/cierre",
-                "--report", "html,vcr,har", "--report-dir", "reporte-schemathesis"], cwd=RAIZ, env=ENV)
+                "--report", "html,vcr,har,junit", "--report-dir", "reporte-schemathesis",
+                "--report-junit-path", "reporte-schemathesis/junit-contrato.xml",], cwd=RAIZ, env=ENV)
         finally:
             servidor.terminate()
             servidor.wait()  # en Windows la BD sigue bloqueada hasta que el proceso muere
     reportes = sorted((RAIZ / "reporte-schemathesis").glob("*/index.html"), key=lambda p: p.stat().st_mtime)
     if reportes:
         print(f"Reporte de Schemathesis: {reportes[-1]}")
-    dashboard()
+    if not os.environ.get("CI"):  # en el CI el dashboard se arma en el job api, con los resultados BDD
+        dashboard()
+    return rc
 
 
 def dashboard():
@@ -197,7 +206,7 @@ if __name__ == "__main__":
         "preparar": preparar,
         "ensayo": pasos,
         "demo": lambda: pasos(pausa=True),
-        "schemathesis": lambda: schemathesis_cli(resto),
+        "schemathesis": lambda: sys.exit(schemathesis_cli(resto)),
         "plan-b": plan_b,
         "reporte": reporte,
         "dashboard": dashboard,
