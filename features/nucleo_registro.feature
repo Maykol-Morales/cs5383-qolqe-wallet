@@ -20,6 +20,7 @@ Feature: Registrarme
   Scenario Outline: Validación del DNI (8 dígitos numéricos)
     When me registro con DNI "<dni>" y el resto de datos válidos
     Then la operación es "<resultado>"
+    And no se persiste ningún cambio si la operación fue rechazada
 
     Examples:
       | dni       | resultado   |
@@ -33,6 +34,7 @@ Feature: Registrarme
   Scenario Outline: Validación del celular (9 dígitos y empieza con 9)
     When me registro con celular "<celular>" y el resto de datos válidos
     Then la operación es "<resultado>"
+    And no se persiste ningún cambio si la operación fue rechazada
 
     Examples:
       | celular    | resultado         |
@@ -56,6 +58,7 @@ Feature: Registrarme
   Scenario Outline: Validación del PIN (4 dígitos, sin repetidos ni secuencias)
     When me registro con PIN "<pin>" y el resto de datos válidos
     Then la operación es "<resultado>"
+    And no se persiste ningún cambio si la operación fue rechazada
 
     Examples:
       | pin   | resultado   |
@@ -84,6 +87,7 @@ Feature: Registrarme
   Scenario Outline: Validación del correo
     When me registro con correo "<correo>" y el resto de datos válidos
     Then la operación es "<resultado>"
+    And no se persiste ningún cambio si la operación fue rechazada
 
     Examples:
       | correo                | resultado         |
@@ -103,6 +107,7 @@ Feature: Registrarme
   Scenario Outline: Longitud de los nombres al registrarme (2 a 80 caracteres)
     When me registro con nombres de <n> caracteres y el resto de datos válidos
     Then la operación es "<resultado>"
+    And no se persiste ningún cambio si la operación fue rechazada
 
     Examples:
       | n  | resultado          |

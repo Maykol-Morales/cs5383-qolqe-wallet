@@ -37,6 +37,7 @@ Feature: Mi cuenta: saldo, perfil y cierre
   Scenario Outline: Longitud de los nombres al editar mi perfil (2 a 80 caracteres)
     When cambio mis nombres por un texto de <n> caracteres
     Then la operación es "<resultado>"
+    And no se persiste ningún cambio si la operación fue rechazada
 
     Examples:
       | n  | resultado      |
@@ -51,6 +52,7 @@ Feature: Mi cuenta: saldo, perfil y cierre
   Scenario Outline: Cambio de correo
     When cambio mi correo por "<correo>"
     Then la operación es "<resultado>"
+    And no se persiste ningún cambio si la operación fue rechazada
 
     Examples:
       | correo                 | resultado         |

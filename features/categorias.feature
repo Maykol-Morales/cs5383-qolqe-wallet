@@ -20,6 +20,7 @@ Feature: Categorías de movimientos
   Scenario Outline: Longitud del nombre (3 a 20 caracteres)
     When creo una categoría con nombre de <n> caracteres
     Then la operación es "<resultado>"
+    And no se persiste ningún cambio si la operación fue rechazada
 
     Examples:
       | n  | resultado          |
@@ -33,6 +34,7 @@ Feature: Categorías de movimientos
   Scenario Outline: El color debe ser de la paleta de 8 colores
     When creo la categoría "Transporte" de color "<color>"
     Then la operación es "<resultado>"
+    And no se persiste ningún cambio si la operación fue rechazada
 
     Examples:
       | color   | resultado          |
@@ -118,6 +120,7 @@ Feature: Categorías de movimientos
   Scenario: Editar aplica la regla de color de la paleta
     When cambio la categoría "Comida" a nombre "Comida" y color "#123456"
     Then la operación es "CATEGORIA_INVALIDA"
+    And no se persiste ningún cambio si la operación fue rechazada
 
   @HU-G3-05 @api
   Scenario: No puedo editar la categoría de otro usuario
@@ -165,11 +168,13 @@ Feature: Categorías de movimientos
   Scenario: El color es obligatorio
     When creo la categoría "Transporte" sin color
     Then la respuesta es 422 con el código "SOLICITUD_INVALIDA"
+    And no se persiste ningún cambio si la operación fue rechazada
 
   @HU-G3-03 @api
   Scenario: Un color vacío es rechazado
     When creo la categoría "Transporte" con color vacío
     Then la operación es "CATEGORIA_INVALIDA"
+    And no se persiste ningún cambio si la operación fue rechazada
 
   @HU-G3-03 @api
   Scenario: Otro usuario puede tener una categoría con el mismo nombre
@@ -181,6 +186,7 @@ Feature: Categorías de movimientos
   Scenario Outline: Longitud del nombre al editar (3 a 20 caracteres)
     When renombro la categoría "Comida" con un nombre de <n> caracteres
     Then la operación es "<resultado>"
+    And no se persiste ningún cambio si la operación fue rechazada
 
     Examples:
       | n  | resultado          |

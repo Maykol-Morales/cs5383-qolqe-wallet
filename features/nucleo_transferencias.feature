@@ -45,6 +45,7 @@ Feature: Transferencias
   Scenario: Descripción de hasta 60 caracteres
     When transfiero S/ 10.00 al celular 912345678 con una descripción de 61 caracteres
     Then la respuesta es 422 con el código "SOLICITUD_INVALIDA"
+    And no se persiste ningún cambio si la operación fue rechazada
 
   @HU-N-07 @api
   Scenario: Descripción de exactamente 60 caracteres
@@ -156,6 +157,7 @@ Feature: Transferencias
   Scenario Outline: Validación del CCI (20 dígitos)
     When intento transferir S/ 10.00 al CCI <cci>
     Then la operación es "<resultado>"
+    And no se persiste ningún cambio si la operación fue rechazada
 
     Examples:
       | cci                   | resultado   |
@@ -197,6 +199,7 @@ Feature: Transferencias
   Scenario: El monto es obligatorio
     When intento transferir sin monto al celular 912345678
     Then la respuesta es 422 con el código "SOLICITUD_INVALIDA"
+    And no se persiste ningún cambio si la operación fue rechazada
 
   @HU-N-07 @api
   Scenario: Un acumulado un centavo bajo el límite diario es válido
