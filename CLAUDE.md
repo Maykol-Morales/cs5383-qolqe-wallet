@@ -58,14 +58,14 @@ cd tests/e2e && npm install && npm run demo   # Parte 2: levanta Qolqe desde la 
 npm test                               # (en tests/e2e, con Qolqe en :8000) escenarios web; HEADED=1 muestra Chrome
 ```
 
-Resultado de referencia (Parte 1, 2026-10-17): `252 passed, 1 skipped, 24 xfailed` + 60 subpruebas de contrato, 141 escenarios Gherkin (G3 70, núcleo 71), 12 defectos abiertos, unos 70 s. El skip es el escenario `@concurrencia` (pertenece a la Parte 3).
+Resultado de referencia (Parte 1, 2026-10-17): `252 passed, 1 skipped, 24 xfailed` + 60 subpruebas de contrato (desde la rama `final` el contrato ya no corre en pytest: `251 passed`), 141 escenarios Gherkin (G3 70, núcleo 71), 12 defectos abiertos, unos 70 s. El skip es el escenario `@concurrencia` (pertenece a la Parte 3).
 
 ## Convenciones de las pruebas
 
 - **Fuente de verdad = `.feature`**; `pytest-bdd` los enlaza con pasos Python. Etiquetas: `@HU-…` (historia), `@DEF-nn` (defecto conocido), `@concurrencia`.
 - **Defectos conocidos**: los escenarios `@DEF-nn` son `xfail(strict)`. Si un defecto se corrige pasa a XPASS y pytest falla — es intencional.
 - **Aislamiento**: cada escenario reinicia datos con `POST /api/pruebas/reiniciar` (propiedad *Independent* de FIRST). Por defecto la app corre in-process (TestClient) con BD temporal; con `QOLQE_URL` va contra un servidor real.
-- **Contrato**: `test_contrato.py` levanta uvicorn en subproceso y corre Schemathesis (15 ejemplos/operación; `CONTRATO_EJEMPLOS` lo cambia; siempre en modo determinista `derandomize`).
+- **Contrato**: única ejecución con el CLI (`demo.py schemathesis`: uvicorn temporal, 30 ejemplos, `--seed 1`, deja HTML + VCR + HAR + `reporte-schemathesis/junit-contrato.xml`; sale con el rc del CLI). `test_contrato.py` se borró en `final` por duplicar la corrida.
 - Todo nuevo defecto: reproducirlo primero contra la API, agregarlo a `docs/defectos.md` (formato DEF-nn) y a la tabla de la sección 5 de `docs/informe.md`.
 - Documentación e idioma: **español** (código, escenarios, docs, commits).
 
@@ -106,10 +106,11 @@ DEF-01 redondeo comisión · 02 PIN descendente aceptado · 03 login exitoso no 
 
 Sitio de Pages (generado por `.github/scripts/reportes.py sitio`, solo stdlib, CSS/JS en línea, claro/oscuro según el sistema; revisado con impeccable): `index.html` (portada + quality gate), `dashboard.html` (por criterio de la rúbrica: casos web × 3 corridas, tiempos por suite, casos por HU, defectos, tendencia entre runs y cobertura), `trazabilidad.html` (buscador + filtro por estado). La tendencia lee `historial.json` publicado en Pages y le suma el run; si no hay, parte de `.github/historial-inicial.json` (runs #1–#5 reconstruidos de sus artefactos).
 
-`.github/workflows/pruebas.yml` (push a `main`/`parte-1`/`parte-2`, tags `parte-*`/`final`, PR, manual; solo ubuntu, cache pip/npm):
-- `api`: `pytest -rx` (humo + BDD + contrato Schemathesis; `@DEF` = xfail strict) → `reportes/junit-api.xml`, Allure, cobertura; luego `demo.py schemathesis` (solo reporte, `BROWSER=true`) → `reportes/schemathesis/` y `reportes/dashboard-contrato.html`.
-- `web` (needs api): Qolqe en :8000, `npm test` × 3 (cada JUnit se aparta a `tests/e2e/reportes/junit-corrida-N/`), `npm run test:ia` desde la caché sin clave (`ANTHROPIC_API_KEY=""`), DEF-14 invertido (falla esperada; si pasa, el job falla) con sus resultados Allure apartados.
-- `reportes` (needs api+web): `.github/scripts/reportes.py sitio` → `docs/trazabilidad.md` + `sitio/` (portada, `trazabilidad.html`, `api/`, `web/`, `schemathesis/`, `contrato/`). `publicar`: `deploy-pages` solo en push a `parte-2`/`main` o manual → https://maykol-morales.github.io/cs5383-qolqe-wallet/
+`.github/workflows/pruebas.yml` (push a `main`/`parte-1`/`parte-2`/`final`, tags `parte-*`/`final`, PR, manual; solo ubuntu, cache pip/npm):
+- `contrato` (primero; gate = rc del CLI): `demo.py schemathesis` → artefacto `contrato` (`reporte-schemathesis/`: `html/`, VCR, HAR, JUnit). Con `CI` puesto no arma el dashboard.
+- `api` (needs contrato): `pytest -rx` (humo + BDD; `@DEF` = xfail strict) → `reportes/junit-api.xml`, Allure, cobertura; baja el artefacto `contrato` y corre `demo.py dashboard` → `reportes/dashboard-contrato.html`.
+- `web` (needs contrato, en paralelo con api): Qolqe en :8000, `npm test` × 3 (cada JUnit se aparta a `tests/e2e/reportes/junit-corrida-N/`), `npm run test:ia` desde la caché sin clave (`ANTHROPIC_API_KEY=""`), DEF-14 invertido (falla esperada; si pasa, el job falla) con sus resultados Allure apartados.
+- `reportes` (needs contrato+api+web): `.github/scripts/reportes.py sitio` → `docs/trazabilidad.md` + `sitio/` (portada, `trazabilidad.html`, `api/`, `web/`, `schemathesis/`, `contrato/`). `publicar`: `deploy-pages` solo en push a `parte-2`/`main` o manual → https://maykol-morales.github.io/cs5383-qolqe-wallet/
 - Mapeo: cada prueba BDD de la API lleva la propiedad JUnit `escenario` (hook en `tests/api/conftest.py`); los casos web por el `CP Wnn` del nombre (el reporter quita la puntuación). IDs API: `CP-A-<feature>-nn` por orden en el `.feature`. El script avisa (`::warning::`) de escenarios sin ejecución.
 - Local: `pytest -rx --junitxml=reportes/junit-api.xml && python .github/scripts/reportes.py sitio` (regenera la matriz; `resumen TITULO xml...` = tabla del step summary).
 - El `ci.yml` anterior (Windows + Linux, borrado el 2026-10-26 por lento) está en el commit `a9cd175`.

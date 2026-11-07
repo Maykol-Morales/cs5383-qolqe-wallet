@@ -227,7 +227,7 @@ MOSTRAR_DEFECTOS=1 pytest tests/api   # los defectos fallan a la vista
 - El paso 3 termina con `rc=1` a propósito, porque los defectos fallan a la vista.
 - Variables opcionales: `SIN_CONTRATO=1` omite el paso 4, `PUERTO` cambia el puerto del servidor temporal (por defecto 8765) y `VENV` cambia la carpeta del entorno. En PowerShell se definen así: `$env:SIN_CONTRATO=1; py demo.py ensayo`.
 
-El contrato también corre dentro de pytest, sin el script (en Windows, después de `.venv\Scripts\activate`): `pytest tests/api/test_contrato.py -v`.
+El contrato corre solo con el CLI (`demo.py schemathesis`): es su única ejecución, y en el CI es el primer job y su gate.
 
 Informe en [`docs/informe.md`](docs/informe.md) y defectos encontrados en [`docs/defectos.md`](docs/defectos.md).
 
