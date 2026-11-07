@@ -248,18 +248,6 @@ def comparar(casos, escenarios, documentadas):
             "solo_st": [[*t, sum(1 for c in casos if (c["op"], c["estado"], c["codigo"]) == t)] for t in solo_st]}
 
 
-def herramientas(comando):
-    """Compara la configuración del CLI (comando del VCR) con tests/api/test_contrato.py."""
-    fuente = (RAIZ / "tests" / "api" / "test_contrato.py").read_text(encoding="utf-8")
-    checks_pytest = sorted(re.findall(r"schemathesis\.checks\.(\w+)", fuente))
-    excluidas_pytest = (re.search(r'EXCLUIDAS = r"([^"]+)"', fuente) or [None, ""])[1]
-    ejemplos_pytest = (re.search(r'CONTRATO_EJEMPLOS", "(\d+)"', fuente) or [None, "?"])[1]
-    checks_cli = sorted((re.search(r"--checks (\S+)", comando) or [None, ""])[1].split(","))
-    return {"checks_pytest": checks_pytest, "checks_cli": checks_cli,
-            "excluidas_iguales": excluidas_pytest == (re.search(r"--exclude-path-regex (\S+)", comando) or [None, ""])[1],
-            "ejemplos_pytest": ejemplos_pytest, "ejemplos_cli": (re.search(r"--max-examples (\d+)", comando) or [None, "?"])[1]}
-
-
 def main():
     carpeta = RAIZ / "reporte-schemathesis"
     vcr = Path(sys.argv[1]) if len(sys.argv) > 1 else max(carpeta.glob("vcr-*.yaml"), key=lambda p: p.stat().st_mtime, default=None)
@@ -276,7 +264,7 @@ def main():
     datos = {
         "fuente": {"vcr": vcr.name, "har": har.name, "comando": comando, "semilla": semilla},
         "documentadas": sorted(documentadas), "modulos": {op: modulo(op.split(" ", 1)[1]) for op in documentadas},
-        "fases": FASES, "casos": casos, "herramientas": herramientas(comando),
+        "fases": FASES, "casos": casos,
         "duracion": duracion, "p95": p95([c["ms"] for c in casos]),
         "escenarios": escenarios, "comparativa": comparar(casos, escenarios, documentadas) if escenarios else None,
     }

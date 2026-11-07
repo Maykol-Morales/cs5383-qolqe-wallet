@@ -175,10 +175,7 @@ button.tema { float: right; font: inherit; font-size: 13px; background: var(--su
     <p class="nota">Ejemplos de un mismo escenario con la misma respuesta y la misma restricción violada. Si son representantes de una misma partición de equivalencia, basta con uno. Si están a los dos lados de un valor límite (p. ej. 2 y 3 caracteres), no sobran.</p>
     <div class="tabla-env"><table id="t-repetidos"></table></div>
   </div>
-  <div class="rejilla r2">
-    <div class="tarjeta"><h2>Solo lo cubrió Schemathesis</h2><p class="nota">Respuestas (operación, estado, código) de Núcleo + G3 que ningún escenario BDD provoca.</p><div class="tabla-env"><table id="t-solo-st"></table></div></div>
-    <div class="tarjeta"><h2>Herramientas que se solapan</h2><div id="herramientas"></div></div>
-  </div>
+  <div class="tarjeta"><h2>Solo lo cubrió Schemathesis</h2><p class="nota">Respuestas (operación, estado, código) de Núcleo + G3 que ningún escenario BDD provoca.</p><div class="tabla-env"><table id="t-solo-st"></table></div></div>
   </div>
 </section>
 </main>
@@ -370,13 +367,6 @@ else {
 
   $("#t-solo-st").innerHTML = `<tr><th>Operación</th><th class="n">HTTP</th><th>Código</th><th class="n">Casos</th></tr>` +
     K.solo_st.map(([op, est, cod, n]) => `<tr><td class="mono">${esc(op)}</td><td class="n">${est}</td><td class="mono">${esc(cod)}</td><td class="n">${n}</td></tr>`).join("");
-
-  const h = D.herramientas, mismosChecks = h.checks_pytest.join() === h.checks_cli.join();
-  $("#herramientas").innerHTML = `<p><b>Schemathesis dentro de pytest</b> (<code>tests/api/test_contrato.py</code>) frente al <b>CLI</b> (<code>demo.py schemathesis</code>):</p><ul>
-    <li>Checks: ${mismosChecks ? `<span class="estado aviso">los mismos ${h.checks_cli.length}</span>` : "distintos"}</li>
-    <li>Operaciones excluidas: ${h.excluidas_iguales ? '<span class="estado aviso">las mismas</span>' : "distintas"}</li>
-    <li>Ejemplos por operación: pytest ${h.ejemplos_pytest}, CLI ${h.ejemplos_cli}. Solo el CLI deja los logs VCR/HAR de este dashboard.</li></ul>
-    <p class="nota">${mismosChecks && h.excluidas_iguales ? "Comprueban lo mismo. El de pytest sirve para el CI (repetible, con derandomize); el CLI, para explorar y generar evidencia. Correr los dos en la misma demo repite el trabajo (el paso 4 de demo.py)." : ""}</p>`;
 }
 </script>
 </body>
