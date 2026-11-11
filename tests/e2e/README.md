@@ -1,9 +1,9 @@
 # Parte 2 · Pruebas web E2E con WebdriverIO
 
 Laboratorio de automatización web de **CS5383 Pruebas y Verificación de Software** (UTEC, Clase 11).
-**Grupo 3 · Sebastian y Maykol** · Herramienta: **WebdriverIO 10** · Módulo: **G3 Historial y categorías**.
+**Grupo 3 · Sebastian y Maykol** · Herramienta: **WebdriverIO 10** · Módulos: **G3 Historial y categorías** y el **Núcleo** común.
 
-Automatiza tres caminos E2E de Qolqe Wallet con **BDD (Cucumber + Gherkin)**, el patrón **Page Object + Fixture** y reportería con **Allure** y **JUnit**. El principal:
+Automatiza los caminos E2E de Qolqe Wallet (G3 y Núcleo) con **BDD (Cucumber + Gherkin)**, el patrón **Page Object + Fixture** y reportería con **Allure** y **JUnit**. El principal:
 
 ```gherkin
 Scenario: CP-W01 · Clasificar el último movimiento en una categoría nueva
@@ -23,6 +23,7 @@ Flujo de una ejecución: **escenario → paso → Page Object → WebdriverIO �
 | CP-W02, CP-W03 | HU-G3-01 | `historial.feature` (Outline): filtrar por Recargas / Pagos de servicios; todas las filas son de ese tipo |
 | CP-W04 | HU-G3-01 | `historial.feature`: últimos 60 días → "Página 1 de 2", Siguiente, Anterior, Siguiente deshabilitado al final |
 | CP-W05 | HU-G3-08 | `historial.feature`: filtrar por Recargas y exportar; encabezado exacto y mismos códigos que la tabla |
+| CP-W06 a CP-W16 | HU-N-01 a HU-N-09 | `nucleo.feature`: registro, login, logout, saldo, perfil, cierre de cuenta (rechazado con saldo y exitoso con S/ 0.00) y transferencias Qolqe e interbancaria |
 | CP-W90 | HU-G3-03, HU-G3-07 | `clasificar-ia.feature` (`@ia`, `npm run test:ia`): CP-W01 con `browser.act()` |
 
 Sin esperas fijas: los Page Objects esperan con `expect`/`waitUntil` (p. ej. a que la tabla quite su esqueleto de carga). El CSV se descarga con `fetch` + `<a download>`; Chrome lo guarda en `reportes/descargas/` (`prefs` en `wdio.conf.js`).

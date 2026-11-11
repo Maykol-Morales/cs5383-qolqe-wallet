@@ -76,7 +76,7 @@ QOLQE_URL=http://localhost:8000 pytest tests/api/test_nucleo.py   # contra un se
 ## 3. Pruebas web y CI/CD
 *(Parte 2)*
 
-**Herramienta web: WebdriverIO 10 + Cucumber + Page Objects + Allure** (`tests/e2e/`, README propio). Cinco casos E2E, solo para lo que existe en la interfaz (el resto se prueba por API):
+**Herramienta web: WebdriverIO 10 + Cucumber + Page Objects + Allure** (`tests/e2e/`, README propio). Casos E2E solo para lo que existe en la interfaz (el resto se prueba por API); `docs/trazabilidad.md` tiene el resultado de cada run:
 
 | Caso | HU | Qué verifica |
 |---|---|---|
@@ -84,6 +84,17 @@ QOLQE_URL=http://localhost:8000 pytest tests/api/test_nucleo.py   # contra un se
 | CP-W02, CP-W03 | HU-G3-01 | Filtrar por tipo (Recargas, Pagos de servicios): todas las filas son de ese tipo |
 | CP-W04 | HU-G3-01 | Paginar de 10 en 10 con Siguiente y Anterior ("Página 1 de 2") |
 | CP-W05 | HU-G3-08 | Exportar CSV desde el botón: encabezado exacto, filas del filtro y mismos códigos que la tabla |
+| CP-W06 | HU-N-01, HU-N-02 | Registrarse e ingresar con la cuenta nueva (saludo y saldo S/ 0.00) |
+| CP-W07 | HU-N-01 | El registro rechaza un PIN secuencial y no sale de `/registro` |
+| CP-W08 | HU-N-02 | PIN incorrecto: mensaje genérico y PIN vacío |
+| CP-W09 | HU-N-03 | Cerrar sesión: aviso y `/inicio` vuelve a `/login` |
+| CP-W10 | HU-N-04 | Ver y ocultar el saldo en el inicio |
+| CP-W11 | HU-N-04, HU-N-05 | Perfil con DNI enmascarado; cambiar los nombres |
+| CP-W12 | HU-N-07, HU-N-09 | Transferir S/ 50.00 a Qolqe: confirmación sin comisión y comprobante con el saldo nuevo |
+| CP-W13 | HU-N-07 | S/ 500.01 se rechaza antes de confirmar |
+| CP-W14 | HU-N-08, HU-N-09 | Interbancaria de S/ 100.00: comisión 1.5 % y CCI enmascarado en el comprobante |
+| CP-W15 | HU-N-06 | Cerrar la cuenta con saldo se rechaza (`SALDO_PENDIENTE`) |
+| CP-W16 | HU-N-01, HU-N-06 | Cuenta nueva con S/ 0.00: se cierra y ya no puede ingresar |
 | CP-W90 | HU-G3-03, HU-G3-07 | El mismo flujo de CP-W01 con `browser.act()` (IA), repetido desde la caché |
 
 Sin esperas fijas (solo `waitUntil`/`expect` con auto-espera); pasan 3 veces seguidas en local y en cada run del pipeline. DEF-14 (`@DEF-14`) corre aparte y debe fallar.
