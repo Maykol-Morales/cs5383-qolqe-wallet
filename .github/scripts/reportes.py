@@ -88,9 +88,20 @@ def escenarios(archivo, nivel):
 
 # ── JUnit → ejecuciones ─────────────────────────────────────────────────────────────────────────
 
+def def15(tc):
+    """DEF-15 en el contrato: el 500 intermitente de POST /api/usuarios (la respuesta sale antes del commit; ver
+    docs/defectos.md). Es el único fallo del CLI que cuenta como defecto conocido; cualquier otro sigue en rojo.
+    No es estricto: casi siempre pasa, porque depende de una ventana de milisegundos."""
+    falla = next((h for h in tc if h.tag == "failure"), None)
+    return (falla is not None and tc.get("name") == "POST /api/usuarios" and "Received: 500" in (falla.text or "")
+            and set(falla.get("message", "").split(", ")) <= {"ST101", "ST103"})
+
+
 def estado(tc):
     for hijo in tc:
         if hijo.tag in ("failure", "error"):  # XPASS(strict): un @DEF que ya pasa, no es "defecto conocido"
+            if def15(tc):
+                return "xfail"
             return "xpass" if "XPASS" in hijo.get("message", "") else "falla"
         if hijo.tag == "skipped":
             xfail = "xfail" in hijo.get("type", "") or "Defecto conocido" in hijo.get("message", "")
@@ -170,7 +181,8 @@ def casos_con_resultados():
     contrato = pruebas(CONTRATO)
     if contrato:
         extras["extra::contrato"] = {"id": "contrato", "nombre": f"Contrato OpenAPI (CLI de Schemathesis, {len(contrato)} operaciones)",
-                                     "nivel": "API", "hu": ["—"], "defs": [], "clave": "extra::contrato",
+                                     "nivel": "API", "hu": ["—"], "clave": "extra::contrato",
+                                     "defs": ["DEF-15"] if any(def15(tc) for tc in contrato) else [],
                                      "ejecuciones": [estado(tc) for tc in contrato], "archivo": CONTRATO.name}
     for archivo in sorted(glob.glob(str(RAIZ / "tests/e2e/reportes/junit*/*.xml"))):
         for tc in pruebas(archivo):
@@ -384,9 +396,11 @@ def criterios(casos):
     """[(id, criterio, umbral, valor, ok)] del quality gate. Un JUnit ausente (job que no corrió) cuenta como falla."""
     salida = []
     contrato = pruebas(CONTRATO)
-    malas = sum(estado(tc) != "pasa" for tc in contrato)
+    malas = sum(estado(tc) not in ("pasa", "xfail") for tc in contrato)
+    conocido = " · DEF-15 (defecto conocido)" if any(def15(tc) for tc in contrato) else ""
     salida.append(("G1", "Contrato OpenAPI (Schemathesis)", "0 fallos",
-                   f"{malas} fallos en {len(contrato)} operaciones" if contrato else "sin JUnit", bool(contrato) and not malas))
+                   f"{malas} fallos en {len(contrato)} operaciones{conocido}" if contrato else "sin JUnit",
+                   bool(contrato) and not malas))
 
     api = [c for c in casos if c["nivel"] == "API" and c["clave"] != "extra::contrato"]
     corrio = bool(pruebas(RAIZ / "reportes/junit-api.xml"))

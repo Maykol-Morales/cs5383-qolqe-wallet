@@ -1,5 +1,5 @@
 # Pipeline de pruebas: contrato → (api ∥ web) → reportes → publicar (GitHub Pages).
-# Quality gate (job reportes, `reportes.py gate`): G1 contrato 0 fallos · G2 API sin fallas inesperadas ni XPASS
+# Quality gate (job reportes, `reportes.py gate`): G1 contrato 0 fallos (DEF-15 = defecto conocido) · G2 API sin fallas inesperadas ni XPASS
 # (@DEF-nn = xfail estricto) · G3 cobertura ≥ 60 % (meta 75 %) · G4 web 3/3 corridas, @ia pasa, DEF-14 falla ·
 # G5 toda HU del alcance con caso ejecutado · G6 pruebas ≤ 10 min. El sitio se publica también con el gate en rojo.
 # Reportes: https://maykol-morales.github.io/cs5383-qolqe-wallet/  (matriz, Allure API/web, Schemathesis)
