@@ -2,6 +2,7 @@
 
     python .github/scripts/reportes.py resumen TITULO junit.xml...   Markdown para $GITHUB_STEP_SUMMARY
     python .github/scripts/reportes.py sitio [DIR]                   docs/trazabilidad.md + sitio de Pages en DIR (sitio/)
+    python .github/scripts/reportes.py gate                          quality gate (Markdown); rc=1 si falla algún criterio
 
 Rutas que lee `sitio` (relativas a la raíz del repo, las mismas que dejan los jobs api y web):
   reportes/junit-api.xml               pytest; cada prueba BDD lleva la propiedad `escenario` (tests/api/conftest.py)
@@ -25,6 +26,13 @@ from pathlib import Path
 RAIZ = Path(__file__).resolve().parents[2]
 CONTRATO = RAIZ / "reporte-schemathesis/junit-contrato.xml"
 REPO = os.environ.get("GITHUB_REPOSITORY", "Maykol-Morales/cs5383-qolqe-wallet")
+# Umbrales del quality gate. Cobertura: 60 % hoy (~64 %), la meta del equipo es 75 %.
+UMBRAL = {"cobertura": 60, "cobertura_meta": 75, "minutos": 10}
+ALCANCE = r"HU-(?:N|G3)-\d+"  # historias de nuestro alcance en docs/requisitos.md: Núcleo + G3
+# Historial por caso: letra por estado de clase(), símbolo en la matriz Markdown, runs que se muestran por caso
+LETRA = {"pasa": "p", "defecto": "d", "falla": "f", "otro": "o"}
+SIMBOLO = {"p": "✓", "d": "⚠", "f": "✗", "o": "·"}
+ULTIMOS = 10
 
 
 def aviso(msg):
@@ -93,7 +101,7 @@ def estado(tc):
 def pruebas(archivo):
     try:
         return list(ET.parse(archivo).getroot().iter("testcase"))
-    except ET.ParseError:  # los specs sin escenarios del filtro dejan un XML vacío
+    except (ET.ParseError, OSError):  # XML vacío (spec sin escenarios del filtro) o ausente (job que no corrió)
         return []
 
 
@@ -365,10 +373,65 @@ def conteo(casos):
     return n
 
 
-def gate(n):
-    if n["falla"]:
-        return f'<p class="gate rojo">{icono("falla")}Quality gate: {n["falla"]} falla(s) inesperada(s)</p>'
-    return f'<p class="gate">{icono("pasa")}Quality gate aprobado: todo pasa salvo los defectos conocidos</p>'
+def criterios(casos):
+    """[(id, criterio, umbral, valor, ok)] del quality gate. Un JUnit ausente (job que no corrió) cuenta como falla."""
+    salida = []
+    contrato = pruebas(CONTRATO)
+    malas = sum(estado(tc) != "pasa" for tc in contrato)
+    salida.append(("G1", "Contrato OpenAPI (Schemathesis)", "0 fallos",
+                   f"{malas} fallos en {len(contrato)} operaciones" if contrato else "sin JUnit", bool(contrato) and not malas))
+
+    api = [c for c in casos if c["nivel"] == "API" and c["clave"] != "extra::contrato"]
+    corrio = bool(pruebas(RAIZ / "reportes/junit-api.xml"))
+    malas = sum(clase(resultado(c)) == "falla" for c in api)
+    salida.append(("G2", "API BDD: fallas inesperadas o XPASS", "0",
+                   f"{malas} de {len(api)} casos" if corrio else "sin JUnit", corrio and not malas))
+
+    cob, _ = cobertura()
+    salida.append(("G3", "Cobertura de líneas (pytest-cov)", f"≥ {UMBRAL['cobertura']} % (meta {UMBRAL['cobertura_meta']} %)",
+                   f"{cob:.1f} %" if cob is not None else "sin cobertura.xml", cob is not None and cob >= UMBRAL["cobertura"]))
+
+    web = corridas_web()
+    esperados = [c["id"] for c in casos if c["nivel"] == "Web E2E" and not c["defs"]]
+    estables = [i for i in esperados if all(web.get(f"junit-corrida-{n}", {}).get(i) == "pasa" for n in (1, 2, 3))]
+    ia = web.get("junit-ia", {})
+    ia_ok = bool(ia) and all(e == "pasa" for e in ia.values())
+    def14 = web.get("junit-def14", {}).get("DEF-14") == "falla"
+    salida.append(("G4", "Web E2E estable", "cada caso 3/3 corridas, @ia pasa, DEF-14 falla",
+                   f"{len(estables)}/{len(esperados)} casos 3/3 · @ia {'pasa' if ia_ok else 'no pasa'} · "
+                   f"DEF-14 {'falla (esperado)' if def14 else 'no falla'}", bool(esperados) and len(estables) == len(esperados) and ia_ok and def14))
+
+    alcance = sorted(set(re.findall(rf"^### ({ALCANCE}) ", (RAIZ / "docs/requisitos.md").read_text(encoding="utf-8"), re.M)))
+    cubiertas = {h for c in casos if any(e != "omitida" for e in c["ejecuciones"]) for h in c["hu"]}
+    faltan = [h for h in alcance if h not in cubiertas]
+    salida.append(("G5", "Trazabilidad: HU del alcance con caso ejecutado", f"{len(alcance)}/{len(alcance)}",
+                   f"{len(alcance) - len(faltan)}/{len(alcance)}" + (f" (faltan {', '.join(faltan)})" if faltan else ""), not faltan))
+
+    minutos = sum(s for _, s in tiempos()) / 60
+    salida.append(("G6", "Duración total de las pruebas", f"≤ {UMBRAL['minutos']} min", f"{minutos:.1f} min",
+                   0 < minutos <= UMBRAL["minutos"]))
+    return salida
+
+
+def gate(crits):
+    malos = [c for c in crits if not c[4]]
+    pill = (f'<p class="gate rojo">{icono("falla")}Quality gate: {len(malos)} de {len(crits)} criterios fallan</p>' if malos else
+            f'<p class="gate">{icono("pasa")}Quality gate aprobado: {len(crits)} de {len(crits)} criterios</p>')
+    filas = [[i, html.escape(t), html.escape(u), html.escape(v),
+              f'<span class="est {"pasa" if ok else "falla"}">{icono("pasa" if ok else "falla")}{"Cumple" if ok else "No cumple"}</span>']
+             for i, t, u, v, ok in crits]
+    return pill + f'<details class="angosta"{" open" if malos else ""}><summary>Criterios del gate</summary>' + \
+        tabla_simple(["", "Criterio", "Umbral", "Valor", "Estado"], filas) + "</details>"
+
+
+def gate_md(crits):
+    malos = sum(not c[4] for c in crits)
+    print(f"### Quality gate: {'aprobado' if not malos else f'{malos} de {len(crits)} criterios fallan'}\n")
+    print("| | Criterio | Umbral | Valor | Estado |\n|---|---|---|---|---|")
+    for i, t, u, v, ok in crits:
+        print(f"| {i} | {t} | {u} | {v} | {'✅' if ok else '❌'} |")
+    print()
+    return malos
 
 
 def kpis(items):
@@ -483,7 +546,7 @@ def html_dashboard(casos, run, url_def, anclas, destino):
     web_casos = sorted({c for r in web.values() for c in r if c.startswith("CP")})
     w = lambda x, m: f"{100 * x / m:.2f}%" if m else "0"
 
-    cuerpo = cabecera("Dashboard de pruebas", run) + gate(n) + kpis([
+    cuerpo = cabecera("Dashboard de pruebas", run) + gate(criterios(casos)) + kpis([
         ("Casos que pasan", f'{n["pasa"]}<small> de {total}</small>'), ("Defectos conocidos", str(n["defecto"])),
         ("Fallas inesperadas", str(n["falla"])), ("Ejecuciones en este run", f"{ejecuciones:,}".replace(",", " ")),
         ("Casos web × corridas", f'{len(web.get("junit-corrida-1", {}))}<small> × 3</small>'),
@@ -633,7 +696,7 @@ def sitio(destino):
     (destino / "index.html").write_text(pagina("Qolqe · Reportes de pruebas", (
         cabecera("Qolqe Wallet · Reportes de pruebas", run, migas=False) +
         f'<p class="sec" style="margin-top:.75rem">CS5383 · Grupo 3 (G3 · Historial y categorías). Pipeline '
-        f'<code>.github/workflows/pruebas.yml</code> · <a href="https://github.com/{REPO}">repositorio</a></p>' + gate(n) +
+        f'<code>.github/workflows/pruebas.yml</code> · <a href="https://github.com/{REPO}">repositorio</a></p>' + gate(criterios(casos)) +
         kpis([("Casos que pasan", f'{n["pasa"]}<small> de {len(casos)}</small>'), ("Defectos conocidos", str(n["defecto"])),
               ("Fallas inesperadas", str(n["falla"])), ("Omitidos", str(n["otro"]))]) +
         '<a class="destacado" href="dashboard.html"><span class="t">Dashboard del run</span><span class="flecha"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg></span>'
@@ -651,5 +714,7 @@ if __name__ == "__main__":
         resumen(args[0], args[1:])
     elif comando == "sitio":
         sitio(args[0] if args else "sitio")
+    elif comando == "gate":
+        sys.exit(1 if gate_md(criterios(casos_con_resultados())) else 0)
     else:
         sys.exit(__doc__)

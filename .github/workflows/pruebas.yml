@@ -1,6 +1,7 @@
 # Pipeline de pruebas: contrato → (api ∥ web) → reportes → publicar (GitHub Pages).
-# Quality gate: contrato OpenAPI sin fallas; todo pasa salvo los defectos conocidos (@DEF-nn: xfail estricto
-# en pytest, paso invertido en web).
+# Quality gate (job reportes, `reportes.py gate`): G1 contrato 0 fallos · G2 API sin fallas inesperadas ni XPASS
+# (@DEF-nn = xfail estricto) · G3 cobertura ≥ 60 % (meta 75 %) · G4 web 3/3 corridas, @ia pasa, DEF-14 falla ·
+# G5 toda HU del alcance con caso ejecutado · G6 pruebas ≤ 10 min. El sitio se publica también con el gate en rojo.
 # Reportes: https://maykol-morales.github.io/cs5383-qolqe-wallet/  (matriz, Allure API/web, Schemathesis)
 name: Pruebas
 
@@ -172,7 +173,7 @@ jobs:
             tests/e2e/evidencia/
 
   reportes:
-    name: Trazabilidad y sitio
+    name: Quality gate y sitio
     needs: [contrato, api, web]
     if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
@@ -203,12 +204,17 @@ jobs:
       - uses: actions/upload-pages-artifact@v4
         with: { path: sitio }
 
-  # Despliegue aparte: el environment github-pages solo se usa al publicar (push a parte-2/main o manual),
-  # así los PR y las demás ramas no chocan con sus reglas de protección.
+      # Al final: el sitio ya se subió, así Pages muestra el estado real aunque el gate quede en rojo.
+      - name: Quality gate
+        run: python .github/scripts/reportes.py gate >> "$GITHUB_STEP_SUMMARY"
+
+  # Despliegue aparte: el environment github-pages solo se usa al publicar (push a parte-2/main/final o manual),
+  # así los PR y las demás ramas no chocan con sus reglas de protección. Publica también si el gate falló
+  # (reportes en failure): el sitio muestra el gate en rojo en vez de quedarse con el último verde.
   publicar:
     name: Publicar en GitHub Pages
     needs: reportes
-    if: ${{ !cancelled() && needs.reportes.result == 'success' && (github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && (github.ref == 'refs/heads/parte-2' || github.ref == 'refs/heads/main'))) }}
+    if: ${{ !cancelled() && (needs.reportes.result == 'success' || needs.reportes.result == 'failure') && (github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && (github.ref == 'refs/heads/parte-2' || github.ref == 'refs/heads/main' || github.ref == 'refs/heads/final'))) }}
     runs-on: ubuntu-latest
     permissions: { pages: write, id-token: write }
     concurrency: { group: pages, cancel-in-progress: false }
