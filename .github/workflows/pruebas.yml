@@ -120,16 +120,21 @@ jobs:
 
       # "Pasa 3 veces seguidas": cada corrida parte de datos semilla (beforeScenario reinicia Qolqe).
       # El reporter JUnit siempre escribe en reportes/junit/e2e-<cid>.xml: se aparta tras cada corrida.
+      # Una corrida fallida no corta las demás (el gate G4 cuenta k/3); el paso falla al final.
       - name: E2E × 3 (npm test)
         run: |
+          fallo=0
           for i in 1 2 3; do
             echo "::group::Corrida $i"
-            npm test
-            mv reportes/junit reportes/junit-corrida-$i
+            npm test || { fallo=1; echo "::error::Corrida $i falló"; }
+            mv reportes/junit reportes/junit-corrida-$i 2>/dev/null || mkdir -p reportes/junit-corrida-$i  # sin JUnit = corrida ❌ en G4
             echo "::endgroup::"
           done
+          exit $fallo
 
+      # !cancelled(): corren aunque falle una corrida, para que G4 informe su resultado real.
       - name: Escenario @ia desde la caché (npm run test:ia)
+        if: ${{ !cancelled() }}
         run: npm run test:ia && mv reportes/junit reportes/junit-ia
 
       # DEF-14 debe fallar mientras exista, como un xfail estricto de pytest: si pasa, el defecto se corrigió
@@ -138,6 +143,7 @@ jobs:
       # <failure> en el JUnit). Sus resultados Allure se apartan (el reporte web muestra en rojo solo lo
       # inesperado); su JUnit sí va a la matriz, como "defecto conocido".
       - name: DEF-14 (falla esperada)
+        if: ${{ !cancelled() }}
         run: |
           mv reportes/allure-results reportes/allure-results-ok
           if npm run test:defectos; then echo "::error::DEF-14 pasó: el defecto se corrigió, retirar @DEF-14"; exit 1; fi
