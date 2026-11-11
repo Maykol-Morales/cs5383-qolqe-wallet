@@ -206,6 +206,15 @@ jobs:
       - name: Matriz y sitio
         run: python .github/scripts/reportes.py sitio sitio >> "$GITHUB_STEP_SUMMARY"
 
+      # Qase (gestión de casos, docs/gestion-casos.md): un test run por run de CI, para el historial por caso.
+      # Sin el secret avisa y sale con 0; un error de su API no tumba el job. stdout = peticiones en seco.
+      - name: Qase
+        continue-on-error: true
+        env:
+          QASE_API_TOKEN: ${{ secrets.QASE_API_TOKEN }}
+          QASE_PROJECT: ${{ vars.QASE_PROJECT || 'QOLQE' }}
+        run: python .github/scripts/qase.py > /dev/null
+
       - uses: actions/upload-artifact@v4
         with:
           name: trazabilidad

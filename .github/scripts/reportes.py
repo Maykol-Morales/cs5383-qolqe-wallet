@@ -205,8 +205,9 @@ def anclas_defectos():
             for m in re.finditer(r"^## ((DEF-\d+): .+)$", texto, re.M)}
 
 
-def tablas(casos):
-    """(resumen por HU, detalle): listas de filas; la celda de defectos es la lista de DEF-nn."""
+def tablas(casos, hist=()):
+    """(resumen por HU, detalle): listas de filas; la celda de defectos es la lista de DEF-nn y la última,
+    el historial del caso ({"serie": [(run, letra)], "inestable": bool}, ver `serie`)."""
     por_hu = defaultdict(list)
     for c in casos:
         for hu in c["hu"]:
@@ -221,16 +222,18 @@ def tablas(casos):
                         str(sum(x.startswith("defecto") for x in r)),
                         str(sum(not x.startswith(("pasa", "defecto")) for x in r))])
         for c in cs:
-            detalle.append([hu, c["id"], c["nivel"], c["nombre"], resultado(c), c["defs"] or "—"])
+            detalle.append([hu, c["id"], c["nivel"], c["nombre"], resultado(c), c["defs"] or "—", serie(c, hist)])
     return resumen, detalle
 
 
 CAB_RESUMEN = ["HU", "Nivel", "Casos", "Pasan", "Defecto conocido", "Otros"]
-CAB_DETALLE = ["HU", "Caso", "Nivel", "Escenario", "Resultado", "Defecto"]
+CAB_DETALLE = ["HU", "Caso", "Nivel", "Escenario", "Resultado", "Defecto", f"Últimos {ULTIMOS} runs"]
 
 
 def md_tabla(cab, filas, anclas):
     def celda(v):
+        if isinstance(v, dict):
+            return "".join(SIMBOLO[l] for _, l in v["serie"]) + (" **inestable**" if v["inestable"] else "")
         if isinstance(v, list):
             return ", ".join(f"[{d}](defectos.md#{anclas.get(d, '')})" for d in v)
         return str(v).replace("|", "\\|")
@@ -238,8 +241,8 @@ def md_tabla(cab, filas, anclas):
                      [f"| {' | '.join(celda(x) for x in f)} |" for f in filas])
 
 
-def markdown(casos, run, anclas):
-    resumen, detalle = tablas(casos)
+def markdown(casos, run, anclas, hist):
+    resumen, detalle = tablas(casos, hist)
     run_txt = f"[run #{run['numero']}]({run['url']})" if run["url"] else f"run {run['numero']}"
     return f"""# Matriz de trazabilidad · HU → caso → nivel → resultado
 
@@ -250,6 +253,8 @@ No se edita a mano: el pipeline la regenera y la publica en https://maykol-moral
 - **Resultado**: `pasa k/n` (n ejecuciones: ejemplos de un Outline o las 3 corridas web); `defecto conocido` = falla
   esperada (`xfail` estricto en pytest, paso invertido en web) enlazada a [docs/defectos.md](defectos.md).
 - Un caso con varias HU aparece una vez por HU.
+- **Últimos runs** (del más viejo al actual, de `historial.json` en Pages): ✓ pasa, ⚠ defecto conocido, ✗ falla,
+  · omitido. **inestable** = pasó y falló en esos runs, o dentro del mismo run (p. ej. web 2/3).
 
 ## Resumen por historia
 
@@ -321,6 +326,8 @@ details{margin-top:1rem;font-size:.85rem}summary{cursor:pointer;color:var(--acen
 .filtro button[aria-pressed=true]{border-color:var(--serie);color:var(--tinta);background:color-mix(in srgb,var(--serie) 10%,var(--sup))}
 #tip{position:fixed;pointer-events:none;background:var(--tinta);color:var(--plano);font-size:.8rem;padding:.4rem .6rem;border-radius:6px;max-width:18rem;opacity:0;transition:opacity .12s}
 #tip b{display:block;font-size:.95rem}
+.hist{display:inline-flex;gap:2px;vertical-align:middle}.hist i{width:.55rem;height:1rem;border-radius:2px}.h-p{background:var(--ok)}.h-d{background:var(--def)}
+.h-f{background:var(--mal)}.h-o{background:var(--omit)}.inestable{font-size:.75rem;font-weight:600;color:var(--mal);white-space:nowrap}
 @media (max-width:40rem){h1{font-size:1.45rem}.kpi .v{font-size:1.5rem}.kpi.hero .v{font-size:2rem}.filas{grid-template-columns:1fr max-content;row-gap:.2rem}.filas .et{grid-column:1/-1;margin-top:.35rem}.rejilla{font-size:.75rem;border-spacing:2px}.rejilla th .mudo{display:none}.rejilla td.c{height:2rem;font-size:.7rem;padding:0 .15rem}.largo{display:none}.corto{display:inline}.datos{min-width:40rem}#detalle{min-width:56rem}#detalle td:nth-child(4){min-width:18rem}.defs .datos{min-width:0}.defs .datos th:nth-child(n+4),.defs .datos td:nth-child(n+4){display:none}}
 @media (prefers-reduced-motion:reduce){#tip{transition:none}}"""
 
@@ -518,16 +525,26 @@ def cobertura():
     return float(raiz.get("line-rate")) * 100, sorted(archivos, key=lambda a: -a[1])
 
 
-def historial(run, n, segundos, destino):
-    """Suma este run al historial publicado en Pages y guarda los últimos 30."""
+def serie(c, hist):
+    """Últimos runs del caso en el historial (las filas viejas, sin "casos", se saltan) y si es inestable."""
+    s = [(f["run"], f["casos"][c["id"]]) for f in hist if c["id"] in f.get("casos", {})][-ULTIMOS:]
+    letras = {l for _, l in s}
+    return {"serie": s, "inestable": {"p", "f"} <= letras or {"pasa", "falla"} <= set(c["ejecuciones"])}
+
+
+def historial(run, casos, segundos, destino):
+    """Suma este run al historial publicado en Pages y guarda los últimos 30. Desde el run con detalle, cada fila
+    lleva `casos` = {id: letra de LETRA} (las filas anteriores solo tienen totales)."""
     import json, urllib.request
     try:
         with urllib.request.urlopen("https://maykol-morales.github.io/cs5383-qolqe-wallet/historial.json", timeout=10) as r:
             previo = json.load(r)
     except Exception:  # sin red o antes del primer deploy con historial: runs #1 a #5, reconstruidos de sus artefactos
         previo = json.loads((RAIZ / ".github/historial-inicial.json").read_text(encoding="utf-8"))
+    n = conteo(casos)
     fila = {"run": run["numero"], "fecha": run["fecha"][:10], "sha": run["corto"], "pasa": n["pasa"], "defecto": n["defecto"],
-            "falla": n["falla"], "otro": n["otro"], "segundos": round(segundos)}
+            "falla": n["falla"], "otro": n["otro"], "segundos": round(segundos),
+            "casos": {c["id"]: LETRA[clase(resultado(c))] for c in casos if c["ejecuciones"]}}
     filas = [f for f in previo if f.get("run") != fila["run"]][-29:] + [fila]
     (destino / "historial.json").write_text(json.dumps(filas, ensure_ascii=False), encoding="utf-8")
     return filas
@@ -535,13 +552,12 @@ def historial(run, n, segundos, destino):
 
 # ── Páginas ─────────────────────────────────────────────────────────────────────────────────────
 
-def html_dashboard(casos, run, url_def, anclas, destino):
+def html_dashboard(casos, run, url_def, anclas, hist):
     n, total = conteo(casos), len(casos)
     resumen_hu, _ = tablas(casos)
     web, ts = corridas_web(), tiempos()
     segundos = sum(s for _, s in ts)
     cob_total, cob = cobertura()
-    hist = historial(run, n, segundos, destino)
     ejecuciones = sum(len(c["ejecuciones"]) for c in casos)
     web_casos = sorted({c for r in web.values() for c in r if c.startswith("CP")})
     w = lambda x, m: f"{100 * x / m:.2f}%" if m else "0"
@@ -635,10 +651,16 @@ def html_dashboard(casos, run, url_def, anclas, destino):
     return pagina(f"Dashboard · run #{run['numero']}", cuerpo)
 
 
-def html_matriz(casos, run, url_def, anclas):
-    resumen_hu, detalle = tablas(casos)
+def html_matriz(casos, run, url_def, anclas, hist):
+    resumen_hu, detalle = tablas(casos, hist)
 
     def celda(v, col):
+        if isinstance(v, dict):
+            nombres = {"p": "pasa", "d": "defecto conocido", "f": "falla", "o": "omitido"}
+            marcas = "".join(f'<i class="h-{l}" title="run #{html.escape(r)}: {nombres[l]}"></i>' for r, l in v["serie"])
+            txt = ", ".join(f"#{r} {nombres[l]}" for r, l in v["serie"])
+            return (f'<span class="hist" role="img" aria-label="{html.escape(txt)}">{marcas}</span>' +
+                    (' <span class="inestable">inestable</span>' if v["inestable"] else ""))
         if isinstance(v, list):
             return ", ".join(f'<a href="{url_def}#{html.escape(anclas.get(d, ""))}">{d}</a>' for d in v)
         if col != 4:
@@ -653,7 +675,9 @@ def html_matriz(casos, run, url_def, anclas):
     botones = "".join(f'<button type="button" data-est="{k}" aria-pressed="false">{ESTADO[k]}</button>' for k in ("pasa", "defecto", "falla", "otro"))
     return pagina("Matriz de trazabilidad", cabecera("Matriz de trazabilidad", run) + (
         '<p class="desc" style="margin-top:1rem">HU → caso → nivel → resultado de este run, generada desde los JUnit del pipeline y las '
-        f'etiquetas de los <code>.feature</code>. «Defecto conocido» es una falla esperada, enlazada a <a href="{url_def}">docs/defectos.md</a>.</p>'
+        f'etiquetas de los <code>.feature</code>. «Defecto conocido» es una falla esperada, enlazada a <a href="{url_def}">docs/defectos.md</a>. '
+        f'«Últimos {ULTIMOS} runs» sale de <a href="historial.json">historial.json</a> (del más viejo al actual); «inestable» marca un caso '
+        'que pasó y falló entre esos runs o dentro del mismo run. Escribe «inestable» en el buscador para verlos.</p>'
         '<section><h2>Resumen por historia</h2><div class="panel angosta" style="margin-top:1rem">' +
         tabla_simple(CAB_RESUMEN, [[html.escape(x) for x in f] for f in resumen_hu], (2, 3, 4, 5)) + "</div>" + nota + "</section>"
         '<section><h2>Detalle</h2><div class="filtro"><input id="q" type="search" placeholder="Buscar HU, caso o escenario" '
@@ -667,13 +691,14 @@ def sitio(destino):
     destino.mkdir(parents=True, exist_ok=True)
     run, anclas = datos_run(), anclas_defectos()
     casos = casos_con_resultados()
-    md = markdown(casos, run, anclas)
+    hist = historial(run, casos, sum(s for _, s in tiempos()), destino)
+    md = markdown(casos, run, anclas, hist)
     (RAIZ / "docs/trazabilidad.md").write_text(md, encoding="utf-8")
     (destino / "trazabilidad.md").write_text(md, encoding="utf-8")
 
     url_def = f"https://github.com/{REPO}/blob/{run['sha']}/docs/defectos.md"
-    (destino / "trazabilidad.html").write_text(html_matriz(casos, run, url_def, anclas), encoding="utf-8")
-    (destino / "dashboard.html").write_text(html_dashboard(casos, run, url_def, anclas, destino), encoding="utf-8")
+    (destino / "trazabilidad.html").write_text(html_matriz(casos, run, url_def, anclas, hist), encoding="utf-8")
+    (destino / "dashboard.html").write_text(html_dashboard(casos, run, url_def, anclas, hist), encoding="utf-8")
 
     copias = {"api/index.html": "reportes/allure/index.html", "web/index.html": "tests/e2e/reportes/allure/index.html",
               "schemathesis": "reporte-schemathesis/html", "contrato/index.html": "reportes/dashboard-contrato.html"}
