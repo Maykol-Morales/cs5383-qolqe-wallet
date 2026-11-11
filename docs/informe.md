@@ -148,7 +148,7 @@ La base de la pirámide (unitarias) no tiene pruebas propias porque el SUT se pr
 
 **Evidencia de complementariedad en el propio repo**
 
-- **Cada nivel encontró defectos que los otros no veían.** Los 12 defectos abiertos de la API (DEF-01 a DEF-10, DEF-12 y DEF-13; `docs/defectos.md`) los detectó pytest-bdd. Todos son reglas de negocio con peticiones válidas según el OpenAPI (redondeo, saldo, límite diario, propiedad, sesión), así que el contrato no podía verlos. **DEF-14 solo se ve en la web**: la API responde según el requisito, y es la UI la que arma el rango con la fecha del navegador. Apareció en la CI de GitHub, con el navegador en UTC. Schemathesis no registró defectos, pero aportó lo que los demás no dan: ningún 5xx en el contrato y 44 hallazgos de **imprecisión del contrato** (faltan `minimum`/`enum`; §2).
+- **Cada nivel encontró defectos que los otros no veían.** Los 12 defectos abiertos de la API (DEF-01 a DEF-10, DEF-12 y DEF-13; `docs/defectos.md`) los detectó pytest-bdd. Todos son reglas de negocio con peticiones válidas según el OpenAPI (redondeo, saldo, límite diario, propiedad, sesión), así que el contrato no podía verlos. **DEF-14 solo se ve en la web**: la API responde según el requisito, y es la UI la que arma el rango con la fecha del navegador. Apareció en la CI de GitHub, con el navegador en UTC. **DEF-15 lo encontró Schemathesis**: un 500 intermitente al repetir el registro (la respuesta sale antes del commit), que ninguna prueba escrita a mano provocaba porque exige dos peticiones idénticas en milisegundos; en la web se veía como un rebote del login. Además dejó 44 hallazgos de **imprecisión del contrato** (faltan `minimum`/`enum`; §2).
 - **Una herramienta mide el solapamiento de otra.** El dashboard de contrato (`tests/dashboard/dashboard.py`) valida contra el OpenAPI la petición del paso `When` de cada escenario BDD, que saca de los adjuntos de Allure. Si esa petición ya viola el esquema y el `Then` solo mira el código de estado, marca el escenario como candidato a redundante con Schemathesis. Eran **44**. En lugar de borrarlos, se les agregó el paso «no se persiste ningún cambio si la operación fue rechazada» (16 escenarios en 4 `.feature`, commit `733b000`), que verifica algo que el contrato no puede ver: que la cuenta quedó igual. Quedaron **12** candidatos, que son lecturas sin estado y los de «requiere sesión».
 - **El pipeline las ordena por costo.** `contrato` va primero y es el gate barato. `api` y `web` corren en paralelo después. `reportes` junta los JUnit de todas, arma la trazabilidad y aplica el quality gate. Un fallo se ve en el nivel más bajo que lo detecta.
 
@@ -186,6 +186,7 @@ Criterios: lenguaje que ya usa el equipo, soporte de BDD (Gherkin como fuente de
 | DEF-12 | Dos operaciones del mismo usuario en el mismo segundo comparten el código de operación | Alta | Abierto |
 | DEF-13 | El límite diario no cuenta las transferencias interbancarias | Alta | Abierto |
 | DEF-14 | De noche en Lima, con el celular en otra zona horaria, el historial sale vacío (UI, Parte 2) | Media | Abierto |
+| DEF-15 | Qolqe responde antes de guardar la operación: una petición inmediata no ve el cambio (500 al repetir el registro, 401 con un token recién emitido) | Alta | Abierto |
 
 ## 6. Conclusiones y recomendaciones
 *(Entrega final)*

@@ -276,3 +276,23 @@ Resumen (ID, título, severidad y estado) en la sección 5 de [`informe.md`](inf
 **Resultado obtenido:** la lista sale vacía con la alerta "La fecha 'hasta' no puede ser futura". La UI arma el rango por defecto con la fecha del celular (`new Date()` + `getTimezoneOffset`), así que `hasta` es el día siguiente al de Lima y el servidor responde `422 FILTRO_INVALIDO`. Pasa con cualquier celular cuya fecha local se adelante a la de Lima (otra zona horaria o reloj adelantado).
 
 **Evidencia:** a las 21:00 de Lima del 2026-10-26, `GET /api/movimientos?desde=2026-09-26&hasta=2026-10-27` → `422 {"codigo":"FILTRO_INVALIDO","detail":"La fecha 'hasta' no puede ser futura"}` (con `hasta=2026-10-26` responde 200). Captura: [`evidencia/DEF-14.png`](evidencia/DEF-14.png). Control: el mismo escenario con el navegador en `America/Lima` pasa.
+
+## DEF-15: Qolqe responde antes de guardar la operación en la BD
+
+| Campo | Valor |
+|---|---|
+| Módulo / regla | Transversal (todas las operaciones que escriben) / HU-N-01 CA (celular único → 409), HU-N-02 · `qolqe/bd.py::obtener_bd` (commit después del `yield`; FastAPI 0.143 cierra las dependencias con `yield` después de enviar la respuesta) |
+| Severidad | Alta |
+| Prioridad | Media |
+| Entorno | Qolqe Wallet 1.0.0, uvicorn, FastAPI 0.143, Linux. Detectado por Schemathesis en la CI (run 42991620965, 1 de 3 120 casos); en local se reproduce demorando el commit |
+| Prueba que lo detecta | `python tests/api/reproducir_def15.py` (sale con 1 mientras exista). En la CI aparece de forma intermitente en el job `contrato` (ST101 en `POST /api/usuarios`) y como rebote a `/login?motivo=sesion` en la web (reintento con aviso en `tests/e2e/pages/login.page.js`) |
+
+**Pasos para reproducir**
+1. `POST /api/usuarios` con `{"dni":"45678912","nombres":"Lucía Fernández Rojas","celular":"987000111","pin":"4826"}`.
+2. Apenas llega la respuesta, repetir la misma petición (o hacer `POST /api/auth/login` con ese celular, o usar un token recién emitido en `GET /api/cuentas/me/saldo`).
+
+**Resultado esperado:** el paso 1 responde cuando la cuenta ya está guardada: el paso 2 da `409 CELULAR_REGISTRADO` (o 200 en el login y el saldo).
+
+**Resultado obtenido:** la respuesta sale antes del commit. Si la petición siguiente llega en esa ventana, lee la BD sin el cambio: registro repetido → `500 Internal Server Error` (`sqlite3.IntegrityError: UNIQUE constraint failed: usuarios.celular`, no documentado); login de la cuenta nueva → `401 CREDENCIALES_INVALIDAS`; token recién emitido → `401 NO_AUTENTICADO` (la UI rebota al login). Si el commit fallara después, el cliente ya recibió un 201 por algo que no se guardó.
+
+**Evidencia:** HAR del job `contrato` (artefacto `contrato`, run 42991620965): entrada 18 `POST /api/usuarios` → 201 (28 ms, iniciada 09:01:27.070); entrada 19, misma petición iniciada 0,6 ms después de terminar la 18 → 500. `tests/api/reproducir_def15.py` (commit demorado 300 ms): `201 y luego 500`, login `401 CREDENCIALES_INVALIDAS`, saldo `401 NO_AUTENTICADO`; el registro responde en ~126 ms, antes de que termine el commit.

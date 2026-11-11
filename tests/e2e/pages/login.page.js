@@ -14,16 +14,14 @@ class LoginPage {
     }
 
     // Listo = /inicio con el saldo pintado: prueba que el token ya sirve, no solo que cambió la URL.
-    // Si una petición da 401, app.js rebota a /login?motivo=sesion. Se vio en la CI y se reintenta una vez
-    // con aviso en la consola. Hipótesis: el commit de obtener_bd corre después de enviar la respuesta
-    // del login. No se reprodujo por API (500 logins + saldo inmediato, con y sin escrituras en paralelo,
-    // 2026-11-11), así que no se registra como defecto; si el aviso aparece en un run, investigarlo.
+    // DEF-15: Qolqe responde al login antes de guardar la sesión; si /inicio pide el saldo antes del commit
+    // recibe 401 y app.js rebota a /login?motivo=sesion. Se avisa en la consola y se vuelve a ingresar.
     async ingresarComo(celular, pin) {
         await this.enviar(celular, pin)
         await browser.waitUntil(async () => {
             const url = await browser.getUrl()
             if (url.includes('motivo=sesion')) {
-                console.warn(`[defecto Qolqe] el token recién emitido para ${celular} dio 401 (sesión sin confirmar); se reintenta`)
+                console.warn(`[DEF-15] el token recién emitido para ${celular} dio 401 (sesión sin confirmar); se reintenta`)
                 await this.enviar(celular, pin)
                 return false
             }

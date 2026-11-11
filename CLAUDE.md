@@ -89,9 +89,9 @@ Resultado de referencia (Parte 1, 2026-10-17): `252 passed, 1 skipped, 24 xfaile
 - API de soporte (`QOLQE_MODO_PRUEBA=1`): `/api/pruebas/{reiniciar,reloj,notificaciones,saldo,procesar-diario}`. Reloj en memoria → un solo proceso.
 - Env vars: `QOLQE_BD`, `QOLQE_MODO_PRUEBA`, `QOLQE_MINUTOS_TOKEN`, `QOLQE_CLAVE_SECRETA`.
 
-## Defectos hallados (13 abiertos; detalle en `docs/defectos.md`)
+## Defectos hallados (14 abiertos; detalle en `docs/defectos.md`)
 
-DEF-01 redondeo comisión · 02 PIN descendente aceptado · 03 login exitoso no reinicia intentos · 04 interbancaria deja saldo negativo (Crítica) · 05 logout no invalida token (Crítica) · 06 transferencia a cuenta cerrada pierde dinero (Crítica) · 07 historial excluye el día `hasta` · 08 detalle de movimiento ajeno visible · 09 destinatario ve movimiento del emisor · 10 categoría editable con nombre duplicado · 11 (descartado: el token vence a los 30 min exactos, se acepta) · 12 dos operaciones del mismo segundo comparten código de operación · 13 el límite diario no cuenta las interbancarias · 14 (UI, Parte 2) historial vacío de noche si el celular no está en hora de Lima
+DEF-01 redondeo comisión · 02 PIN descendente aceptado · 03 login exitoso no reinicia intentos · 04 interbancaria deja saldo negativo (Crítica) · 05 logout no invalida token (Crítica) · 06 transferencia a cuenta cerrada pierde dinero (Crítica) · 07 historial excluye el día `hasta` · 08 detalle de movimiento ajeno visible · 09 destinatario ve movimiento del emisor · 10 categoría editable con nombre duplicado · 11 (descartado: el token vence a los 30 min exactos, se acepta) · 12 dos operaciones del mismo segundo comparten código de operación · 13 el límite diario no cuenta las interbancarias · 14 (UI, Parte 2) historial vacío de noche si el celular no está en hora de Lima · 15 la respuesta sale antes del commit (500 al repetir el registro, 401 con token recién emitido; lo halló Schemathesis en CI, repro determinista `tests/api/reproducir_def15.py`)
 
 ## Presentación y demo
 
