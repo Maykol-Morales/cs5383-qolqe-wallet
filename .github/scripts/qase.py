@@ -60,9 +60,10 @@ def main():
     qase = ids_existentes()
 
     nuevos = [c for c in casos if c["id"] not in qase]
+    # Creación en lote: "isManual": 0 = automatizado (probado 2026-11-11; "automation" y false se ignoran o rechazan aquí)
     if nuevos:  # ponytail: no actualiza título ni tags de casos ya creados; se editan en Qase o se borran para recrearlos
         cuerpo = [{"title": f"{c['id']} · {c['nombre']}"[:255], "tags": c["hu"] + c["defs"] + [c["nivel"]],
-                   "description": f"Escenario de {c['archivo']}", "automation": 2} for c in nuevos]
+                   "description": f"Escenario de {c['archivo']}", "isManual": 0} for c in nuevos]
         for i in range(0, len(cuerpo), 100):
             ids = api("POST", f"/case/{PROYECTO}/bulk", {"cases": cuerpo[i:i + 100]})["ids"]
             qase.update(zip((c["id"] for c in nuevos[i:i + 100]), ids))
