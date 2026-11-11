@@ -6,6 +6,7 @@ try { process.loadEnvFile() } catch {}
 
 export const baseUrl = process.env.QOLQE_URL ?? 'http://localhost:8000'
 export const descargas = resolve('reportes/descargas') // CSV de HU-G3-08
+const pasos = {} // pasos con captura por escenario (EVIDENCIA=todo)
 
 export const config = {
     runner: 'local',
@@ -50,10 +51,14 @@ export const config = {
         }
         await browser.emulationSetTimezoneOverride({ timezone: 'America/Lima', userContexts: ['default'] })
     },
-    // Evidencia: captura del paso que falló, en evidencia/ y adjunta en el reporte Allure.
+    // Evidencia (EVIDENCIA=fallos|todo|no, por defecto fallos): captura del paso que falló o de cada paso, en
+    // evidencia/ y adjunta en el reporte Allure (el reporter adjunta cada saveScreenshot); `no`: sin imágenes.
     afterStep: async (step, scenario, { error }) => {
-        if (!error) return
+        const modo = process.env.EVIDENCIA || 'fallos'
+        if (modo === 'no' || (modo === 'fallos' && !error)) return
+        const nombre = scenario.name.replace(/\W+/g, '_')
+        pasos[nombre] = (pasos[nombre] ?? 0) + 1
         mkdirSync('evidencia', { recursive: true })
-        await browser.saveScreenshot(`./evidencia/${scenario.name.replace(/\W+/g, '_')}.png`)
+        await browser.saveScreenshot(`./evidencia/${nombre}${modo === 'todo' ? `_${String(pasos[nombre]).padStart(2, '0')}` : ''}.png`)
     },
 }

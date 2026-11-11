@@ -11,9 +11,19 @@ on:
     tags: ["parte-*", "final"]
   pull_request:
   workflow_dispatch:
+    inputs:
+      evidencia:
+        description: "Evidencia en los reportes Allure: fallos (captura del paso web que falló), todo (captura de cada paso web), no (sin imágenes ni adjuntos HTTP)"
+        type: choice
+        options: [fallos, todo, no]
+        default: fallos
 
 permissions:
   contents: read
+
+# La leen tests/api/conftest.py (adjuntos HTTP) y tests/e2e/wdio.conf.js (capturas). Push y PR: fallos.
+env:
+  EVIDENCIA: ${{ inputs.evidencia || 'fallos' }}
 
 jobs:
   # Primero el contrato: es la verificación más amplia y barata (todas las operaciones del OpenAPI) y la única
@@ -70,11 +80,12 @@ jobs:
 
       # Dashboard de contrato: los casos del job contrato (VCR + HAR) frente a las peticiones de cada escenario BDD
       # (adjuntos Allure), para ver qué escenarios repiten lo que ya comprobó Schemathesis. BROWSER=true: no abre nada.
+      # Con EVIDENCIA=no no hay adjuntos HTTP y se omite.
       - uses: actions/download-artifact@v4
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && env.EVIDENCIA != 'no' }}
         with: { name: contrato, path: reporte-schemathesis }
       - name: Dashboard de contrato
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && env.EVIDENCIA != 'no' }}
         env: { BROWSER: "true" }
         run: .venv/bin/python demo.py dashboard
 

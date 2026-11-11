@@ -114,11 +114,12 @@ Spec Files:	 2 passed, 2 skipped, 4 total (100% completed) in 00:00:08
 
 (`passing` cuenta pasos; los 2 *skipped* son `clasificar-ia` y `historial-zona-horaria`, que el filtro de etiquetas deja fuera.)
 
-Antes de cada escenario se reinician los datos de Qolqe (`POST /api/pruebas/reiniciar`), así que se puede ejecutar las veces que se quiera. Si una prueba falla, la captura queda en `evidencia/`.
+Antes de cada escenario se reinician los datos de Qolqe (`POST /api/pruebas/reiniciar`), así que se puede ejecutar las veces que se quiera. Las capturas quedan en `evidencia/` según `EVIDENCIA`.
 
 | Variable | Uso |
 |---|---|
 | `HEADED` | Cualquier valor: ejecuta con ventana |
+| `EVIDENCIA` | `fallos` (por defecto: captura del paso que falló), `todo` (una por paso) o `no` (sin capturas) |
 | `QOLQE_URL` | URL de Qolqe (por defecto `http://localhost:8000`) |
 | `CHROME_BIN` | Ruta del navegador, si no es el Chrome por defecto |
 
@@ -127,9 +128,9 @@ Antes de cada escenario se reinician los datos de Qolqe (`POST /api/pruebas/rein
 | Reporte | Dónde | Qué muestra |
 |---|---|---|
 | Consola (`spec`) | la terminal | cada paso Given/When/Then con ✓ o ✖ |
-| **Allure** | `npm run reporte` → `reportes/allure/index.html` (un solo archivo, se abre con doble clic) | escenarios agrupados por épica e historia (`@epic=`, `@story=`), severidad, pasos con su duración y la **captura adjunta** del paso que falló |
+| **Allure** | `npm run reporte` → `reportes/allure/index.html` (un solo archivo, se abre con doble clic) | escenarios agrupados por épica e historia (`@epic=`, `@story=`), severidad, pasos con su duración y las **capturas adjuntas** (`EVIDENCIA`) |
 | **JUnit** | `reportes/junit/e2e-<cid>.xml` (uno por `.feature`) | un `testcase` por escenario; el nombre empieza con el caso (`CP W02 …`, el reporter quita la puntuación) para la trazabilidad en la CI |
-| Evidencia | `evidencia/*.png` | captura del navegador cuando un paso falla |
+| Evidencia | `evidencia/*.png` | captura del navegador según `EVIDENCIA` (por defecto, del paso que falla) |
 
 Las etiquetas del `.feature` alimentan el reporte: `@HU-G3-03` filtra en Cucumber y `@story=HU-G3-03` agrupa en Allure. El reporte acumula el historial de corridas en `reportes/allure-historial.jsonl`.
 

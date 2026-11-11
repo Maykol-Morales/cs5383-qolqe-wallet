@@ -169,7 +169,9 @@ def pytest_bdd_step_error(request, feature, scenario, step, step_func, step_func
 
 
 def _adjuntar_http(request):
-    """Adjunta al paso las peticiones HTTP que hizo desde el paso anterior."""
+    """Adjunta al paso las peticiones HTTP que hizo desde el paso anterior (EVIDENCIA=no: reporte sin adjuntos)."""
+    if os.environ.get("EVIDENCIA") == "no":
+        return
     respuestas = request.getfixturevalue("ctx").respuestas
     for r in respuestas[getattr(request.node, "_respuestas_vistas", 0):]:
         try:
