@@ -11,10 +11,10 @@ Proyecto 2 del curso **CS5383 Pruebas y Verificación de Software** (UTEC). Cont
 | Parte | Contenido | Estado |
 |---|---|---|
 | 1 | Pruebas de API (núcleo + G3), contrato con Schemathesis, 12 defectos, análisis EP/VL mapeado a escenarios | Hecha |
-| CI | `.github/workflows/pruebas.yml`: api → web (3 corridas) → reportes → Pages; matriz `docs/trazabilidad.md` | Hecha (falta activar Pages) |
+| CI | `.github/workflows/pruebas.yml`: contrato → (api ∥ web ×3) → reportes (gate G1–G6, Qase vía `.github/scripts/qase.py`) → Pages; matriz `docs/trazabilidad.md` | Hecha (falta activar Pages) |
 | Reportes | Allure 3 (`demo.py reporte`) y dashboard de Schemathesis + comparativa con BDD (`demo.py schemathesis` / `dashboard`) | Hecha |
 | Presentación | Deck final de 13 slides, mapa visual y guion `demo.py` | Hecha (ver "Presentación y demo") |
-| 2 | Pruebas web E2E: WebdriverIO 10 + Cucumber + Page Objects + Allure en `tests/e2e/` (migrado del repo `cs5383-webdriverio`) | Happy path G3 hecho; falta ampliar escenarios e informe §3 |
+| 2 | Pruebas web E2E: WebdriverIO 10 + Cucumber + Page Objects + Allure en `tests/e2e/` (migrado del repo `cs5383-webdriverio`) | Hecha: G3 (CP-W01–W05, W90) + Núcleo (CP-W06–W16, `nucleo.feature`); informe §3, §3.1 Page Object y §3.2 herramientas |
 | 3 | Rendimiento (`tests/performance/`) | Pendiente (solo `.gitkeep`) |
 
 ## Estructura
@@ -35,7 +35,7 @@ tests/
   test_humo.py         prueba de humo
   e2e/                 Parte 2, proyecto Node propio: features/, steps/, pages/ (Page Objects), wdio.conf.js,
                        allurerc.mjs, demo.mjs; npm se corre dentro de tests/e2e/ (README propio)
-docs/                  requisitos.md (HU, CA, RN), informe.md, defectos.md, plantilla-informe.md,
+docs/                  requisitos.md (HU, CA, RN), informe.md, defectos.md, plantilla-informe.md, gestion-casos.md (Qase),
                        casos-equivalencia-limites.md (análisis EP/VL), formato-particiones.md (formatos A1/B1)
 demo.py                guion de la demo, multiplataforma (preparar, ensayo, demo, schemathesis, plan-b)
 demo.sh                Linux/macOS: prepara .venv, node_modules y revisa gh; lanzar | mostrar (demo CI) | web (plan B) | resto → demo.py
@@ -51,6 +51,7 @@ uvicorn qolqe.main:app --reload        # SUT en :8000 (un solo proceso, sin --wo
 pytest -rx                             # todo (~1 min); defectos conocidos salen xfailed
 pytest tests/api -m "HU-G3-01"         # una historia (cada escenario lleva etiqueta @HU-…)
 MOSTRAR_DEFECTOS=1 pytest tests/api    # los defectos fallan a la vista
+EVIDENCIA=fallos|todo|no pytest …      # adjuntos Allure (también npm test en tests/e2e: capturas); en CI, input evidencia
 QOLQE_URL=http://localhost:8000 pytest tests/api/test_nucleo.py   # contra servidor real
 pytest --cov=qolqe                     # cobertura (64 %)
 python demo.py preparar | ensayo | demo | schemathesis [g3] [todos] | plan-b   # Windows: py demo.py …; ver "Presentación y demo"
@@ -110,7 +111,7 @@ Sitio de Pages (generado por `.github/scripts/reportes.py sitio`, solo stdlib, C
 - `contrato` (primero; gate = rc del CLI): `demo.py schemathesis` → artefacto `contrato` (`reporte-schemathesis/`: `html/`, VCR, HAR, JUnit). Con `CI` puesto no arma el dashboard.
 - `api` (needs contrato): `pytest -rx` (humo + BDD; `@DEF` = xfail strict) → `reportes/junit-api.xml`, Allure, cobertura; baja el artefacto `contrato` y corre `demo.py dashboard` → `reportes/dashboard-contrato.html`.
 - `web` (needs contrato, en paralelo con api): Qolqe en :8000, `npm test` × 3 (cada JUnit se aparta a `tests/e2e/reportes/junit-corrida-N/`), `npm run test:ia` desde la caché sin clave (`ANTHROPIC_API_KEY=""`), DEF-14 invertido (falla esperada; si pasa, el job falla) con sus resultados Allure apartados.
-- `reportes` (needs contrato+api+web): `.github/scripts/reportes.py sitio` → `docs/trazabilidad.md` + `sitio/` (portada, `trazabilidad.html`, `api/`, `web/`, `schemathesis/`, `contrato/`). `publicar`: `deploy-pages` solo en push a `parte-2`/`main` o manual → https://maykol-morales.github.io/cs5383-qolqe-wallet/
+- `reportes` (needs contrato+api+web): `.github/scripts/reportes.py sitio` → `docs/trazabilidad.md` + `sitio/` (portada, `trazabilidad.html`, `api/`, `web/`, `schemathesis/`, `contrato/`); al final `reportes.py gate` (2.3): G1 contrato 0 fallos · G2 API sin fallas inesperadas ni XPASS (`@DEF-nn` = xfail estricto) · G3 cobertura ≥ 60 % (meta 75 %) · G4 web 3/3 corridas, `@ia` pasa y DEF-14 falla · G5 toda HU del alcance (Núcleo + G3) con caso ejecutado · G6 pruebas ≤ 10 min; umbrales en `UMBRAL`, un JUnit ausente = ❌. `publicar`: `deploy-pages` en push a `parte-2`/`main`/`final` o manual, también si el gate falló (reportes en failure) → https://maykol-morales.github.io/cs5383-qolqe-wallet/
 - Mapeo: cada prueba BDD de la API lleva la propiedad JUnit `escenario` (hook en `tests/api/conftest.py`); los casos web por el `CP Wnn` del nombre (el reporter quita la puntuación). IDs API: `CP-A-<feature>-nn` por orden en el `.feature`. El script avisa (`::warning::`) de escenarios sin ejecución.
 - Local: `pytest -rx --junitxml=reportes/junit-api.xml && python .github/scripts/reportes.py sitio` (regenera la matriz; `resumen TITULO xml...` = tabla del step summary).
 - El `ci.yml` anterior (Windows + Linux, borrado el 2026-10-26 por lento) está en el commit `a9cd175`.

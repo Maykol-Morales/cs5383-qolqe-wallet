@@ -251,12 +251,25 @@ npm test                    # solo los escenarios (con Qolqe ya corriendo en :80
 [`.github/workflows/pruebas.yml`](.github/workflows/pruebas.yml) corre en cada push a `main`/`parte-*`, tags, PR y a mano:
 
 ```
-api (pytest-bdd + contrato Schemathesis, Allure, CLI de Schemathesis)
- └─ web (WebdriverIO: npm test × 3 seguidas, @ia desde la caché, DEF-14 como falla esperada)
-     └─ reportes (matriz de trazabilidad + sitio)  └─ publicar (GitHub Pages; solo push a parte-2/main o manual)
+contrato (CLI de Schemathesis, una sola vez)
+ ├─ api (pytest-bdd, Allure, cobertura, dashboard de contrato)
+ └─ web (WebdriverIO: npm test × 3, @ia desde la caché, DEF-14 como falla esperada)
+     └─ reportes (matriz, sitio, Qase y quality gate)  └─ publicar (GitHub Pages; push a parte-2/main/final o manual, también con el gate en rojo)
 ```
 
-Quality gate: todo pasa salvo los defectos conocidos (`@DEF-nn`, xfail estricto; si un defecto se corrige, el pipeline falla). Cada job deja un resumen y su artefacto. Reportes publicados en **https://maykol-morales.github.io/cs5383-qolqe-wallet/**: portada con datos del run, **dashboard** (`dashboard.html`: casos web × 3 corridas, tiempos por suite, casos por HU, defectos vigilados, tendencia entre runs desde `historial.json` y cobertura), matriz HU → caso → resultado (`trazabilidad.html`, copia en [`docs/trazabilidad.md`](docs/trazabilidad.md)), Allure de API (`api/`) y web (`web/`), Schemathesis (`schemathesis/`) y dashboard de contrato (`contrato/`).
+Quality gate (`python .github/scripts/reportes.py gate`, también en local; umbrales en `UMBRAL` del script): G1 contrato 0 fallos · G2 API sin fallas inesperadas ni XPASS (`@DEF-nn` = xfail estricto) · G3 cobertura ≥ 60 % (meta 75 %) · G4 web 3/3 corridas, `@ia` pasa y DEF-14 falla · G5 toda HU del alcance (Núcleo + G3) con caso ejecutado · G6 pruebas ≤ 10 min. Si un defecto se corrige, G2 falla. El gate corre al final del job `reportes`, después de subir el sitio: Pages muestra el estado real aunque quede en rojo. Cada job deja un resumen y su artefacto. Reportes publicados en **https://maykol-morales.github.io/cs5383-qolqe-wallet/**: portada con datos del run, **dashboard** (`dashboard.html`: casos web × 3 corridas, tiempos por suite, casos por HU, defectos vigilados, tendencia entre runs desde `historial.json` y cobertura), matriz HU → caso → resultado (`trazabilidad.html`, copia en [`docs/trazabilidad.md`](docs/trazabilidad.md)), Allure de API (`api/`) y web (`web/`), Schemathesis (`schemathesis/`) y dashboard de contrato (`contrato/`).
+
+**Varias ejecuciones:** la matriz muestra los últimos 10 runs de cada caso y marca los *inestables*; cada run de CI se sube además a **Qase** si existe el secret `QASE_API_TOKEN` ([`docs/gestion-casos.md`](docs/gestion-casos.md)).
+
+**Reporte con o sin evidencia** (variable `EVIDENCIA`; en Actions, el input `evidencia` de *Run workflow*):
+
+| Valor | API (Allure) | Web (Allure + `tests/e2e/evidencia/`) |
+|---|---|---|
+| `fallos` (por defecto; push y PR) | petición/respuesta HTTP de cada paso | captura solo del paso que falló |
+| `todo` | igual que `fallos` | captura de cada paso |
+| `no` | sin adjuntos (se omite el dashboard de contrato, que los usa) | sin capturas |
+
+En local: `EVIDENCIA=no pytest tests/api --alluredir=reportes/allure-results` o, en `tests/e2e`, `EVIDENCIA=todo npm test`.
 
 Generar la matriz y el sitio localmente (queda en `sitio/`, ignorado por git):
 
