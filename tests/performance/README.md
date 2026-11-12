@@ -35,6 +35,37 @@ Cada corrida deja `resultados/<prueba>-<fecha>[-etiqueta]/`:
 
 k6 sale con error si se incumple un umbral. `integridad.txt` termina en `INTEGRIDAD OK` o lista los fallos. Durante la corrida, el dashboard en vivo de k6 está en http://localhost:5665.
 
+## Demo en vivo (exposición, ~5 min)
+
+Hora punta acortada: 2 min de rampa + 1 min estable, solo los 120 usuarios que necesita (`maxVUs`), así `preparar` tarda segundos.
+
+**Antes de la exposición** (en la transición entre grupos):
+1. Cerrar el resto de aplicaciones; abrir dos terminales en la raíz del repo y, en el navegador, `resultados/pico-20261111-2032-docker/dashboard.html` (plan B).
+2. Levantar Qolqe y comprobar que responde:
+   ```bash
+   docker start qolqe-rend && curl -s -o /dev/null -w "%{http_code}\n" localhost:8001/docs   # 200
+   ```
+3. Dejar las variables cargadas en la terminal 1:
+   ```bash
+   export QOLQE_PID=$(docker inspect -f '{{.State.Pid}}' qolqe-rend) QOLQE_URL=http://localhost:8001 \
+          QOLQE_BD=$PWD/datos/rendimiento/qolqe.db PATH=$HOME/.local/bin:$PATH
+   ```
+
+**Guion:**
+
+| Min | Pantalla | Qué se hace | Qué se dice |
+|---|---|---|---|
+| 0:00 | Terminal 2 | `docker stats qolqe-rend` | "Qolqe en un contenedor de 1 núcleo y 1 GB: es nuestro servidor" |
+| 0:15 | Terminal 1 | `USUARIOS=120 DURACION=1m ETIQUETA=demo K6_WEB_DASHBOARD_OPEN=true tests/performance/correr.sh carga` | "Prepara 120 usuarios, uno por VU, y arranca la hora punta: 50 sesiones por minuto" |
+| 0:30 | Dashboard de k6 (se abre solo en :5665) | Mostrar VUs subiendo, req/s y p95 | "Modelo abierto: llegan 50 sesiones por minuto pase lo que pase; si Qolqe se atrasa, se ve aquí" |
+| 1:30 | Terminal 2 | CPU del contenedor | "El CPU que ven es el de Qolqe; k6 casi no consume" |
+| 2:00 | `qolqe.js` en el editor | Umbrales y pesos | "Cada umbral es una frase del requerimiento" |
+| 3:00 | Terminal 1 | Esperar el cierre (hasta 30 s de `gracefulStop` para las sesiones en curso) | "Las sesiones que quedan a medias por el corte de k6 no cuentan; las operaciones de dinero sí se verifican" |
+| 4:00 | Terminal 1 | `D=$(ls -td tests/performance/resultados/carga-*-demo \| head -1); sed -n '/THRESHOLDS/,/TOTAL/p' $D/k6.txt; cat $D/integridad.txt` (k6 escribe en `k6.txt`, no en la terminal) | "Todos los umbrales en verde y cada operación de dinero confirmada está una sola vez en la BD: INTEGRIDAD OK" |
+| 4:30 | `recursos.png` y `k6.png` de esa carpeta | Gráficos | "Esto mismo, en 15 minutos y con 300 usuarios, son los resultados que vienen" |
+
+**Plan B** (si el contenedor o k6 fallan): el `dashboard.html` exportado del pico, que ya está abierto, y `resultados/carga-20261111-0422-docker/`.
+
 ## Dos equipos (EC2)
 
 En el servidor, desde la raíz del repo:
