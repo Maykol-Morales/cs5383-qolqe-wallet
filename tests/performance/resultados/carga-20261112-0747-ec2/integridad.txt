@@ -1,0 +1,2 @@
+Operaciones de dinero confirmadas a k6: 1350; filas nuevas: 1350
+INTEGRIDAD OK
