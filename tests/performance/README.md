@@ -9,6 +9,7 @@ Requerimiento "Quincena Qolqe" (`pdfs/P2_Parte3_Enunciado.pdf`). Modelo, umbrale
 | `monitor.py` | CPU y memoria de un proceso → CSV (script del enunciado) |
 | `graficos.py` | `por-minuto.csv`, `por-endpoint.csv`, `k6.png`, `recursos.png` |
 | `correr.sh` | Todo lo anterior en orden, cuando Qolqe y k6 están en el mismo equipo |
+| `reproducir_def16.py` | DEF-16: N logins simultáneos contra un Qolqe dedicado; sale con 1 si alguno da 5xx |
 
 ## Requisitos
 

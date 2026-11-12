@@ -276,3 +276,44 @@ Resumen (ID, título, severidad y estado) en la sección 5 de [`informe.md`](inf
 **Resultado obtenido:** la lista sale vacía con la alerta "La fecha 'hasta' no puede ser futura". La UI arma el rango por defecto con la fecha del celular (`new Date()` + `getTimezoneOffset`), así que `hasta` es el día siguiente al de Lima y el servidor responde `422 FILTRO_INVALIDO`. Pasa con cualquier celular cuya fecha local se adelante a la de Lima (otra zona horaria o reloj adelantado).
 
 **Evidencia:** a las 21:00 de Lima del 2026-10-26, `GET /api/movimientos?desde=2026-09-26&hasta=2026-10-27` → `422 {"codigo":"FILTRO_INVALIDO","detail":"La fecha 'hasta' no puede ser futura"}` (con `hasta=2026-10-26` responde 200). Captura: [`evidencia/DEF-14.png`](evidencia/DEF-14.png). Control: el mismo escenario con el navegador en `America/Lima` pasa.
+
+## DEF-16: Con más de 40 inicios de sesión a la vez, Qolqe responde 500 «database is locked»
+
+*(Parte 3, rendimiento. El número 15 lo tiene DEF-15, registrado en la rama `final`: Qolqe responde antes de guardar la operación en la BD. Tienen la misma raíz.)*
+
+| Campo | Valor |
+|---|---|
+| Módulo / regla | Requerimiento de rendimiento «Quincena Qolqe» (fallas < 1 %, ninguna operación de dinero a medias) / HU-N-02 · `qolqe/api/autenticacion.py:136` (`INSERT INTO sesiones`), `qolqe/operaciones.py:23` (`mover_saldo`), `qolqe/bd.py:216` (`obtener_bd`: commit en el cierre de la dependencia) |
+| Severidad | Alta |
+| Prioridad | Alta |
+| Entorno | Qolqe Wallet 1.0.0, Python 3.12, uvicorn (1 proceso), Docker `--cpus=1 --memory=1g`, SQLite en WAL, Linux |
+| Prueba que lo detecta | `tests/performance/reproducir_def16.py` (sale con 1 mientras el defecto exista) y el estrés con rampa de 1 min (`tests/performance/resultados/estres-20261111-2048-docker-rampa-1min/`) |
+
+**Pasos para reproducir**
+1. Levantar Qolqe dedicado: `docker run -d --rm --name qolqe-def16 --cpus=1 --memory=1g -p 8003:8000 -e QOLQE_BD=/tmp/def16.db qolqe-rendimiento` (imagen de `tests/performance/Dockerfile`, modo prueba).
+2. `QOLQE_URL=http://localhost:8003 .venv/bin/python tests/performance/reproducir_def16.py 60`: reinicia la BD y lanza 60 `POST /api/auth/login` a la vez, liberados por una barrera, con usuarios de carga distintos (900000001…) y el PIN correcto (2580).
+3. `docker logs qolqe-def16 | grep "database is locked"`.
+
+**Resultado esperado:** los 60 inicios de sesión responden 200, aunque tarden. Si el servicio no da abasto, debería encolarlos o rechazarlos de forma controlada (503 con reintento); nunca un error interno con credenciales válidas.
+
+**Resultado obtenido:** 27 de 60 responden **500 Internal Server Error**, con `sqlite3.OperationalError: database is locked` en `iniciar_sesion` (`autenticacion.py:136`), a los ~10 s (el `busy_timeout`). El umbral coincide con el pool de hilos de AnyIO (40):
+
+| Logins simultáneos | 200 | 500 | Otros | Mediana |
+|---|---|---|---|---|
+| 20 | 20 | 0 | | 4,2 s |
+| 40 | 40 | 0 | | 8,9 s |
+| 60 | 33 | 27 | | 19,2 s |
+| 100 | 41 | 59 | | 27,8 s |
+| 200 | 2 | 153 | 45 timeouts de 60 s | 45,1 s |
+
+Hasta 40 todos entran (la demora es el PBKDF2 en 1 núcleo, no el defecto). Con más de 40 aparecen los 500. Bajo carga mixta afecta también a las operaciones de dinero: en el estrés con 300 VUs que entraron en 1 min hubo 244 `database is locked` en login (139), transferencias y recargas (`mover_saldo`, 95) y pagos (8). Ese estrés colapsó con p95 de 26 s y 60 % de fallas por minuto. Las operaciones de dinero que fallaron hicieron rollback: la integridad se mantuvo (391/391).
+
+**Causa probable:**
+- SQLite admite un solo escritor. Cada petición toma el candado de escritura en su primera escritura y lo suelta en el `commit` de `obtener_bd`, que FastAPI ejecuta después de enviar la respuesta y en un hilo del mismo pool de 40.
+- Con más de 40 peticiones, el pool se llena de peticiones que esperan el candado (hasta 10 s), y la que lo tiene no consigue hilo para hacer `commit` hasta que las otras fallan.
+- Corregirlo es tarea del equipo de Qolqe, no de este proyecto (`qolqe/` no se modifica). Opciones: hacer `commit` dentro del endpoint, transacciones más cortas, un pool mayor que el número de escritores o un motor con concurrencia de escritura.
+
+**Evidencia:**
+- Salida del reproductor: `200 logins simultáneos → {500: 153, 200: 2, 'ReadTimeout': 45}; mediana 45.1 s, máx. 60.3 s` (2026-11-11 21:20).
+- Log del contenedor: `File "/app/qolqe/api/autenticacion.py", line 136, in iniciar_sesion` … `sqlite3.OperationalError: database is locked` (153 veces con 200 logins; 243 en total en las cinco corridas del reproductor).
+- Corrida de estrés: `tests/performance/resultados/estres-20261111-2048-docker-rampa-1min/` (`k6.txt`, `por-minuto.csv`, `recursos-qolqe.csv` con CPU de 9–14 % durante el colapso, `flamegraph.svg`).

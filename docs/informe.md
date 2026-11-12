@@ -278,7 +278,7 @@ Inicio 20:48:44, fin 20:51:35. La primera versión del estrés subía de 0 a 300
 - Cada petición abre su transacción en la primera escritura y hace `commit` en el cierre de la dependencia `obtener_bd` (`qolqe/bd.py:216`), es decir, después de la respuesta.
 - Ese cierre también necesita un hilo del pool de AnyIO (40). Con 300 sesiones entrando juntas, el pool se llena de peticiones que esperan el candado (`busy_timeout` de 10 s), y quien lo tiene no consigue hilo para hacer `commit`.
 - Todo se destraba recién cuando vencen los 10 s, con un 500.
-- Es la misma raíz que DEF-15 (commit después de la respuesta, en la rama `final`).
+- Es la misma raíz que DEF-15 (commit después de la respuesta, en la rama `final`). Se registró como **DEF-16** y se reproduce aparte con `tests/performance/reproducir_def16.py`: con más de 40 logins simultáneos aparecen los 500 (40 es el tamaño del pool).
 
 **Consecuencia para el diseño:** con esta rampa el estrés no mide capacidad, porque se mide una avalancha de logins. El primer escalón se cambió a 5 min, como el pico (`qolqe.js`), y el estrés sin historial se descartó: la causa del colapso no es el historial.
 
@@ -323,6 +323,7 @@ Inicio 20:48:44, fin 20:51:35. La primera versión del estrés subía de 0 a 300
 | DEF-12 | Dos operaciones del mismo usuario en el mismo segundo comparten el código de operación | Alta | Abierto |
 | DEF-13 | El límite diario no cuenta las transferencias interbancarias | Alta | Abierto |
 | DEF-14 | De noche en Lima, con el celular en otra zona horaria, el historial sale vacío (UI, Parte 2) | Media | Abierto |
+| DEF-16 | Con más de 40 inicios de sesión a la vez, Qolqe responde 500 «database is locked» (rendimiento, Parte 3) | Alta | Abierto |
 
 ## 6. Conclusiones y recomendaciones
 *(Entrega final)*
