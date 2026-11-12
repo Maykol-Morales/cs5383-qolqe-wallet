@@ -284,27 +284,98 @@ Inicio 20:48:44, fin 20:51:35. La primera versión del estrés subía de 0 a 300
 
 **Consecuencia para el diseño:** con esta rampa el estrés no mide capacidad, porque se mide una avalancha de logins. El primer escalón se cambió a 5 min, como el pico (`qolqe.js`), y el estrés sin historial se descartó: la causa del colapso no es el historial.
 
-#### Prueba 3b: Estrés (300 → 1 000 VUs, primer escalón en 5 min)
+#### Prueba 3b: Estrés (300 → 1 000 VUs, primer escalón en 5 min) · `resultados/estres-20261111-2107-docker/`
 
-*Pendiente: en ejecución el 2026-11-11, con flamegraph de py-spy.*
+Inicio 21:08:07, fin 21:18:37. Llega a 300 VUs en 5 min (como el pico), se mantiene 3 min y sube 100 VUs por minuto. **Se quebró en el paso de 300 a 400:** k6 cortó la prueba a los 10,5 min (`abortOnFail`, fallas > 10 %).
 
-#### Prueba 4: Resistencia (60 min a la tasa de hora punta)
+| Minuto | VUs | req/s | p95 consultas | p95 dinero | Fallas | |
+|---|---|---|---|---|---|---|
+| 21:13 | 300 | 26,0 | 223 ms | 137 ms | 0 % | escalón 300 |
+| 21:14 | 300 | 27,3 | 526 ms | 208 ms | 0 % | escalón 300 |
+| 21:15 | 300 | 26,6 | 209 ms | 142 ms | 0 % | escalón 300 |
+| 21:16 | 386 | 13,6 | 24,5 s | 27,1 s | 31 % | subida a 400 |
+| 21:17 | 400 | 10,0 | 56,1 s | 54,5 s | 71 % | |
+| 21:18 | 400 | 6,3 | 60,0 s | 60,0 s | 94 % | |
 
-*Pendiente: en ejecución el 2026-11-11.*
+- **Escalón de 300 VUs: cumple** los umbrales de hora punta (p95 por minuto ≤ 526 ms en consultas y ≤ 208 ms en dinero, 0 fallas), igual que el pico.
+- **Al subir a 400 se derrumba en un minuto.** El throughput cae de 27 a 6 req/s mientras los VUs suben: Qolqe deja de atender.
+- **Fallas:** 1 038 de 10 319. Son 495 respuestas 500, 408 conexiones cortadas y 135 timeouts de 60 s del cliente. 0 errores de negocio.
+- **Log:** 615 `database is locked` (464 en el login, `autenticacion.py:136`; 131 en `mover_saldo`). Es el mismo DEF-16 de la prueba 3a: los 100 VUs nuevos entran con login en un minuto y se suman a las sesiones que rotan.
+- **Integridad OK:** 1 543 / 1 543 operaciones de dinero cruzadas.
+- **Recursos:**
+  - Qolqe en el escalón de 300: CPU 54 % en promedio, con ráfagas al 100 %; memoria de 117 a 120 MB.
+  - Qolqe en el colapso: CPU 43 % en promedio y memoria hasta 181 MB, porque se acumulan las conexiones.
+  - k6: 2,2 % de CPU en promedio.
+- **Flamegraph** (`flamegraph.svg`): `verificar_pin` (PBKDF2) se lleva el **58 %** de las muestras con CPU y el historial (`listar`) el 9 %.
+
+**Confirmación** (`resultados/estres-20261111-2222-docker-confirmacion/`, 22:23–22:34): durante la prueba 3b corrió en paralelo el reproductor de DEF-16 (21:15–21:22). Para descartar esa interferencia, el estrés se repitió con la máquina dedicada. Dio el mismo resultado:
+- **Escalón de 300:** cumple (p95 por minuto de 125–217 ms en consultas y 123–205 ms en dinero, 0 fallas).
+- **Subida a 400:** colapsa (p95 de 17–60 s, fallas de 16 % a 88 % por minuto; 1 112 de 10 988 en total: 627 respuestas 500, 465 conexiones cortadas y 20 timeouts).
+- **Log:** 625 `database is locked`.
+- **Integridad OK**, con un aviso: **1 operación de dinero se aplicó aunque k6 recibió un error o un timeout** (1 689 filas nuevas para 1 688 confirmadas). No quedó a medias ni duplicada, pero el usuario la vio fallar.
+
+**La cifra se confirma.**
+
+![Estrés: tiempos, throughput y errores](../tests/performance/resultados/estres-20261111-2107-docker/k6.png)
+![Estrés: CPU y memoria](../tests/performance/resultados/estres-20261111-2107-docker/recursos.png)
+
+#### Prueba 4: Resistencia (60 min a la tasa de hora punta) · `resultados/carga-20261111-2118-docker-resistencia/`
+
+Inicio 21:19:37, fin 22:22:09. Es la carga de hora punta (50 sesiones/min, modelo abierto) durante 60 min estables en vez de 15.
+
+| Criterio | Umbral | Medido | ¿Cumple? |
+|---|---|---|---|
+| p95 consultas + login | < 800 ms | **88 ms** | ✅ |
+| p95 dinero | < 1 500 ms | **119 ms** | ✅ |
+| Fallas técnicas | < 1 % | **0 %** (0 de 29 031) | ✅ |
+| Errores de negocio | 0 | **0** | ✅ |
+| Throughput | ≈ 8 req/s, ≥ 5 operaciones/s | **7,7–8,3 req/s**, 4,8 operaciones/s en promedio (rampa incluida) | ✅ |
+| Sin acumular retrasos | 0 dropped; sesión p95 < 130 s | **0 dropped**; sesión p95 **120 s** | ✅ |
+| Integridad | 0 a medias o duplicadas | **5 288 / 5 288**, INTEGRIDAD OK | ✅ |
+
+**Sin degradación en el tiempo:**
+- **p95 por minuto:** consultas 87–97 ms y dinero 113–122 ms, del primer al último minuto.
+- **Memoria plana:** **122 → 124 MB** en la hora, ≈ 2 MB/h.
+- **CPU estable:** 10,6–11,5 % por cuarto de hora. k6 usó 1,2 %.
+- **Historial:** con 2 985 sesiones y 5 288 operaciones de dinero nuevas, el p95 de `GET /api/movimientos` fue de 37 ms. El historial por defecto es de 30 días y los movimientos nuevos son pocos frente a los ~1 000 por usuario de la semilla.
+
+**Lectura:**
+- **Extrapolación a 18 h:** al ritmo medido serían unos 36 MB más, muy por debajo de 1 GB. No se vio nada que crezca con el tiempo (memoria, latencia, CPU).
+- **Límite de la extrapolación:** 18 h reales acumulan 18 veces más movimientos, sesiones y notificaciones, y una prueba de 1 h no lo demuestra.
+- **Arranque:** la memoria inicial (184 MB en el primer minuto) era la que dejó el estrés anterior en el mismo contenedor, que no se reinició. Bajó a 122 MB al empezar la corrida.
+
+![Resistencia: tiempos, throughput y errores](../tests/performance/resultados/carga-20261111-2118-docker-resistencia/k6.png)
+![Resistencia: CPU y memoria](../tests/performance/resultados/carga-20261111-2118-docker-resistencia/recursos.png)
 
 ### 4.8 Análisis, conclusiones y recomendaciones
 
 **Predicción antes del estrés** (ley de utilización U = X · S). En la carga, ≈ 8 req/s usaron ≈ 19 % de un núcleo → unos 24 ms de CPU por petición. Con 1 núcleo el servidor se satura cerca de **42 req/s ≈ 4,2 sesiones/s ≈ 15 000 sesiones/h ≈ 5 veces la hora punta**, que por Little son unos **500 usuarios simultáneos**. El pico (300 VUs ≈ 25 req/s) debería quedar cerca del 60 % de CPU y cumplir; el estrés debería quebrar entre 400 y 500 VUs.
 
-**¿Se cumplieron los umbrales?** En hora punta, **sí, con amplio margen**: el p95 está a la sexta parte del umbral y no hubo fallas ni retrasos. En el **pico de la campaña también**, incluso con los umbrales estrictos de hora punta (no hizo falta la tolerancia de 2×), y sin ninguna operación de dinero a medias ni duplicada. La predicción del 60 % de CPU en el pico sobrestimó: se midió 44 %, así que el costo de CPU por petición baja con la carga (≈ 16 ms frente a 24 ms; probablemente porque en la carga, con solo 19 % de CPU, el consumo fijo del proceso pesa más). El estrés dirá si la capacidad real supera los 500 usuarios previstos. *Estrés y resistencia: pendiente.*
+**¿Se cumplieron los umbrales?** En hora punta, **sí, con amplio margen**: el p95 está a la sexta parte del umbral y no hubo fallas ni retrasos. En el **pico de la campaña también**, incluso con los umbrales estrictos de hora punta (no hizo falta la tolerancia de 2×), y sin ninguna operación de dinero a medias ni duplicada. La predicción del 60 % de CPU en el pico sobrestimó: se midió 44 %, así que el costo de CPU por petición baja con la carga (≈ 16 ms frente a 24 ms; probablemente porque en la carga, con solo 19 % de CPU, el consumo fijo del proceso pesa más). En el **estrés**, los umbrales se cumplen hasta **300 VUs** y dejan de cumplirse al subir a **400**: en un minuto el p95 pasa de ~0,2 s a 24–27 s y las fallas a 31 %. En la **resistencia** (60 min de hora punta) se cumplen todos, sin degradación con el tiempo: p95 y memoria planos (122 → 124 MB).
 
-**Patrón de degradación y cuello de botella:** *pendiente del estrés y del flamegraph.* Las hipótesis del plan eran: (1) `GET /api/movimientos` con una subconsulta por fila; (2) el pool de 40 hilos de AnyIO ocupado por el antifraude y PBKDF2; (3) CPU del login (PBKDF2). SQLite en WAL se consideraba poco probable. **La prueba 3a desmintió eso último:** ante una avalancha de logins el primer síntoma es `database is locked`, combinado con el pool de hilos (hipótesis 2). En CPU pesan el login (43 %) y el historial (≈ 25 %).
+**Cuello de botella, con evidencia:** las hipótesis del plan eran: (1) `GET /api/movimientos` con una subconsulta por fila; (2) el pool de 40 hilos de AnyIO ocupado por el antifraude y PBKDF2; (3) CPU del login (PBKDF2). SQLite en WAL se consideraba poco probable. **Las pruebas 3a y 3b desmintieron eso último:** en los dos colapsos la causa es `database is locked` (244 y 615 veces en el log) combinado con el pool de hilos (hipótesis 2), registrado como **DEF-16**: el reproductor muestra que con más de 40 logins simultáneos aparecen los 500. El CPU estaba lejos de saturarse (9–14 % en el colapso de la 3a). En CPU, los flamegraphs muestran el login (43–58 %) y el historial (9–25 %).
 
-**Capacidad estimada:** *pendiente del estrés.*
+**Patrón de degradación:** no es gradual sino un **acantilado**.
+- Hasta 300 VUs el p95 sube poco (de ~90 ms a 200–500 ms por minuto) y no hay fallas.
+- Por encima, la latencia salta a decenas de segundos y el throughput cae en vez de crecer.
+- La predicción por CPU (U = X · S, ~500 usuarios) **sobrestimó la capacidad**, porque el recurso que se agota no es el CPU (54 % en el último escalón sano) sino el candado de escritura de SQLite junto con el pool de 40 hilos (DEF-16).
+- El CPU sí explica la lentitud del login: PBKDF2 es el 43–58 % del flamegraph.
+- El historial, la sospecha principal del plan, pesa solo el 9–25 % del CPU y no aparece en el colapso.
 
-**Riesgos para el negocio:** *pendiente.*
+**Capacidad estimada:** **300 usuarios simultáneos ≈ 9 000 sesiones/h ≈ 3 veces la hora punta**, si se sube con una rampa como la del pico. Es el último escalón que cumple los umbrales; el siguiente medido (400) los incumple. Se confirmó con una segunda corrida dedicada (mismo quiebre). Entre 300 y 400 no se afinó: el quiebre depende de cuántos logins llegan a la vez más que de un número fijo de usuarios (DEF-16), así que una cifra más fina daría una precisión engañosa.
 
-**Acciones recomendadas:** *pendiente.*
+**Riesgos para el negocio:**
+- **La campaña cabe justo en el límite.** El pico de la campaña es 300 usuarios, exactamente la capacidad medida: no queda margen para crecer.
+- **Lo que tumba a Qolqe es cómo llegan los usuarios, no cuántos.** La misma cantidad (300) que entra en 5 min pasa, y entra en 1 min colapsa. Basta que más de 40 personas inicien sesión en el mismo instante para que parte reciba un 500 (DEF-16). Una notificación push de la campaña que haga entrar a todos a la vez es justo ese escenario.
+- **Un colapso deja de atender a todos**, no solo a los nuevos: las consultas de saldo también llegan a 60 s.
+- **El dinero no se pierde, pero puede parecer perdido:** en todas las pruebas, incluidas las que colapsaron, la integridad fue OK, porque los 500 hacen rollback. En el colapso de la confirmación, una operación se aplicó aunque el cliente recibió un timeout. Si el usuario la reintenta, se cobra dos veces: la API no tiene clave de idempotencia. El riesgo es de disponibilidad y de reintentos, no de saldos corruptos.
+
+**Acciones recomendadas** (para el equipo de Qolqe; este proyecto no modifica `qolqe/`):
+1. **Corregir DEF-16 y DEF-15:** hacer `commit` dentro del endpoint y no en el cierre de la dependencia, y acortar las transacciones (escribir solo al final, después del antifraude y de los cálculos). Es el cambio con más impacto en la capacidad.
+2. **No responder 500 por contención:** con candado ocupado, 503 con `Retry-After`, y que la app reintente con espera aleatoria. Para que reintentar sea seguro, una **clave de idempotencia** en transferencias, recargas y pagos.
+3. **Escalonar la entrada en la campaña:** notificaciones por tandas y una cola o sala de espera para el login.
+4. **Medir de nuevo después del cambio:** con el candado resuelto, el siguiente límite será el CPU del login (PBKDF2, la mitad del CPU). Se puede mover el hash a un proceso aparte o escalar horizontalmente, con un motor de BD que admita varios escritores (PostgreSQL) si se usa más de un proceso.
+5. **Historial:** precalcular el saldo posterior en vez de una subconsulta por fila. No es urgente, porque pesa menos del 25 % del CPU.
 
 ## 5. Defectos encontrados
 *(Todas las partes)* · Detalle, pasos y evidencia en [`defectos.md`](defectos.md).
