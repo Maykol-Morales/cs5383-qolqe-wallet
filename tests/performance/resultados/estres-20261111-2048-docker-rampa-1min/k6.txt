@@ -1,0 +1,684 @@
+
+         /\      Grafana   /‾‾/  
+    /\  /  \     |\  __   /  /   
+   /  \/    \    | |/ /  /   ‾‾\ 
+  /          \   |   (  |  (‾)  |
+ / __________ \  |_|\_\  \_____/ 
+
+     execution: local
+        script: tests/performance/qolqe.js
+ web dashboard: http://127.0.0.1:5665
+        output: json (tests/performance/resultados/estres-20261111-2048-docker/k6.json.gz)
+
+     scenarios: (100.00%) 1 scenario, 1000 max VUs, 32m30s max duration (incl. graceful stop):
+              * estres: Up to 1000 looping VUs for 32m0s over 16 stages (gracefulRampDown: 30s, gracefulStop: 30s)
+
+
+running (00m00.9s), 0004/1000 VUs, 0 complete and 0 interrupted iterations
+estres   [   0% ] 0004/1000 VUs  00m00.9s/32m00.0s
+
+running (00m01.9s), 0009/1000 VUs, 0 complete and 0 interrupted iterations
+estres   [   0% ] 0009/1000 VUs  00m01.9s/32m00.0s
+
+running (00m02.9s), 0014/1000 VUs, 0 complete and 0 interrupted iterations
+estres   [   0% ] 0014/1000 VUs  00m02.9s/32m00.0s
+
+running (00m03.9s), 0019/1000 VUs, 0 complete and 0 interrupted iterations
+estres   [   0% ] 0019/1000 VUs  00m03.9s/32m00.0s
+
+running (00m04.9s), 0024/1000 VUs, 0 complete and 0 interrupted iterations
+estres   [   0% ] 0024/1000 VUs  00m04.9s/32m00.0s
+
+running (00m05.9s), 0029/1000 VUs, 0 complete and 0 interrupted iterations
+estres   [   0% ] 0029/1000 VUs  00m05.9s/32m00.0s
+
+running (00m06.9s), 0034/1000 VUs, 0 complete and 0 interrupted iterations
+estres   [   0% ] 0034/1000 VUs  00m06.9s/32m00.0s
+
+running (00m07.9s), 0039/1000 VUs, 0 complete and 0 interrupted iterations
+estres   [   0% ] 0039/1000 VUs  00m07.9s/32m00.0s
+
+running (00m08.9s), 0044/1000 VUs, 0 complete and 0 interrupted iterations
+estres   [   0% ] 0044/1000 VUs  00m08.9s/32m00.0s
+
+running (00m09.9s), 0049/1000 VUs, 0 complete and 0 interrupted iterations
+estres   [   1% ] 0049/1000 VUs  00m09.9s/32m00.0s
+
+running (00m10.9s), 0054/1000 VUs, 0 complete and 0 interrupted iterations
+estres   [   1% ] 0054/1000 VUs  00m10.9s/32m00.0s
+
+running (00m11.9s), 0059/1000 VUs, 0 complete and 0 interrupted iterations
+estres   [   1% ] 0059/1000 VUs  00m11.9s/32m00.0s
+
+running (00m12.9s), 0064/1000 VUs, 0 complete and 0 interrupted iterations
+estres   [   1% ] 0064/1000 VUs  00m12.9s/32m00.0s
+
+running (00m13.9s), 0069/1000 VUs, 0 complete and 0 interrupted iterations
+estres   [   1% ] 0069/1000 VUs  00m13.9s/32m00.0s
+
+running (00m14.9s), 0074/1000 VUs, 0 complete and 0 interrupted iterations
+estres   [   1% ] 0074/1000 VUs  00m14.9s/32m00.0s
+
+running (00m15.9s), 0079/1000 VUs, 0 complete and 0 interrupted iterations
+estres   [   1% ] 0079/1000 VUs  00m15.9s/32m00.0s
+
+running (00m16.9s), 0084/1000 VUs, 0 complete and 0 interrupted iterations
+estres   [   1% ] 0084/1000 VUs  00m16.9s/32m00.0s
+
+running (00m17.9s), 0089/1000 VUs, 0 complete and 0 interrupted iterations
+estres   [   1% ] 0089/1000 VUs  00m17.9s/32m00.0s
+
+running (00m18.9s), 0094/1000 VUs, 0 complete and 0 interrupted iterations
+estres   [   1% ] 0094/1000 VUs  00m18.9s/32m00.0s
+
+running (00m19.9s), 0099/1000 VUs, 0 complete and 0 interrupted iterations
+estres   [   1% ] 0099/1000 VUs  00m19.9s/32m00.0s
+
+running (00m20.9s), 0104/1000 VUs, 0 complete and 0 interrupted iterations
+estres   [   1% ] 0104/1000 VUs  00m20.9s/32m00.0s
+
+running (00m21.9s), 0109/1000 VUs, 0 complete and 0 interrupted iterations
+estres   [   1% ] 0109/1000 VUs  00m21.9s/32m00.0s
+
+running (00m22.9s), 0114/1000 VUs, 0 complete and 0 interrupted iterations
+estres   [   1% ] 0114/1000 VUs  00m22.9s/32m00.0s
+
+running (00m23.9s), 0119/1000 VUs, 0 complete and 0 interrupted iterations
+estres   [   1% ] 0119/1000 VUs  00m23.9s/32m00.0s
+
+running (00m24.9s), 0124/1000 VUs, 0 complete and 0 interrupted iterations
+estres   [   1% ] 0124/1000 VUs  00m24.9s/32m00.0s
+
+running (00m25.9s), 0129/1000 VUs, 0 complete and 0 interrupted iterations
+estres   [   1% ] 0129/1000 VUs  00m25.9s/32m00.0s
+
+running (00m26.9s), 0134/1000 VUs, 0 complete and 0 interrupted iterations
+estres   [   1% ] 0134/1000 VUs  00m26.9s/32m00.0s
+
+running (00m27.9s), 0139/1000 VUs, 0 complete and 0 interrupted iterations
+estres   [   1% ] 0139/1000 VUs  00m27.9s/32m00.0s
+
+running (00m28.9s), 0144/1000 VUs, 0 complete and 0 interrupted iterations
+estres   [   2% ] 0144/1000 VUs  00m28.9s/32m00.0s
+
+running (00m29.9s), 0149/1000 VUs, 0 complete and 0 interrupted iterations
+estres   [   2% ] 0149/1000 VUs  00m29.9s/32m00.0s
+
+running (00m30.9s), 0154/1000 VUs, 0 complete and 0 interrupted iterations
+estres   [   2% ] 0154/1000 VUs  00m30.9s/32m00.0s
+
+running (00m31.9s), 0159/1000 VUs, 0 complete and 0 interrupted iterations
+estres   [   2% ] 0159/1000 VUs  00m31.9s/32m00.0s
+
+running (00m32.9s), 0164/1000 VUs, 0 complete and 0 interrupted iterations
+estres   [   2% ] 0164/1000 VUs  00m32.9s/32m00.0s
+
+running (00m33.9s), 0169/1000 VUs, 0 complete and 0 interrupted iterations
+estres   [   2% ] 0169/1000 VUs  00m33.9s/32m00.0s
+
+running (00m34.9s), 0174/1000 VUs, 0 complete and 0 interrupted iterations
+estres   [   2% ] 0174/1000 VUs  00m34.9s/32m00.0s
+
+running (00m35.9s), 0179/1000 VUs, 0 complete and 0 interrupted iterations
+estres   [   2% ] 0179/1000 VUs  00m35.9s/32m00.0s
+
+running (00m36.9s), 0184/1000 VUs, 0 complete and 0 interrupted iterations
+estres   [   2% ] 0184/1000 VUs  00m36.9s/32m00.0s
+
+running (00m37.9s), 0189/1000 VUs, 0 complete and 0 interrupted iterations
+estres   [   2% ] 0189/1000 VUs  00m37.9s/32m00.0s
+
+running (00m38.9s), 0194/1000 VUs, 0 complete and 0 interrupted iterations
+estres   [   2% ] 0194/1000 VUs  00m38.9s/32m00.0s
+
+running (00m39.9s), 0199/1000 VUs, 0 complete and 0 interrupted iterations
+estres   [   2% ] 0199/1000 VUs  00m39.9s/32m00.0s
+
+running (00m40.9s), 0204/1000 VUs, 0 complete and 0 interrupted iterations
+estres   [   2% ] 0204/1000 VUs  00m40.9s/32m00.0s
+
+running (00m41.9s), 0209/1000 VUs, 0 complete and 0 interrupted iterations
+estres   [   2% ] 0209/1000 VUs  00m41.9s/32m00.0s
+
+running (00m42.9s), 0214/1000 VUs, 0 complete and 0 interrupted iterations
+estres   [   2% ] 0214/1000 VUs  00m42.9s/32m00.0s
+
+running (00m43.9s), 0219/1000 VUs, 0 complete and 0 interrupted iterations
+estres   [   2% ] 0219/1000 VUs  00m43.9s/32m00.0s
+
+running (00m44.9s), 0224/1000 VUs, 0 complete and 0 interrupted iterations
+estres   [   2% ] 0224/1000 VUs  00m44.9s/32m00.0s
+
+running (00m45.9s), 0229/1000 VUs, 0 complete and 0 interrupted iterations
+estres   [   2% ] 0229/1000 VUs  00m45.9s/32m00.0s
+
+running (00m46.9s), 0234/1000 VUs, 0 complete and 0 interrupted iterations
+estres   [   2% ] 0234/1000 VUs  00m46.9s/32m00.0s
+
+running (00m47.9s), 0239/1000 VUs, 0 complete and 0 interrupted iterations
+estres   [   2% ] 0239/1000 VUs  00m47.9s/32m00.0s
+
+running (00m48.9s), 0244/1000 VUs, 0 complete and 0 interrupted iterations
+estres   [   3% ] 0244/1000 VUs  00m48.9s/32m00.0s
+
+running (00m49.9s), 0249/1000 VUs, 0 complete and 0 interrupted iterations
+estres   [   3% ] 0249/1000 VUs  00m49.9s/32m00.0s
+
+running (00m50.9s), 0254/1000 VUs, 0 complete and 0 interrupted iterations
+estres   [   3% ] 0254/1000 VUs  00m50.9s/32m00.0s
+
+running (00m51.9s), 0259/1000 VUs, 0 complete and 0 interrupted iterations
+estres   [   3% ] 0259/1000 VUs  00m51.9s/32m00.0s
+
+running (00m52.9s), 0264/1000 VUs, 0 complete and 0 interrupted iterations
+estres   [   3% ] 0264/1000 VUs  00m52.9s/32m00.0s
+
+running (00m53.9s), 0269/1000 VUs, 0 complete and 0 interrupted iterations
+estres   [   3% ] 0269/1000 VUs  00m53.9s/32m00.0s
+
+running (00m54.9s), 0274/1000 VUs, 0 complete and 0 interrupted iterations
+estres   [   3% ] 0274/1000 VUs  00m54.9s/32m00.0s
+
+running (00m55.9s), 0279/1000 VUs, 0 complete and 0 interrupted iterations
+estres   [   3% ] 0279/1000 VUs  00m55.9s/32m00.0s
+
+running (00m56.9s), 0284/1000 VUs, 0 complete and 0 interrupted iterations
+estres   [   3% ] 0284/1000 VUs  00m56.9s/32m00.0s
+
+running (00m57.9s), 0289/1000 VUs, 0 complete and 0 interrupted iterations
+estres   [   3% ] 0289/1000 VUs  00m57.9s/32m00.0s
+
+running (00m58.9s), 0294/1000 VUs, 0 complete and 0 interrupted iterations
+estres   [   3% ] 0294/1000 VUs  00m58.9s/32m00.0s
+
+running (00m59.9s), 0299/1000 VUs, 0 complete and 0 interrupted iterations
+estres   [   3% ] 0299/1000 VUs  00m59.9s/32m00.0s
+
+running (01m00.9s), 0300/1000 VUs, 0 complete and 0 interrupted iterations
+estres   [   3% ] 0300/1000 VUs  01m00.9s/32m00.0s
+
+running (01m01.9s), 0300/1000 VUs, 0 complete and 0 interrupted iterations
+estres   [   3% ] 0300/1000 VUs  01m01.9s/32m00.0s
+
+running (01m02.9s), 0300/1000 VUs, 0 complete and 0 interrupted iterations
+estres   [   3% ] 0300/1000 VUs  01m02.9s/32m00.0s
+
+running (01m03.9s), 0300/1000 VUs, 0 complete and 0 interrupted iterations
+estres   [   3% ] 0300/1000 VUs  01m03.9s/32m00.0s
+
+running (01m04.9s), 0300/1000 VUs, 0 complete and 0 interrupted iterations
+estres   [   3% ] 0300/1000 VUs  01m04.9s/32m00.0s
+
+running (01m05.9s), 0300/1000 VUs, 0 complete and 0 interrupted iterations
+estres   [   3% ] 0300/1000 VUs  01m05.9s/32m00.0s
+
+running (01m06.9s), 0300/1000 VUs, 0 complete and 0 interrupted iterations
+estres   [   3% ] 0300/1000 VUs  01m06.9s/32m00.0s
+
+running (01m07.9s), 0300/1000 VUs, 0 complete and 0 interrupted iterations
+estres   [   4% ] 0300/1000 VUs  01m07.9s/32m00.0s
+
+running (01m08.9s), 0300/1000 VUs, 0 complete and 0 interrupted iterations
+estres   [   4% ] 0300/1000 VUs  01m08.9s/32m00.0s
+
+running (01m09.9s), 0300/1000 VUs, 0 complete and 0 interrupted iterations
+estres   [   4% ] 0300/1000 VUs  01m09.9s/32m00.0s
+
+running (01m10.9s), 0300/1000 VUs, 0 complete and 0 interrupted iterations
+estres   [   4% ] 0300/1000 VUs  01m10.9s/32m00.0s
+
+running (01m11.9s), 0300/1000 VUs, 0 complete and 0 interrupted iterations
+estres   [   4% ] 0300/1000 VUs  01m11.9s/32m00.0s
+
+running (01m12.9s), 0300/1000 VUs, 0 complete and 0 interrupted iterations
+estres   [   4% ] 0300/1000 VUs  01m12.9s/32m00.0s
+
+running (01m13.9s), 0300/1000 VUs, 0 complete and 0 interrupted iterations
+estres   [   4% ] 0300/1000 VUs  01m13.9s/32m00.0s
+
+running (01m14.9s), 0300/1000 VUs, 0 complete and 0 interrupted iterations
+estres   [   4% ] 0300/1000 VUs  01m14.9s/32m00.0s
+
+running (01m15.9s), 0300/1000 VUs, 0 complete and 0 interrupted iterations
+estres   [   4% ] 0300/1000 VUs  01m15.9s/32m00.0s
+
+running (01m16.9s), 0300/1000 VUs, 0 complete and 0 interrupted iterations
+estres   [   4% ] 0300/1000 VUs  01m16.9s/32m00.0s
+
+running (01m17.9s), 0300/1000 VUs, 0 complete and 0 interrupted iterations
+estres   [   4% ] 0300/1000 VUs  01m17.9s/32m00.0s
+
+running (01m18.9s), 0300/1000 VUs, 0 complete and 0 interrupted iterations
+estres   [   4% ] 0300/1000 VUs  01m18.9s/32m00.0s
+
+running (01m19.9s), 0300/1000 VUs, 0 complete and 0 interrupted iterations
+estres   [   4% ] 0300/1000 VUs  01m19.9s/32m00.0s
+
+running (01m20.9s), 0300/1000 VUs, 0 complete and 0 interrupted iterations
+estres   [   4% ] 0300/1000 VUs  01m20.9s/32m00.0s
+
+running (01m21.9s), 0300/1000 VUs, 0 complete and 0 interrupted iterations
+estres   [   4% ] 0300/1000 VUs  01m21.9s/32m00.0s
+
+running (01m22.9s), 0300/1000 VUs, 0 complete and 0 interrupted iterations
+estres   [   4% ] 0300/1000 VUs  01m22.9s/32m00.0s
+
+running (01m23.9s), 0300/1000 VUs, 0 complete and 0 interrupted iterations
+estres   [   4% ] 0300/1000 VUs  01m23.9s/32m00.0s
+
+running (01m24.9s), 0300/1000 VUs, 0 complete and 0 interrupted iterations
+estres   [   4% ] 0300/1000 VUs  01m24.9s/32m00.0s
+
+running (01m25.9s), 0300/1000 VUs, 0 complete and 0 interrupted iterations
+estres   [   4% ] 0300/1000 VUs  01m25.9s/32m00.0s
+
+running (01m26.9s), 0300/1000 VUs, 0 complete and 0 interrupted iterations
+estres   [   5% ] 0300/1000 VUs  01m26.9s/32m00.0s
+
+running (01m27.9s), 0300/1000 VUs, 0 complete and 0 interrupted iterations
+estres   [   5% ] 0300/1000 VUs  01m27.9s/32m00.0s
+
+running (01m28.9s), 0300/1000 VUs, 0 complete and 0 interrupted iterations
+estres   [   5% ] 0300/1000 VUs  01m28.9s/32m00.0s
+
+running (01m29.9s), 0300/1000 VUs, 0 complete and 0 interrupted iterations
+estres   [   5% ] 0300/1000 VUs  01m29.9s/32m00.0s
+
+running (01m30.9s), 0300/1000 VUs, 0 complete and 0 interrupted iterations
+estres   [   5% ] 0300/1000 VUs  01m30.9s/32m00.0s
+
+running (01m31.9s), 0300/1000 VUs, 0 complete and 0 interrupted iterations
+estres   [   5% ] 0300/1000 VUs  01m31.9s/32m00.0s
+
+running (01m32.9s), 0300/1000 VUs, 0 complete and 0 interrupted iterations
+estres   [   5% ] 0300/1000 VUs  01m32.9s/32m00.0s
+
+running (01m33.9s), 0300/1000 VUs, 0 complete and 0 interrupted iterations
+estres   [   5% ] 0300/1000 VUs  01m33.9s/32m00.0s
+
+running (01m34.9s), 0300/1000 VUs, 0 complete and 0 interrupted iterations
+estres   [   5% ] 0300/1000 VUs  01m34.9s/32m00.0s
+
+running (01m35.9s), 0300/1000 VUs, 0 complete and 0 interrupted iterations
+estres   [   5% ] 0300/1000 VUs  01m35.9s/32m00.0s
+
+running (01m36.9s), 0300/1000 VUs, 0 complete and 0 interrupted iterations
+estres   [   5% ] 0300/1000 VUs  01m36.9s/32m00.0s
+
+running (01m37.9s), 0300/1000 VUs, 0 complete and 0 interrupted iterations
+estres   [   5% ] 0300/1000 VUs  01m37.9s/32m00.0s
+
+running (01m38.9s), 0300/1000 VUs, 2 complete and 0 interrupted iterations
+estres   [   5% ] 0300/1000 VUs  01m38.9s/32m00.0s
+
+running (01m39.9s), 0300/1000 VUs, 2 complete and 0 interrupted iterations
+estres   [   5% ] 0300/1000 VUs  01m39.9s/32m00.0s
+
+running (01m40.9s), 0300/1000 VUs, 2 complete and 0 interrupted iterations
+estres   [   5% ] 0300/1000 VUs  01m40.9s/32m00.0s
+
+running (01m41.9s), 0300/1000 VUs, 2 complete and 0 interrupted iterations
+estres   [   5% ] 0300/1000 VUs  01m41.9s/32m00.0s
+
+running (01m42.9s), 0300/1000 VUs, 3 complete and 0 interrupted iterations
+estres   [   5% ] 0300/1000 VUs  01m42.9s/32m00.0s
+
+running (01m43.9s), 0300/1000 VUs, 6 complete and 0 interrupted iterations
+estres   [   5% ] 0300/1000 VUs  01m43.9s/32m00.0s
+
+running (01m44.9s), 0300/1000 VUs, 7 complete and 0 interrupted iterations
+estres   [   5% ] 0300/1000 VUs  01m44.9s/32m00.0s
+
+running (01m45.9s), 0300/1000 VUs, 8 complete and 0 interrupted iterations
+estres   [   6% ] 0300/1000 VUs  01m45.9s/32m00.0s
+
+running (01m46.9s), 0300/1000 VUs, 10 complete and 0 interrupted iterations
+estres   [   6% ] 0300/1000 VUs  01m46.9s/32m00.0s
+
+running (01m47.9s), 0300/1000 VUs, 13 complete and 0 interrupted iterations
+estres   [   6% ] 0300/1000 VUs  01m47.9s/32m00.0s
+
+running (01m48.9s), 0300/1000 VUs, 14 complete and 0 interrupted iterations
+estres   [   6% ] 0300/1000 VUs  01m48.9s/32m00.0s
+
+running (01m49.9s), 0300/1000 VUs, 16 complete and 0 interrupted iterations
+estres   [   6% ] 0300/1000 VUs  01m49.9s/32m00.0s
+
+running (01m50.9s), 0300/1000 VUs, 18 complete and 0 interrupted iterations
+estres   [   6% ] 0300/1000 VUs  01m50.9s/32m00.0s
+
+running (01m51.9s), 0300/1000 VUs, 21 complete and 0 interrupted iterations
+estres   [   6% ] 0300/1000 VUs  01m51.9s/32m00.0s
+
+running (01m52.9s), 0300/1000 VUs, 25 complete and 0 interrupted iterations
+estres   [   6% ] 0300/1000 VUs  01m52.9s/32m00.0s
+
+running (01m53.9s), 0300/1000 VUs, 29 complete and 0 interrupted iterations
+estres   [   6% ] 0300/1000 VUs  01m53.9s/32m00.0s
+
+running (01m54.9s), 0300/1000 VUs, 33 complete and 0 interrupted iterations
+estres   [   6% ] 0300/1000 VUs  01m54.9s/32m00.0s
+
+running (01m55.9s), 0300/1000 VUs, 36 complete and 0 interrupted iterations
+estres   [   6% ] 0300/1000 VUs  01m55.9s/32m00.0s
+
+running (01m56.9s), 0300/1000 VUs, 40 complete and 0 interrupted iterations
+estres   [   6% ] 0300/1000 VUs  01m56.9s/32m00.0s
+
+running (01m57.9s), 0300/1000 VUs, 43 complete and 0 interrupted iterations
+estres   [   6% ] 0300/1000 VUs  01m57.9s/32m00.0s
+
+running (01m58.9s), 0300/1000 VUs, 47 complete and 0 interrupted iterations
+estres   [   6% ] 0300/1000 VUs  01m58.9s/32m00.0s
+
+running (01m59.9s), 0300/1000 VUs, 47 complete and 0 interrupted iterations
+estres   [   6% ] 0300/1000 VUs  01m59.9s/32m00.0s
+
+running (02m00.9s), 0300/1000 VUs, 48 complete and 0 interrupted iterations
+estres   [   6% ] 0300/1000 VUs  02m00.9s/32m00.0s
+
+running (02m01.9s), 0300/1000 VUs, 51 complete and 0 interrupted iterations
+estres   [   6% ] 0300/1000 VUs  02m01.9s/32m00.0s
+
+running (02m02.9s), 0300/1000 VUs, 55 complete and 0 interrupted iterations
+estres   [   6% ] 0300/1000 VUs  02m02.9s/32m00.0s
+
+running (02m03.9s), 0300/1000 VUs, 55 complete and 0 interrupted iterations
+estres   [   6% ] 0300/1000 VUs  02m03.9s/32m00.0s
+
+running (02m04.9s), 0300/1000 VUs, 55 complete and 0 interrupted iterations
+estres   [   7% ] 0300/1000 VUs  02m04.9s/32m00.0s
+time="2026-11-11T20:50:49-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+time="2026-11-11T20:50:50-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+
+running (02m05.9s), 0300/1000 VUs, 61 complete and 0 interrupted iterations
+estres   [   7% ] 0300/1000 VUs  02m05.9s/32m00.0s
+time="2026-11-11T20:50:50-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+time="2026-11-11T20:50:50-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+time="2026-11-11T20:50:51-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+
+running (02m06.9s), 0300/1000 VUs, 71 complete and 0 interrupted iterations
+estres   [   7% ] 0300/1000 VUs  02m06.9s/32m00.0s
+
+running (02m07.9s), 0300/1000 VUs, 71 complete and 0 interrupted iterations
+estres   [   7% ] 0300/1000 VUs  02m07.9s/32m00.0s
+time="2026-11-11T20:50:52-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+time="2026-11-11T20:50:52-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+
+running (02m08.9s), 0300/1000 VUs, 75 complete and 0 interrupted iterations
+estres   [   7% ] 0300/1000 VUs  02m08.9s/32m00.0s
+time="2026-11-11T20:50:53-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+time="2026-11-11T20:50:54-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+time="2026-11-11T20:50:54-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+
+running (02m09.9s), 0300/1000 VUs, 81 complete and 0 interrupted iterations
+estres   [   7% ] 0300/1000 VUs  02m09.9s/32m00.0s
+time="2026-11-11T20:50:54-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+time="2026-11-11T20:50:54-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+time="2026-11-11T20:50:55-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+
+running (02m10.9s), 0300/1000 VUs, 88 complete and 0 interrupted iterations
+estres   [   7% ] 0300/1000 VUs  02m10.9s/32m00.0s
+time="2026-11-11T20:50:55-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+time="2026-11-11T20:50:56-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+
+running (02m11.9s), 0300/1000 VUs, 98 complete and 0 interrupted iterations
+estres   [   7% ] 0300/1000 VUs  02m11.9s/32m00.0s
+time="2026-11-11T20:50:56-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+time="2026-11-11T20:50:57-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+
+running (02m12.9s), 0300/1000 VUs, 104 complete and 0 interrupted iterations
+estres   [   7% ] 0300/1000 VUs  02m12.9s/32m00.0s
+time="2026-11-11T20:50:57-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+
+running (02m13.9s), 0300/1000 VUs, 106 complete and 0 interrupted iterations
+estres   [   7% ] 0300/1000 VUs  02m13.9s/32m00.0s
+time="2026-11-11T20:50:58-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+time="2026-11-11T20:50:58-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+time="2026-11-11T20:50:58-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+time="2026-11-11T20:50:58-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+
+running (02m14.9s), 0300/1000 VUs, 114 complete and 0 interrupted iterations
+estres   [   7% ] 0300/1000 VUs  02m14.9s/32m00.0s
+
+running (02m15.9s), 0300/1000 VUs, 116 complete and 0 interrupted iterations
+estres   [   7% ] 0300/1000 VUs  02m15.9s/32m00.0s
+time="2026-11-11T20:51:00-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+
+running (02m16.9s), 0300/1000 VUs, 118 complete and 0 interrupted iterations
+estres   [   7% ] 0300/1000 VUs  02m16.9s/32m00.0s
+time="2026-11-11T20:51:01-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+time="2026-11-11T20:51:01-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+time="2026-11-11T20:51:01-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+time="2026-11-11T20:51:01-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+
+running (02m17.9s), 0300/1000 VUs, 126 complete and 0 interrupted iterations
+estres   [   7% ] 0300/1000 VUs  02m17.9s/32m00.0s
+time="2026-11-11T20:51:03-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+time="2026-11-11T20:51:03-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+time="2026-11-11T20:51:03-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+
+running (02m18.9s), 0300/1000 VUs, 132 complete and 0 interrupted iterations
+estres   [   7% ] 0300/1000 VUs  02m18.9s/32m00.0s
+time="2026-11-11T20:51:04-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+
+running (02m19.9s), 0300/1000 VUs, 134 complete and 0 interrupted iterations
+estres   [   7% ] 0300/1000 VUs  02m19.9s/32m00.0s
+time="2026-11-11T20:51:05-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+
+running (02m20.9s), 0300/1000 VUs, 136 complete and 0 interrupted iterations
+estres   [   7% ] 0300/1000 VUs  02m20.9s/32m00.0s
+time="2026-11-11T20:51:05-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+time="2026-11-11T20:51:05-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+time="2026-11-11T20:51:06-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+
+running (02m21.9s), 0300/1000 VUs, 142 complete and 0 interrupted iterations
+estres   [   7% ] 0300/1000 VUs  02m21.9s/32m00.0s
+time="2026-11-11T20:51:06-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+time="2026-11-11T20:51:06-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+
+running (02m22.9s), 0300/1000 VUs, 147 complete and 0 interrupted iterations
+estres   [   7% ] 0300/1000 VUs  02m22.9s/32m00.0s
+time="2026-11-11T20:51:07-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+time="2026-11-11T20:51:07-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+time="2026-11-11T20:51:07-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+time="2026-11-11T20:51:07-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+time="2026-11-11T20:51:08-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+
+running (02m23.9s), 0300/1000 VUs, 160 complete and 0 interrupted iterations
+estres   [   7% ] 0300/1000 VUs  02m23.9s/32m00.0s
+time="2026-11-11T20:51:08-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+time="2026-11-11T20:51:08-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+time="2026-11-11T20:51:08-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+time="2026-11-11T20:51:08-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+
+running (02m24.9s), 0300/1000 VUs, 168 complete and 0 interrupted iterations
+estres   [   8% ] 0300/1000 VUs  02m24.9s/32m00.0s
+time="2026-11-11T20:51:09-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+time="2026-11-11T20:51:09-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+time="2026-11-11T20:51:09-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+time="2026-11-11T20:51:09-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+
+running (02m25.9s), 0300/1000 VUs, 178 complete and 0 interrupted iterations
+estres   [   8% ] 0300/1000 VUs  02m25.9s/32m00.0s
+
+running (02m26.9s), 0300/1000 VUs, 178 complete and 0 interrupted iterations
+estres   [   8% ] 0300/1000 VUs  02m26.9s/32m00.0s
+time="2026-11-11T20:51:12-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+
+running (02m27.9s), 0300/1000 VUs, 180 complete and 0 interrupted iterations
+estres   [   8% ] 0300/1000 VUs  02m27.9s/32m00.0s
+time="2026-11-11T20:51:13-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+
+running (02m28.9s), 0300/1000 VUs, 183 complete and 0 interrupted iterations
+estres   [   8% ] 0300/1000 VUs  02m28.9s/32m00.0s
+time="2026-11-11T20:51:13-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+time="2026-11-11T20:51:13-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+time="2026-11-11T20:51:13-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+time="2026-11-11T20:51:14-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+
+running (02m29.9s), 0300/1000 VUs, 193 complete and 0 interrupted iterations
+estres   [   8% ] 0300/1000 VUs  02m29.9s/32m00.0s
+time="2026-11-11T20:51:14-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+time="2026-11-11T20:51:15-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+time="2026-11-11T20:51:15-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+
+running (02m30.9s), 0300/1000 VUs, 199 complete and 0 interrupted iterations
+estres   [   8% ] 0300/1000 VUs  02m30.9s/32m00.0s
+time="2026-11-11T20:51:15-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+
+running (02m31.9s), 0300/1000 VUs, 201 complete and 0 interrupted iterations
+estres   [   8% ] 0300/1000 VUs  02m31.9s/32m00.0s
+time="2026-11-11T20:51:16-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+time="2026-11-11T20:51:16-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+time="2026-11-11T20:51:16-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+time="2026-11-11T20:51:17-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+time="2026-11-11T20:51:17-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+time="2026-11-11T20:51:17-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+
+running (02m32.9s), 0300/1000 VUs, 214 complete and 0 interrupted iterations
+estres   [   8% ] 0300/1000 VUs  02m32.9s/32m00.0s
+time="2026-11-11T20:51:17-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+time="2026-11-11T20:51:17-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+time="2026-11-11T20:51:17-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+time="2026-11-11T20:51:17-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+
+running (02m33.9s), 0300/1000 VUs, 222 complete and 0 interrupted iterations
+estres   [   8% ] 0300/1000 VUs  02m33.9s/32m00.0s
+time="2026-11-11T20:51:18-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+time="2026-11-11T20:51:18-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+time="2026-11-11T20:51:19-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+time="2026-11-11T20:51:19-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+
+running (02m34.9s), 0300/1000 VUs, 230 complete and 0 interrupted iterations
+estres   [   8% ] 0300/1000 VUs  02m34.9s/32m00.0s
+time="2026-11-11T20:51:19-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+time="2026-11-11T20:51:19-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+time="2026-11-11T20:51:19-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+
+running (02m35.9s), 0300/1000 VUs, 237 complete and 0 interrupted iterations
+estres   [   8% ] 0300/1000 VUs  02m35.9s/32m00.0s
+time="2026-11-11T20:51:20-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+time="2026-11-11T20:51:20-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+time="2026-11-11T20:51:20-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+time="2026-11-11T20:51:21-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+
+running (02m36.9s), 0300/1000 VUs, 244 complete and 0 interrupted iterations
+estres   [   8% ] 0300/1000 VUs  02m36.9s/32m00.0s
+time="2026-11-11T20:51:21-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+time="2026-11-11T20:51:22-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+
+running (02m37.9s), 0300/1000 VUs, 250 complete and 0 interrupted iterations
+estres   [   8% ] 0300/1000 VUs  02m37.9s/32m00.0s
+
+running (02m38.9s), 0300/1000 VUs, 250 complete and 0 interrupted iterations
+estres   [   8% ] 0300/1000 VUs  02m38.9s/32m00.0s
+time="2026-11-11T20:51:23-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+time="2026-11-11T20:51:23-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+time="2026-11-11T20:51:23-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+time="2026-11-11T20:51:24-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+
+running (02m39.9s), 0300/1000 VUs, 260 complete and 0 interrupted iterations
+estres   [   8% ] 0300/1000 VUs  02m39.9s/32m00.0s
+time="2026-11-11T20:51:25-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+time="2026-11-11T20:51:25-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+
+running (02m40.9s), 0300/1000 VUs, 264 complete and 0 interrupted iterations
+estres   [   8% ] 0300/1000 VUs  02m40.9s/32m00.0s
+time="2026-11-11T20:51:25-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+time="2026-11-11T20:51:26-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+
+running (02m41.9s), 0300/1000 VUs, 270 complete and 0 interrupted iterations
+estres   [   8% ] 0300/1000 VUs  02m41.9s/32m00.0s
+time="2026-11-11T20:51:26-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+time="2026-11-11T20:51:26-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+time="2026-11-11T20:51:27-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+
+running (02m42.9s), 0300/1000 VUs, 276 complete and 0 interrupted iterations
+estres   [   8% ] 0300/1000 VUs  02m42.9s/32m00.0s
+time="2026-11-11T20:51:27-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+time="2026-11-11T20:51:27-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+time="2026-11-11T20:51:27-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+time="2026-11-11T20:51:28-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+
+running (02m43.9s), 0300/1000 VUs, 286 complete and 0 interrupted iterations
+estres   [   9% ] 0300/1000 VUs  02m43.9s/32m00.0s
+time="2026-11-11T20:51:28-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+time="2026-11-11T20:51:28-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+time="2026-11-11T20:51:28-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+time="2026-11-11T20:51:29-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+
+running (02m44.9s), 0300/1000 VUs, 294 complete and 0 interrupted iterations
+estres   [   9% ] 0300/1000 VUs  02m44.9s/32m00.0s
+time="2026-11-11T20:51:29-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+time="2026-11-11T20:51:30-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+
+running (02m45.9s), 0300/1000 VUs, 301 complete and 0 interrupted iterations
+estres   [   9% ] 0300/1000 VUs  02m45.9s/32m00.0s
+time="2026-11-11T20:51:30-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+time="2026-11-11T20:51:30-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+time="2026-11-11T20:51:30-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+
+running (02m46.9s), 0300/1000 VUs, 309 complete and 0 interrupted iterations
+estres   [   9% ] 0300/1000 VUs  02m46.9s/32m00.0s
+
+running (02m47.9s), 0300/1000 VUs, 309 complete and 0 interrupted iterations
+estres   [   9% ] 0300/1000 VUs  02m47.9s/32m00.0s
+time="2026-11-11T20:51:32-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+
+running (02m48.9s), 0300/1000 VUs, 311 complete and 0 interrupted iterations
+estres   [   9% ] 0300/1000 VUs  02m48.9s/32m00.0s
+time="2026-11-11T20:51:33-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+time="2026-11-11T20:51:33-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+time="2026-11-11T20:51:33-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+time="2026-11-11T20:51:34-05:00" level=warning msg="Request Failed" error="Post \"http://localhost:8001/api/auth/login\": EOF"
+
+running (02m49.9s), 0300/1000 VUs, 320 complete and 0 interrupted iterations
+estres   [   9% ] 0300/1000 VUs  02m49.9s/32m00.0s
+
+
+  █ THRESHOLDS 
+
+    errores_negocio
+    ✓ 'count<1' count=0
+
+    http_req_duration{tipo:consulta}
+    ✗ 'p(95)<800' p(95)=20.33s
+
+    http_req_duration{tipo:dinero}
+    ✗ 'p(95)<1500' p(95)=22.31s
+
+    http_req_failed
+    ✗ 'rate<0.10' rate=10.17%
+
+
+  █ TOTAL RESULTS 
+
+    CUSTOM
+    errores_negocio................: 0      0/s
+    operaciones....................: 1554   9.147986/s
+
+    HTTP
+    http_req_duration..............: avg=2.55s  med=7.59ms  p(90)=12.17s p(95)=20.6s  p(99)=26.59s max=28.77s
+      { expected_response:true }...: avg=1.61s  med=6.4ms   p(90)=3.81s  p(95)=14.79s p(99)=26.08s max=27.47s
+      { tipo:consulta }............: avg=2.34s  med=5.55ms  p(90)=9.31s  p(95)=20.33s p(99)=26.25s max=27.47s
+      { tipo:dinero }..............: avg=3.56s  med=68.78ms p(90)=16.56s p(95)=22.31s p(99)=28.03s max=28.77s
+    http_req_failed................: 10.17% 280 out of 2751
+    http_reqs......................: 2751   16.194408/s
+
+    EXECUTION
+    iteration_duration.............: avg=50.61s med=20.17s  p(90)=2m9s   p(95)=2m17s  p(99)=2m24s  max=2m28s 
+    iterations.....................: 320    1.883755/s
+    vus............................: 300    min=4           max=300 
+    vus_max........................: 1000   min=1000        max=1000
+
+    NETWORK
+    data_received..................: 2.7 MB 16 kB/s
+    data_sent......................: 1.0 MB 6.0 kB/s
+
+
+
+
+running (02m49.9s), 0000/1000 VUs, 320 complete and 300 interrupted iterations
+estres ✗ [   9% ] 0055/1000 VUs  02m49.9s/32m00.0s
+time="2026-11-11T20:51:35-05:00" level=error msg="thresholds on metrics 'http_req_duration{tipo:consulta}, http_req_duration{tipo:dinero}, http_req_failed' were crossed; at least one has abortOnFail enabled, stopping test prematurely"
