@@ -37,7 +37,7 @@ k6 sale con error si se incumple un umbral. `integridad.txt` termina en `INTEGRI
 
 ## Demo en vivo (exposición, ~5 min)
 
-Hora punta acortada: 2 min de rampa + 1 min estable, solo los 120 usuarios que necesita (`maxVUs`), así `preparar` tarda segundos.
+Hora punta acortada: 2 min de rampa + 1 min estable, solo los 120 usuarios que necesita (`maxVUs`), así `preparar` tarda segundos. Ensayo del 2026-11-11: **3 min 32 s** de principio a fin, todos los umbrales en verde, integridad 122 / 122 (`resultados/carga-20261111-2242-demo/`).
 
 **Antes de la exposición** (en la transición entre grupos):
 1. Cerrar el resto de aplicaciones; abrir dos terminales en la raíz del repo y, en el navegador, `resultados/pico-20261111-2032-docker/dashboard.html` (plan B).
@@ -61,8 +61,8 @@ Hora punta acortada: 2 min de rampa + 1 min estable, solo los 120 usuarios que n
 | 1:30 | Terminal 2 | CPU del contenedor | "El CPU que ven es el de Qolqe; k6 casi no consume" |
 | 2:00 | `qolqe.js` en el editor | Umbrales y pesos | "Cada umbral es una frase del requerimiento" |
 | 3:00 | Terminal 1 | Esperar el cierre (hasta 30 s de `gracefulStop` para las sesiones en curso) | "Las sesiones que quedan a medias por el corte de k6 no cuentan; las operaciones de dinero sí se verifican" |
-| 4:00 | Terminal 1 | `D=$(ls -td tests/performance/resultados/carga-*-demo \| head -1); sed -n '/THRESHOLDS/,/TOTAL/p' $D/k6.txt; cat $D/integridad.txt` (k6 escribe en `k6.txt`, no en la terminal) | "Todos los umbrales en verde y cada operación de dinero confirmada está una sola vez en la BD: INTEGRIDAD OK" |
-| 4:30 | `recursos.png` y `k6.png` de esa carpeta | Gráficos | "Esto mismo, en 15 minutos y con 300 usuarios, son los resultados que vienen" |
+| 3:50 | Terminal 1 | Al terminar, la terminal muestra el resumen de k6 (subir hasta `THRESHOLDS`) y al final `INTEGRIDAD OK` | "Todos los umbrales en verde y cada operación de dinero confirmada está una sola vez en la BD" |
+| 4:10 | `recursos.png` y `k6.png` de la carpeta que imprime al final | Gráficos | "Esto mismo, en 15 minutos y con 300 usuarios, son los resultados que vienen" |
 
 **Plan B** (si el contenedor o k6 fallan): el `dashboard.html` exportado del pico, que ya está abierto, y `resultados/carga-20261111-0422-docker/`.
 
