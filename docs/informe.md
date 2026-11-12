@@ -132,6 +132,8 @@ Las demás operaciones de la tabla (contactos, consultar deudas, otras) también
 | **Artillery** | YAML simple, Node.js como el E2E, modelo abierto nativo (`arrivalRate`) | `ensure` con p95 global (por endpoint, con plugin); el generador Node, de un hilo, satura antes |
 | **Taurus** | Capa YAML sobre JMeter, Gatling, Locust o k6 que agrega `passfail` | No es un generador; solo aporta umbrales, que k6 ya trae |
 
+**Medición propia:** con el mismo escenario (100 usuarios, saldo cada 1 s, ~85 req/s), k6 usó **5,2 %** de CPU y Locust **14,0 %**, unas 2,7 veces más (`tests/performance/comparativa/`).
+
 Comparación completa, por cada necesidad del requerimiento y con fuentes: [`comparativa-rendimiento.md`](comparativa-rendimiento.md).
 
 **Limitaciones de k6:** el runtime JS no es Node (no hay paquetes npm, solo módulos ESM puros); no mide los recursos del servidor (lo hace `monitor.py`); la extensión de navegador no se usó. Sin GUI: el script es código y se revisa como tal.

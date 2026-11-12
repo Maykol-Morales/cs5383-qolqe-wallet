@@ -38,10 +38,31 @@ Las otras quedan descartadas por un hueco concreto frente al requerimiento:
 - Los 4xx cuentan como falla por defecto. Hubo que declarar `http.setResponseCallback(expectedStatuses({min: 200, max: 499}))` y contarlos aparte.
 - La integridad del dinero no se puede ver desde k6. Se verifica después contra la BD (`datos.py verificar`), cruzando los ids que k6 registró.
 
+## 4. Medición propia: CPU del generador, k6 frente a Locust
+
+Mismo escenario en las dos herramientas (`tests/performance/comparativa/`: `saldo.js` y `locustfile.py`):
+- 100 usuarios que entran en 50 s y hacen login una vez.
+- Después, `GET /api/cuentas/me/saldo` cada 1 s durante 2 min.
+- Mismo Qolqe (Docker, 1 núcleo) y BD preparada antes de cada corrida.
+- CPU medido con `monitor.py` sobre el proceso del generador, en la meseta (los 100 usuarios ya dentro).
+
+Se corre con `tests/performance/comparativa/correr.sh`. Resultados en `tests/performance/resultados/comparativa-20261111-2236/`:
+
+| Generador | Peticiones | p95 medido | CPU del generador |
+|---|---|---|---|
+| k6 1.3.0 | 14 561 | 11 ms | **5,2 %** |
+| Locust 2.47.0 (1 proceso) | 14 471 | 17 ms | **14,0 %** |
+
+**Lectura:**
+- Para la misma carga (~85 req/s), **Locust gasta unas 2,7 veces más CPU que k6**.
+- Un proceso de Locust usa un solo núcleo. A este ritmo, se saturaría cerca de 600 req/s (extrapolación lineal), y por encima habría que repartir la carga entre varios workers.
+- Para nuestro estrés (~27 req/s) cualquiera de los dos alcanza. La diferencia importa porque el generador corre en la misma laptop que Qolqe: cada punto de CPU del generador se le quita al sistema que se mide.
+- El p95 que informa Locust es 6 ms mayor para las mismas respuestas: mide también el tiempo del cliente Python (`requests` + gevent).
+
 ## Fuentes
 
 - k6, executors y thresholds: https://grafana.com/docs/k6/latest/using-k6/scenarios/executors/ · https://grafana.com/docs/k6/latest/using-k6/thresholds/
 - Gatling, SDK de JavaScript y modelos de carga: https://docs.gatling.io/tutorials/test-as-code/javascript/installation-guide/ · https://docs.gatling.io/reference/script/core/injection
 - JMeter, Open Model Thread Group (5.5, experimental): https://www.blazemeter.com/blog/open-model-thread-group
 - Locust, modelo cerrado y `constant_pacing`: https://medium.com/locust-cloud/locusts-and-honey-badgers-closed-vs-open-workload-models-in-load-testing-9f59abfc6d9f
-- Medición propia: `tests/performance/resultados/carga-20261111-0422-docker/recursos-k6.csv`
+- Medición propia: `tests/performance/resultados/carga-20261111-0422-docker/recursos-k6.csv` y `tests/performance/resultados/comparativa-20261111-2236/`
