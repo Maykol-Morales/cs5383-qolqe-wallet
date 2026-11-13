@@ -11,3 +11,6 @@ reporte-schemathesis/
 .schemathesis/
 .hypothesis/
 sitio/
+
+# Llave SSH del Learner Lab (nunca versionar)
+*.pem
