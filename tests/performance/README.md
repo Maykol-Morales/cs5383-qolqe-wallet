@@ -8,26 +8,32 @@ Requerimiento "Quincena Qolqe" (`pdfs/P2_Parte3_Enunciado.pdf`). Modelo, umbrale
 | `datos.py` | `preparar` (reinicia y deja un usuario por VU con deudas y contactos) y `verificar` (integridad) |
 | `monitor.py` | CPU y memoria de un proceso → CSV (script del enunciado) |
 | `graficos.py` | `por-minuto.csv`, `por-endpoint.csv`, `k6.png`, `recursos.png` |
-| `correr.sh` | Todo lo anterior en orden, cuando Qolqe y k6 están en el mismo equipo |
+| `correr.py` | Todo lo anterior en orden, con Qolqe en Docker y k6 en el equipo. Funciona en Windows, macOS y Linux |
 | `reproducir_def16.py` | DEF-16: N logins simultáneos contra un Qolqe dedicado; sale con 1 si alguno da 5xx |
 
 ## Requisitos
 
-- [k6](https://grafana.com/docs/k6/latest/set-up/install-k6/) ≥ 1.0
-- `.venv/bin/pip install psutil matplotlib py-spy`
-- Qolqe en un solo proceso: `uvicorn qolqe.main:app --host 0.0.0.0 --port 8000`
-- Qolqe dedicado: si otras pruebas (E2E, pytest) usan el mismo servidor, sus `reiniciar` borran los usuarios de carga y salen 401. En ese caso, levantar otro puerto y otra BD (`QOLQE_BD=/tmp/rend.db uvicorn … --port 8001`) y correr con las mismas `QOLQE_URL` y `QOLQE_BD`
+- **Docker** encendido (Docker Desktop en Windows y macOS).
+- **k6** ≥ 1.0 en el PATH: Windows `winget install k6 --source winget`; macOS `brew install k6`; [otros](https://grafana.com/docs/k6/latest/set-up/install-k6/).
+- **Python 3** con `pip install psutil matplotlib` (mide k6 y grafica; no hace falta instalar Qolqe).
+- Qolqe corre en un contenedor aparte (`qolqe-rend`, puerto 8001, base en un volumen de Docker), así que no choca con el :8000 de las pruebas funcionales, cuyo `reiniciar` borraría a los usuarios de carga.
 
-## Correr (mismo equipo)
+## Correr (Windows, macOS y Linux)
+
+En Windows, `py` en lugar de `python3`; las rutas pueden ir con `/`.
 
 ```bash
-tests/performance/correr.sh humo                      # 1 VU, 3 sesiones (~6 min): referencia y prueba del script
-tests/performance/correr.sh carga                     # hora punta: 50 sesiones/min, 2 + 15 min
-DURACION=60m ETIQUETA=resistencia tests/performance/correr.sh carga
-tests/performance/correr.sh pico                      # 300 VUs, 15 min
-PERFIL=1 tests/performance/correr.sh estres           # 300 → 1000 VUs (+100 cada 4 min) con flamegraph
-PESOS=30,0,15,10,10,6,4,10 ETIQUETA=sin-historial tests/performance/correr.sh estres   # confirmación: el 15 % del historial se reparte en proporción
+python3 tests/performance/correr.py levantar          # una vez: construye la imagen y crea el contenedor (1 CPU, 1 GB)
+python3 tests/performance/correr.py humo              # 1 VU, 3 sesiones (~5 min): referencia y prueba del script
+python3 tests/performance/correr.py carga             # hora punta: 50 sesiones/min, 2 + 15 min
+python3 tests/performance/correr.py pico              # 300 VUs, 15 min
+python3 tests/performance/correr.py estres            # 300 → 1000 VUs (+100 por escalón), corta si fallan > 10 %
+python3 tests/performance/correr.py parar             # borra el contenedor
 ```
+
+Variables (en PowerShell: `$env:USUARIOS="120"; py tests/performance/correr.py carga`): `USUARIOS`, `DURACION`, `ETIQUETA`, `TOPE`, `PASO` y `FLUJOS=20,40,25,15` (% de sesiones: chequear mi plata, pagar a los míos, recargar celulares, pagar servicios).
+
+**Cómo se mide:** k6 corre en el equipo (su CPU y memoria, con psutil) y Qolqe con `docker stats` del contenedor, una fila por segundo. Es el % de un núcleo (con `--cpus=1`, máximo 100 %) y la memoria del contenedor, que incluye la caché de archivos y es algo mayor que el RSS de las corridas anteriores. `datos.py` (datos de prueba e integridad) se ejecuta dentro del contenedor porque lee la base SQLite, que en Windows y macOS queda dentro de la VM de Docker. `correr.py` ya no graba el flamegraph con `py-spy` de las corridas en Linux (pedía `sudo`).
 
 Cada corrida deja `resultados/<prueba>-<fecha>[-etiqueta]/`:
 - de k6: `summary.json`, `dashboard.html` y `k6.json.gz`;

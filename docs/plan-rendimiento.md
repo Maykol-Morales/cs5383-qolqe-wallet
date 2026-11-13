@@ -42,20 +42,65 @@ El enunciado pide elegir una de cuatro opciones; EC2 no figura tal cual.
 
 Ley de Little: usuarios simultáneos = 3 000 sesiones/h × 2 min / 60 min = **100**. Campaña = triple = **300**.
 
-| Parámetro | Carga (hora punta) | Pico (campaña) | Estrés (capacidad) | Resistencia |
-|---|---|---|---|---|
-| Executor k6 | `ramping-arrival-rate` | `ramping-vus` | `ramping-vus` en escalones | igual a carga, más larga |
-| Carga | 50 sesiones/min (≈ 100 VUs, `maxVUs` 120) | 300 VUs | 300 → 400 → … → tope 1 000 (+50 cerca del quiebre) | 50 sesiones/min |
-| Ramp-up | 2 min (una sesión) | 5 min: la rampa lineal hace entrar a todos en los primeros 5 min | 1 min por escalón | 2 min |
-| Duración | 15 min estables | 15 min en total (12:00–12:15, rampa incluida) | 3 min por escalón; se miden los últimos 2 | 60 min (supuesto) |
-| Think time | triangular 10–25 s | igual | igual | igual |
-| Distribución | 30/15/15/10/10/6/4/10 | igual | igual | igual |
+| Parámetro | Carga (hora punta) | Pico (campaña) | Estrés (capacidad) |
+|---|---|---|---|
+| Executor k6 | `ramping-arrival-rate` | `ramping-vus` | `ramping-vus` en escalones |
+| Carga | 50 sesiones/min (≈ 100 VUs, `maxVUs` 120) | 300 VUs | 300 → 400 → … → tope 1 000 (+50 cerca del quiebre) |
+| Ramp-up | 2 min (una sesión) | 5 min: la rampa lineal hace entrar a todos en los primeros 5 min | 1 min por escalón |
+| Duración | 15 min estables | 15 min en total (12:00–12:15, rampa incluida) | 3 min por escalón; se miden los últimos 2 |
+| Think time | triangular 10–25 s | igual | igual |
+| Distribución | 4 flujos: 20 / 40 / 25 / 15 % de las sesiones (ver abajo) | igual | igual |
 
 - La carga usa modelo **abierto** porque el dato es "sesiones por hora", y "sin acumular retrasos" solo se nota si las sesiones siguen llegando aunque el sistema se atrase. Pico y estrés usan **VUs** porque el dato es "usuarios simultáneos".
 - El estrés empieza en el pico (300). La capacidad es el último escalón que cumple los umbrales de hora punta. Corta solo con `abortOnFail` si las fallas pasan de 10 %.
-- La resistencia es la carga con `DURACION=60m`. El requerimiento pide 18 h (6:00–24:00); se comprime a 1 h por costo y se justifica en el informe. Vigilar la RSS, el p95 del historial (crece `movimientos`) y `notificaciones`.
 - El humo es la carga con 1 VU y 3 sesiones: referencia de latencia y prueba del script. Va en la demo en vivo.
-- Las 6 operaciones se sortean con pesos: saldo+perfil 30, movimientos 15, transferencia 15, contactos 10, recarga 10, consultar deuda 6, pagar deuda 4, otras (límites, alertas, solicitudes, dispositivos, sesiones) 10.
+- Cada sesión sigue **uno de 4 flujos completos**, historias de lo que un usuario hace al abrir la app, de 6 operaciones cada una y sorteados con 20 / 40 / 25 / 15 % (variable `FLUJOS`):
+
+| Flujo | % sesiones | Operaciones (después del login) | Por qué es crítico |
+|---|---|---|---|
+| 1. Chequear mi plata | 20 | saldo+perfil, movimientos, límites o alertas, otra consulta de cuenta, saldo+perfil, movimientos | Frecuencia (consultas) y riesgo: el historial calcula el saldo posterior con una subconsulta por fila |
+| 2. Es quincena, pago a los míos | 40 | saldo+perfil, contactos, transferencia, saldo+perfil, transferencia, movimientos | Impacto en el dinero (débito y crédito en dos cuentas); verifica el resultado al terminar |
+| 3. Recargo celulares | 25 | saldo+perfil, contactos, recarga, recarga (a un familiar), saldo+perfil, límites o alertas | Dinero y riesgo: la recarga pasa por el antifraude simulado (40–120 ms por hilo) |
+| 4. Pago mis servicios | 15 | saldo+perfil, consultar deuda, pagar, consultar deuda, pagar, movimientos | Dinero: se paga siempre la deuda consultada antes; revisa el historial al final |
+
+  Las "otras" (límites, alertas, solicitudes, dispositivos, sesiones) se reparten al azar entre esos 5 endpoints. Los datos de cada operación siguen siendo al azar (monto, contacto, número recargado).
+- **Los pesos 20/40/25/15 salen de la tabla del requerimiento.** Una sesión tiene 6 operaciones, así que 100 sesiones son 600 operaciones. Se probaron las combinaciones de porcentajes (en pasos de 5) y de variantes de los flujos, y se eligió la de menor desviación que deja el flujo de consulta con un peso creíble (20 %). La mezcla resultante frente al requerimiento:
+
+| Operación | Requerimiento | Con los 4 flujos | Diferencia |
+|---|---|---|---|
+| Saldo y perfil | 30 % | 30,8 % | +0,8 |
+| Movimientos | 15 % | 15,8 % | +0,8 |
+| Transferencia | 15 % | 13,3 % | −1,7 |
+| Contactos | 10 % | 10,8 % | +0,8 |
+| Recarga | 10 % | 8,3 % | −1,7 |
+| Consultar deuda | 6 % | 5,0 % | −1,0 |
+| Pagar deuda | 4 % | 5,0 % | +1,0 |
+| Otras | 10 % | 10,8 % | +0,8 |
+
+  Con sesiones de longitud fija (6 operaciones, dato del requerimiento) y flujos enteros, la mezcla no puede ser exacta: la mayor desviación es de 1,7 puntos. Las operaciones de dinero suman 26,7 % (requerimiento: 29 %): transferencias, recargas y pagos quedan algo por debajo, en las tres un poco menos de lo pedido.
+
+### 3.1 Tipos de prueba: cuáles se ejecutan y cuál se descarta
+
+El requerimiento pregunta dos cosas: si se cumple en **hora punta y en el pico de la campaña**, y **hasta cuántos usuarios simultáneos** puede crecer la plataforma. Cada tipo de prueba se elige según la pregunta que contesta:
+
+| Tipo | Decisión | Pregunta del requerimiento que contesta |
+|---|---|---|
+| Carga | **Se ejecuta** | "En hora punta … sostener el volumen de la hora punta sin acumular retrasos" |
+| Pico | **Se ejecuta** | "El triple de usuarios simultáneos, la mayoría en los primeros 5 minutos … ninguna operación de dinero a medias ni dos veces" |
+| Estrés | **Se ejecuta** | "Hasta cuántos usuarios simultáneos podemos crecer antes de dejar de cumplir" |
+| Resistencia (soak) | **Se descarta** | Ninguna (ver abajo) |
+| Humo | Se ejecuta (validación) | No es del requerimiento: valida el script y da la latencia sin contención |
+
+**Por qué se descarta la resistencia:**
+
+1. **El requerimiento no la pide.** Lo que "necesitamos saber" es si se cumple en hora punta y en el pico, y el límite de crecimiento. Nada pregunta por la estabilidad durante muchas horas. El dato de que Qolqe "opera de 6:00 a 24:00 sin reinicios" describe el contexto, no un criterio de aceptación: no trae ningún umbral (memoria máxima, degradación permitida) que convertir en prueba.
+2. **La prueba real no es ejecutable.** La resistencia que corresponde al dato son 18 h (6:00–24:00). No cabe en el plazo ni en una laptop que además genera la carga. Una versión de 1 h no demuestra nada sobre 18 h: las 18 h acumulan 18 veces más movimientos, sesiones y notificaciones, y una hora no permite extrapolar con confianza.
+3. **Lo que vigila una resistencia ya se observa en las otras pruebas.** Su objetivo es ver si crece la memoria o el tiempo de respuesta con el uso. En la carga, el pico y el estrés se registran el CPU y la memoria de Qolqe cada segundo y el p95 por minuto, así que una fuga o una degradación progresiva importante aparecería en esas curvas.
+4. **Sería la misma prueba que la carga, más larga.** La hora punta dura 1 h, y la carga ya mide el ritmo de 3 000 sesiones/h con 0 sesiones descartadas; alargarla a 60 min repite la misma carga sin hacer una pregunta nueva.
+
+**Riesgo que queda sin cubrir (se declara en el informe, §6):** la acumulación de datos durante 18 h (crecimiento del historial, de las sesiones y de las notificaciones en SQLite) no se mide. Si el negocio necesita esa garantía, la recomendación es una prueba de resistencia de 18 h en un entorno dedicado, con memoria y tamaño de la base como criterios, que hoy no existen en el requerimiento.
+
+**Referencia previa, no comparable:** en la rama `parte-3` hay una corrida de 60 min a la tasa de hora punta (memoria 122 → 124 MB, sin degradación del p95), hecha con el modelo de carga anterior y otro hardware. No se usa como resultado de esta entrega.
 
 ## 4. Datos de prueba (un usuario por VU)
 
@@ -81,7 +126,7 @@ Ley de Little: usuarios simultáneos = 3 000 sesiones/h × 2 min / 60 min = **10
 ```
 tests/performance/
   README.md        cómo correr cada prueba
-  qolqe.js         script k6 único; PRUEBA=humo|carga|pico|estres (+ DURACION para resistencia)
+  qolqe.js         script k6 único; PRUEBA=humo|carga|pico|estres
   datos.py         preparar | verificar
   monitor.py       CPU y memoria de un proceso → CSV
   graficos.py      CPU/memoria → PNG y p95/errores por escalón del estrés (lo demás lo da el dashboard HTML de k6)
@@ -100,7 +145,7 @@ tests/performance/
 **Evidencia (obligatoria):**
 - p95 por endpoint (etiqueta `name` de k6) y CPU del proceso;
 - `py-spy record --pid <uvicorn> -o flamegraph.svg` durante el estrés: en qué funciones se va el CPU;
-- experimento de confirmación: estrés repetido con `PESOS` sin historial (su 15 % repartido entre las demás operaciones). Si la capacidad sube mucho, el historial es la causa.
+- el estrés sin historial no se ejecutó: la evidencia apuntó al candado de SQLite y no al historial.
 
 **Capacidad** se informa en usuarios simultáneos y en sesiones/h (= usuarios × 30) frente a la hora punta: "N usuarios ≈ M sesiones/h = K veces la hora punta".
 
@@ -110,7 +155,7 @@ tests/performance/
 |---|---|---|
 | F0 | Este plan | Agente revisor (hecho; correcciones incorporadas) |
 | F1 | `qolqe.js`, `datos.py`, `monitor.py`, `graficos.py`; humo y carga corta en local para calibrar | Agente code-reviewer con ponytail-review |
-| F2 | Ejecución en EC2 (o Docker): humo, carga, pico, estrés, resistencia | – |
+| F2 | Ejecución en EC2 (o Docker): humo, carga, pico, estrés (la resistencia se descarta, §3.1) | – |
 | F3 | Análisis + `docs/informe.md` §4 + defectos nuevos si aparecen (DEF-15…) | Agente revisor |
 | F4 | Comparación de herramientas (k6 vs JMeter, Locust, Gatling, Artillery), deck de 15 min y guion de demo | – |
 

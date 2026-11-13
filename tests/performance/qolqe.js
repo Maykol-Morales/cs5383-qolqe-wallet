@@ -1,5 +1,5 @@
 // Prueba de rendimiento de Qolqe: requerimiento "Quincena Qolqe" (pdfs/P2_Parte3_Enunciado.pdf §4).
-// PRUEBA=humo|carga|pico|estres. Resistencia = carga con DURACION=60m. Modelo y trazabilidad: docs/plan-rendimiento.md
+// PRUEBA=humo|carga|pico|estres (la resistencia se descartó: docs/plan-rendimiento.md §3.1). Modelo y trazabilidad: docs/plan-rendimiento.md
 import http from 'k6/http';
 import { sleep } from 'k6';
 import exec from 'k6/execution';
@@ -9,9 +9,10 @@ const URL = __ENV.QOLQE_URL || 'http://localhost:8000';
 const PRUEBA = __ENV.PRUEBA || 'humo';
 const USUARIOS = Number(__ENV.USUARIOS || 1000); // preparados con datos.py; uno por VU
 const DURACION = __ENV.DURACION || '15m';
-// Pesos de la tabla del requerimiento: saldo+perfil, movimientos, transferencia, contactos,
-// recarga, consultar deuda, pagar deuda, otras. PESOS permite el experimento sin historial.
-const PESOS = (__ENV.PESOS || '30,15,15,10,10,6,4,10').split(',').map(Number);
+// Cada sesión sigue uno de 4 flujos completos de 6 operaciones. FLUJOS = % de sesiones de
+// [chequear mi plata, pagar a los míos, recargar celulares, pagar servicios]; su suma reproduce la tabla
+// del requerimiento (comparación en docs/plan-rendimiento.md).
+const FLUJOS_PESOS = (__ENV.FLUJOS || '20,40,25,15').split(',').map(Number);
 
 // Escalones del estrés: desde el pico (300) hasta TOPE, 1 min de subida + 3 min estable.
 // El primero sube en 5 min como el pico: con 0 → 300 en 1 min Qolqe colapsa por "database is locked"
@@ -105,12 +106,14 @@ const OPERACIONES = [
     const celular = `9${String((exec.vu.idInTest * 100000 + n) % 1e8).padStart(8, '0')}`;
     pedir('POST', '/api/recargas', { celular, monto: uno(['5', '10', '20']) }, 'dinero', { ref: `R-${celular}` });
   },
-  function consultarDeuda() { pedir('GET', `/api/servicios/deudas?empresa=ELECTRO&suministro=${suministro()}`, null, 'consulta'); },
-  function pagarDeuda() {
+  function consultarDeuda() {
     const r = pedir('GET', `/api/servicios/deudas?empresa=ELECTRO&suministro=${suministro()}`, null, 'consulta');
-    if (r.status !== 200) return;
-    const id = r.json('0.id');
-    pedir('POST', '/api/servicios/pagos', { deuda_id: id }, 'dinero', { ref: `P-${id}` });
+    deudaId = r.status === 200 ? r.json('0.id') : null; // la deuda que el usuario verá y pagará después
+  },
+  function pagarDeuda() {
+    if (!deudaId) return; // sin deuda consultada no hay nada que pagar (la consulta falló o no hay deudas)
+    pedir('POST', '/api/servicios/pagos', { deuda_id: deudaId }, 'dinero', { ref: `P-${deudaId}` });
+    deudaId = null;
   },
   function otras() {
     pedir('GET', uno(['/api/limites', '/api/limites/alertas', '/api/solicitudes',
@@ -118,24 +121,43 @@ const OPERACIONES = [
   },
 ];
 const suministro = () => `5${String(exec.vu.idInTest).padStart(8, '0')}`;
-const TOTAL = PESOS.reduce((a, b) => a + b, 0);
+const [SALDO, MOVS, TRANSFERIR, CONTACTOS, RECARGAR, CONSULTAR_DEUDA, PAGAR_DEUDA, OTRAS] = OPERACIONES;
+let deudaId = null;
 
-function sortear() {
+// 3 flujos completos, 6 operaciones cada uno (login + 6 pausas de 18 s ≈ 2 min).
+// Suma de operaciones por 100 sesiones (20/40/25/15): saldo 185, movimientos 95, transferencia 80,
+// contactos 65, recarga 50, consultar deuda 30, pagar deuda 30, otras 65. Ver docs/plan-rendimiento.md.
+const FLUJOS = [
+  // 1. Chequear mi plata (20 %): solo consultas; el historial es lo más caro de calcular.
+  [SALDO, MOVS, OTRAS, OTRAS, SALDO, MOVS],
+  // 2. Es quincena, pago a los míos (40 %): dos transferencias y verifica saldo y movimientos
+  //    (el dinero no puede quedar a medias).
+  [SALDO, CONTACTOS, TRANSFERIR, SALDO, TRANSFERIR, MOVS],
+  // 3. Recargo celulares (25 %): el propio y el de un familiar, elegido entre los contactos (antifraude).
+  [SALDO, CONTACTOS, RECARGAR, RECARGAR, SALDO, OTRAS],
+  // 4. Pago mis servicios (15 %): consulta cada deuda antes de pagarla y revisa el historial al final.
+  [SALDO, CONSULTAR_DEUDA, PAGAR_DEUDA, CONSULTAR_DEUDA, PAGAR_DEUDA, MOVS],
+];
+const TOTAL = FLUJOS_PESOS.reduce((a, b) => a + b, 0);
+
+function sortearFlujo() {
   let x = Math.random() * TOTAL;
-  return OPERACIONES.find((_, i) => (x -= PESOS[i]) < 0);
+  return FLUJOS.find((_, i) => (x -= FLUJOS_PESOS[i]) < 0);
 }
 
-// Una iteración = una sesión: login + 6 operaciones, con una pausa antes de cada una.
+// Una iteración = una sesión: login + un flujo de 6 operaciones, con una pausa antes de cada una.
 export default function () {
   token = null;
+  deudaId = null;
   const celular = `9${String(exec.vu.idInTest).padStart(8, '0')}`;
   const r = pedir('POST', '/api/auth/login', { celular, pin: '2580' }, 'consulta');
   if (r.status !== 200) return;
   token = r.json('access_token');
+  const flujo = sortearFlujo();
   for (let i = 0; i < 6; i++) {
     pausa();
     const n = exec.vu.iterationInInstance * 6 + i;
-    sortear()(`k6-${exec.vu.idInTest}-${n}`, n);
+    flujo[i](`k6-${exec.vu.idInTest}-${n}`, n);
     operaciones.add(1);
   }
 }
