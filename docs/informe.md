@@ -95,7 +95,7 @@ Sin esperas fijas (solo `waitUntil`/`expect` con auto-espera); pasan 3 veces seg
 ## 4. Pruebas de rendimiento
 *(Parte 3)* · Estructura de `pdfs/Template_Informe_Rendimiento.docx`. Scripts y cómo correrlos en `tests/performance/` (README); plan y trazabilidad de cada valor en [`plan-rendimiento.md`](plan-rendimiento.md); reportes, CSV y gráficos de cada corrida en `tests/performance/resultados/<prueba>-<fecha>-<etiqueta>/`.
 
-**Grupo:** G3 (Sebastian, Maykol) · **Fecha:** 2026-11-11 · **Aplicación:** Qolqe Wallet (FastAPI + SQLite) · **Herramienta:** k6 1.3.0
+**Grupo:** G3 (Sebastian, Maykol) · **Fecha:** 2026-11-11 (Docker) y 2026-11-12 (EC2) · **Aplicación:** Qolqe Wallet (FastAPI + SQLite) · **Herramienta:** k6 1.3.0
 
 ### 4.1 Alcance y justificación
 
@@ -190,7 +190,11 @@ Además, una corrida de **humo** (1 VU, 3 sesiones) valida el script y da la lat
 
 ### 4.6 Restricciones del entorno
 
-**Entorno elegido: Docker** (plan B; el plan A, dos instancias EC2 como "dos equipos", quedó en espera porque no aprobaron las cuentas a tiempo). Qolqe corre en un contenedor `python:3.12-slim` (`tests/performance/Dockerfile`) con `--cpus=1 --memory=1g`, un solo proceso uvicorn y BD SQLite propia en `datos/rendimiento/` (puerto 8001, aparte del :8000 de las pruebas funcionales, cuyo `reiniciar` borraría a los usuarios de carga). k6 corre en el anfitrión.
+**Dos entornos.** Las pruebas se hicieron primero en **Docker en la laptop** (plan B, mientras no aprobaban las cuentas de AWS) y se repitieron carga, pico y estrés en **AWS EC2** cuando el Learner Lab estuvo disponible (plan A). La EC2 es el entorno de referencia para la capacidad; Docker queda como **entorno restringido** (CPU lenta, disco de laptop) y es donde aparecieron el colapso y DEF-16.
+
+**EC2 (2026-11-12):** una instancia `c7i.large` (2 vCPU Intel Xeon Sapphire Rapids, 4 GB, Ubuntu 22.04, us-east-1). En vez de dos instancias se usa **una con núcleos separados**: Qolqe en Docker con `--cpus=1 --memory=1g --cpuset-cpus=1` y k6 con `taskset -c 0`. Así no compiten por el CPU y no se suma la latencia Perú → us-east-1 (~120 ms) que tendría k6 corriendo en la laptop. Montaje en `tests/performance/README.md` ("Montaje de la EC2").
+
+**Docker local (2026-11-11):** Qolqe corre en un contenedor `python:3.12-slim` (`tests/performance/Dockerfile`) con `--cpus=1 --memory=1g`, un solo proceso uvicorn y BD SQLite propia en `datos/rendimiento/` (puerto 8001, aparte del :8000 de las pruebas funcionales, cuyo `reiniciar` borraría a los usuarios de carga). k6 corre en el anfitrión.
 **Máquina:** Surface con Intel Core i7-8650U (4 núcleos / 8 hilos, 1,9 GHz), 8 GB de RAM, Arch Linux (kernel 6.19).
 
 **Cómo se midieron CPU y memoria:** `tests/performance/monitor.py` (el script psutil del enunciado, con PID y salida como argumentos) muestrea cada segundo el proceso uvicorn del contenedor (`docker inspect -f '{{.State.Pid}}'`, para no medir `docker-proxy`) y, aparte, el proceso de k6 → `recursos-qolqe.csv` y `recursos-k6.csv`. `correr.sh` anota la hora de inicio y fin en `horario.txt`, y `graficos.py` cruza ambos con la salida de k6. Para el cuello de botella, `py-spy record` (flamegraph) sobre el mismo proceso durante el estrés, desde un contenedor hermano con `--pid=container:qolqe-rend`.
@@ -203,7 +207,7 @@ Además, una corrida de **humo** (1 VU, 3 sesiones) valida el script y da la lat
 - Los resultados entre entornos no se comparan: en local (Python 3.14, sin límite de CPU) la calibración salió más lenta que en Docker (Python 3.12).
 
 **Diferencias entre el plan y la ejecución real:**
-- Docker en vez de EC2 (cuentas sin aprobar).
+- Una sola EC2 con núcleos separados en vez de dos instancias (el Learner Lab da una sesión de ~4 h y la IP cambia al reiniciar; con núcleos fijos el generador no le roba CPU al SUT). Resistencia y prueba 3a solo en Docker: el lab no alcanzaba para 60 min más.
 - **Resistencia de 60 min en vez de 18 h** (6:00–24:00): 18 h de carga no caben en el plazo ni en una laptop; 1 h a la tasa de hora punta (≈ 3 000 sesiones y ~30 000 peticiones) basta para ver tendencias de memoria y de tiempo, y la extrapolación se discute en §4.8.
 - py-spy desde un contenedor hermano en vez de `sudo py-spy` (las corridas desatendidas no pueden pedir contraseña).
 - **Estrés:** el primer escalón pasó de 1 a 5 min de subida, después de que la rampa de 1 min tumbara a Qolqe con 300 VUs (§4.7, prueba 3a). Esa corrida se conserva como hallazgo.
@@ -347,25 +351,49 @@ Inicio 21:19:37, fin 22:22:09. Es la carga de hora punta (50 sesiones/min, model
 ![Resistencia: tiempos, throughput y errores](../tests/performance/resultados/carga-20261111-2118-docker-resistencia/k6.png)
 ![Resistencia: CPU y memoria](../tests/performance/resultados/carga-20261111-2118-docker-resistencia/recursos.png)
 
+#### Validación en EC2 (carga, pico y estrés) · `resultados/{carga-20261112-0747,pico-20261112-0805,estres-20261112-0821}-ec2/`
+
+Mismos scripts y perfiles que en Docker (`ETIQUETA=ec2`), corridos en cadena el 2026-11-12 de 07:47 a 08:57.
+
+| Prueba | p95 consultas | p95 dinero | Fallas | Throughput | Integridad | CPU Qolqe prom. / máx. | CPU k6 | ¿Cumple? |
+|---|---|---|---|---|---|---|---|---|
+| Carga (100 VUs máx.) | **32 ms** | **117 ms** | 0 de 7 491 | 7,1 req/s · 4,4 operaciones/s (rampa incluida), 0 dropped | 1 350 / 1 350 OK | 5 % / 13 % | 0,8 % | ✅ |
+| Pico (300 VUs) | **34 ms** | **116 ms** | 0 de 20 624 | 22 req/s promedio | 3 672 / 3 672 OK | 15 % / 37 % | 1,6 % | ✅ |
+| Estrés (hasta 1 000 VUs) | **51 ms** | **117 ms** | 0 de 113 829 | meseta **87–90 req/s** a 1 000 VUs | 20 173 / 20 173 OK | 32 % / 84 % | 3,4 % | ✅ |
+
+**El estrés no encontró el quiebre:** a 1 000 VUs (el tope del perfil) el p95 por minuto de consultas fue como máximo 81 ms, sin un solo `database is locked` ni 500. La memoria de Qolqe fue de 64 a 85 MB. El throughput creció con los usuarios hasta el final, así que el límite está por encima de 1 000 VUs.
+
+**Por qué difiere tanto de Docker local** (allí quebraba entre 300 y 400 VUs):
+- **CPU más rápido:** el login (PBKDF2, 200 000 iteraciones) baja de p95 171 ms a 36 ms en la carga. Cada login retiene un hilo y la transacción abierta mucho menos tiempo, así que es raro que más de 40 coincidan (la condición de DEF-16).
+- **Disco más rápido:** el `fsync` del commit de SQLite en el volumen EBS es más corto que en la laptop, y el candado de escritura se libera antes.
+- Hipótesis no verificada con flamegraph en la EC2; los dos efectos van en la misma dirección.
+
+**DEF-16 sigue siendo un defecto:** el mecanismo (commit en el cierre de la dependencia + pool de 40 hilos) no depende del entorno, solo se vuelve menos probable con hardware rápido. Reproducirlo en la EC2 con `tests/performance/reproducir_def16.py` queda **pendiente**.
+
+![Estrés en EC2: tiempos, throughput y errores](../tests/performance/resultados/estres-20261112-0821-ec2/k6.png)
+![Estrés en EC2: CPU y memoria](../tests/performance/resultados/estres-20261112-0821-ec2/recursos.png)
+
 ### 4.8 Análisis, conclusiones y recomendaciones
 
 **Predicción antes del estrés** (ley de utilización U = X · S). En la carga, ≈ 8 req/s usaron ≈ 19 % de un núcleo → unos 24 ms de CPU por petición. Con 1 núcleo el servidor se satura cerca de **42 req/s ≈ 4,2 sesiones/s ≈ 15 000 sesiones/h ≈ 5 veces la hora punta**, que por Little son unos **500 usuarios simultáneos**. El pico (300 VUs ≈ 25 req/s) debería quedar cerca del 60 % de CPU y cumplir; el estrés debería quebrar entre 400 y 500 VUs.
 
-**¿Se cumplieron los umbrales?** En hora punta, **sí, con amplio margen**: el p95 está a la sexta parte del umbral y no hubo fallas ni retrasos. En el **pico de la campaña también**, incluso con los umbrales estrictos de hora punta (no hizo falta la tolerancia de 2×), y sin ninguna operación de dinero a medias ni duplicada. La predicción del 60 % de CPU en el pico sobrestimó: se midió 44 %, así que el costo de CPU por petición baja con la carga (≈ 16 ms frente a 24 ms; probablemente porque en la carga, con solo 19 % de CPU, el consumo fijo del proceso pesa más). En el **estrés**, los umbrales se cumplen hasta **300 VUs** y dejan de cumplirse al subir a **400**: en un minuto el p95 pasa de ~0,2 s a 24–27 s y las fallas a 31 %. En la **resistencia** (60 min de hora punta) se cumplen todos, sin degradación con el tiempo: p95 y memoria planos (122 → 124 MB).
+**¿Se cumplieron los umbrales?** En hora punta, **sí, con amplio margen**: el p95 está a la sexta parte del umbral y no hubo fallas ni retrasos. En el **pico de la campaña también**, incluso con los umbrales estrictos de hora punta (no hizo falta la tolerancia de 2×), y sin ninguna operación de dinero a medias ni duplicada. La predicción del 60 % de CPU en el pico sobrestimó: se midió 44 %, así que el costo de CPU por petición baja con la carga (≈ 16 ms frente a 24 ms; probablemente porque en la carga, con solo 19 % de CPU, el consumo fijo del proceso pesa más). En el **estrés**, los umbrales se cumplen hasta **300 VUs** y dejan de cumplirse al subir a **400**: en un minuto el p95 pasa de ~0,2 s a 24–27 s y las fallas a 31 %. En la **EC2** carga, pico y estrés cumplen todo, el estrés hasta 1 000 VUs sin quebrar. En la **resistencia** (60 min de hora punta) se cumplen todos, sin degradación con el tiempo: p95 y memoria planos (122 → 124 MB).
 
 **Cuello de botella, con evidencia:** las hipótesis del plan eran: (1) `GET /api/movimientos` con una subconsulta por fila; (2) el pool de 40 hilos de AnyIO ocupado por el antifraude y PBKDF2; (3) CPU del login (PBKDF2). SQLite en WAL se consideraba poco probable. **Las pruebas 3a y 3b desmintieron eso último:** en los dos colapsos la causa es `database is locked` (244 y 615 veces en el log) combinado con el pool de hilos (hipótesis 2), registrado como **DEF-16**: el reproductor muestra que con más de 40 logins simultáneos aparecen los 500. El CPU estaba lejos de saturarse (9–14 % en el colapso de la 3a). En CPU, los flamegraphs muestran el login (43–58 %) y el historial (9–25 %).
 
-**Patrón de degradación:** no es gradual sino un **acantilado**.
+**Patrón de degradación (Docker local; en la EC2 no hubo degradación hasta 1 000 VUs):** no es gradual sino un **acantilado**.
 - Hasta 300 VUs el p95 sube poco (de ~90 ms a 200–500 ms por minuto) y no hay fallas.
 - Por encima, la latencia salta a decenas de segundos y el throughput cae en vez de crecer.
 - La predicción por CPU (U = X · S, ~500 usuarios) **sobrestimó la capacidad**, porque el recurso que se agota no es el CPU (54 % en el último escalón sano) sino el candado de escritura de SQLite junto con el pool de 40 hilos (DEF-16).
 - El CPU sí explica la lentitud del login: PBKDF2 es el 43–58 % del flamegraph.
 - El historial, la sospecha principal del plan, pesa solo el 9–25 % del CPU y no aparece en el colapso.
 
-**Capacidad estimada:** **300 usuarios simultáneos ≈ 9 000 sesiones/h ≈ 3 veces la hora punta**, si se sube con una rampa como la del pico. Es el último escalón que cumple los umbrales; el siguiente medido (400) los incumple. Se confirmó con una segunda corrida dedicada (mismo quiebre). Entre 300 y 400 no se afinó: el quiebre depende de cuántos logins llegan a la vez más que de un número fijo de usuarios (DEF-16), así que una cifra más fina daría una precisión engañosa.
+**Capacidad estimada (EC2, entorno de referencia):** **al menos 1 000 usuarios simultáneos ≈ 30 000 sesiones/h ≈ 10 veces la hora punta**, con todos los umbrales de hora punta cumplidos y 0 fallas. Es una cota inferior: el perfil terminaba en 1 000 y no se llegó al quiebre. Con CPU promedio de 32 % (máx. 84 %) en el último escalón, el siguiente límite probable es el CPU del login.
+
+**Capacidad en el entorno restringido (Docker local):** **300 usuarios simultáneos ≈ 9 000 sesiones/h ≈ 3 veces la hora punta**, si se sube con una rampa como la del pico. Es el último escalón que cumple los umbrales; el siguiente medido (400) los incumple. Se confirmó con una segunda corrida dedicada (mismo quiebre). Entre 300 y 400 no se afinó: el quiebre depende de cuántos logins llegan a la vez más que de un número fijo de usuarios (DEF-16), así que una cifra más fina daría una precisión engañosa.
 
 **Riesgos para el negocio:**
-- **La campaña cabe justo en el límite.** El pico de la campaña es 300 usuarios, exactamente la capacidad medida: no queda margen para crecer.
+- **El margen depende del hardware.** En la EC2 la campaña (300 usuarios) ocupa menos de un tercio de la capacidad medida; en un servidor como la laptop cabría justo en el límite. El margen viene del CPU y el disco, no de la aplicación: DEF-16 sigue ahí.
 - **Lo que tumba a Qolqe es cómo llegan los usuarios, no cuántos.** La misma cantidad (300) que entra en 5 min pasa, y entra en 1 min colapsa. Basta que más de 40 personas inicien sesión en el mismo instante para que parte reciba un 500 (DEF-16). Una notificación push de la campaña que haga entrar a todos a la vez es justo ese escenario.
 - **Un colapso deja de atender a todos**, no solo a los nuevos: las consultas de saldo también llegan a 60 s.
 - **El dinero no se pierde, pero puede parecer perdido:** en todas las pruebas, incluidas las que colapsaron, la integridad fue OK, porque los 500 hacen rollback. En el colapso de la confirmación, una operación se aplicó aunque el cliente recibió un timeout. Si el usuario la reintenta, se cobra dos veces: la API no tiene clave de idempotencia. El riesgo es de disponibilidad y de reintentos, no de saldos corruptos.
