@@ -15,7 +15,7 @@ Proyecto 2 del curso **CS5383 Pruebas y Verificación de Software** (UTEC). Cont
 | Reportes | Allure 3 (`demo.py reporte`) y dashboard de Schemathesis + comparativa con BDD (`demo.py schemathesis` / `dashboard`) | Hecha |
 | Presentación | Deck final de 13 slides, mapa visual y guion `demo.py` | Hecha (ver "Presentación y demo") |
 | 2 | Pruebas web E2E: WebdriverIO 10 + Cucumber + Page Objects + Allure en `tests/e2e/` (migrado del repo `cs5383-webdriverio`) | Happy path G3 hecho; falta ampliar escenarios e informe §3 |
-| 3 | Rendimiento con k6 (`tests/performance/`, `correr.py` + Docker 1 CPU/1 GB, 4 flujos 20/40/25/15); entregable `tests/performance/Informe_Rendimiento_G3.docx`, resumen en `docs/informe.md` §4 | Hecha en Docker/Windows (capacidad 700 VUs); falta re-correr en EC2 con el modelo nuevo |
+| 3 | Rendimiento con k6 (`tests/performance/`, `correr.py` + Docker 1 CPU/1 GB, 4 flujos 20/40/25/15); entregable `tests/performance/Informe_Rendimiento_G3.docx`, resumen en `docs/informe.md` §4 | Hecha en Docker/Windows (capacidad 700 VUs); validada en EC2 el 2026-11-20 (≥ 1 000 VUs, 0 fallas) |
 
 ## Estructura
 

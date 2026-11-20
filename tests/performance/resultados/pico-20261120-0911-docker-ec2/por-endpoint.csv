@@ -1,0 +1,15 @@
+endpoint,peticiones,p95_ms,max_ms
+POST /api/transferencias,1674,119,130
+POST /api/auth/login,2226,75,147
+GET /api/movimientos,1967,37,84
+POST /api/recargas,1060,7,86
+POST /api/servicios/pagos,653,6,25
+GET /api/limites,260,5,14
+GET /api/servicios/deudas,663,5,11
+GET /api/solicitudes,298,5,21
+GET /api/seguridad/sesiones,270,5,13
+GET /api/contactos,2842,5,12
+GET /api/limites/alertas,267,4,8
+GET /api/seguridad/dispositivos,271,4,11
+GET /api/cuentas/me/saldo,3990,4,27
+GET /api/cuentas/me,3990,4,26

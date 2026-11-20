@@ -47,7 +47,7 @@ Qolqe y k6 corren en la EC2 (AWS Academy Learner Lab, `c7i.large`, Ubuntu 22.04,
 
 **Antes de la exposición** (10 min antes, fuera del tiempo de la demo):
 1. Iniciar el Learner Lab (*Start Lab*, esperar el círculo verde) y anotar la **IP pública** de la instancia, que cambia en cada sesión. La sesión dura unas 4 h.
-2. En la laptop, abrir en el navegador el plan B: `resultados/pico-20261112-*-ec2/dashboard.html` (o el de Docker, `resultados/pico-20261111-2032-docker/dashboard.html`).
+2. En la laptop, abrir en el navegador el plan B: `resultados/pico-20261120-0911-docker-ec2/dashboard.html` (o el de Docker en Windows, `resultados/pico-20261112-2008-docker/dashboard.html`).
 3. **Terminal 1**, con túnel al dashboard de k6:
    ```bash
    export IP=<IP pública>
@@ -75,7 +75,7 @@ Qolqe y k6 corren en la EC2 (AWS Academy Learner Lab, `c7i.large`, Ubuntu 22.04,
 | 4:10 | Terminal 2 (Ctrl+C a `docker stats`) y luego la laptop | `exit`, y en la laptop `scp -r -i ~/.ssh/labsuser.pem ubuntu@$IP:qolqe/<carpeta que imprimió> /tmp/demo && xdg-open /tmp/demo/recursos.png` | "Esto mismo, en 15 minutos y con 300 usuarios, son los resultados que vienen" |
 
 **Plan B:**
-- Si falla la red o el lab, mostrar el `dashboard.html` exportado que ya está abierto, y `resultados/carga-20261112-0747-ec2/`.
+- Si falla la red o el lab, mostrar el `dashboard.html` exportado que ya está abierto, y `resultados/carga-20261120-0853-docker-ec2/`.
 - Si hay tiempo, la misma demo en Docker local de la laptop: `docker start qolqe-rend` y las variables con `$PWD`, sin `taskset` ni túnel.
 
 ## Montaje de la EC2 (una vez)

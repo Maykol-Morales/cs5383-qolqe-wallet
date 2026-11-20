@@ -223,6 +223,18 @@ Fallas en total: 6 080 de 60 674 (10,0 %; k6 cortó con `abortOnFail` a los 32 m
 
 Gráficos: `k6.png` y `recursos.png` en cada carpeta.
 
+#### Validación en EC2 · `resultados/{humo,carga,pico,estres}-20261120-*-docker-ec2/`
+
+Mismo `correr.py` y mismos 4 flujos en una AWS EC2 `c7i.large` (2 vCPU, Ubuntu 22.04): Qolqe en Docker con `--cpus=1 --memory=1g` fijado al núcleo 1 (`CPUSET=1`) y k6 con `taskset -c 0` en el núcleo 0, sin red de por medio.
+
+| Prueba | p95 consultas | p95 dinero | Fallas | Throughput (meseta) | Integridad | CPU Qolqe prom. |
+|---|---|---|---|---|---|---|
+| Carga | 36 ms | 115 ms | 0 de 7 374 | 7,9 peticiones/s | 1 225 / 1 225 OK | 5 % |
+| Pico | 39 ms | 116 ms | 0 de 20 431 | 26,2 peticiones/s | 3 387 / 3 387 OK | 16 % |
+| Estrés 300 → 1 000 | ≤ 118 ms por minuto | ≤ 127 ms por minuto | 0 de 112 387 | 26 → 88 peticiones/s | 18 789 / 18 789 OK | 36 % (43 % a 700, 61 % a 1 000) |
+
+Carga y pico repiten las cifras de Docker en Windows. **El estrés no quiebra**: llega al tope de 1 000 usuarios preparados sin una falla, con el p95 de consultas subiendo de forma gradual (40 → 118 ms) y el throughput creciendo con los usuarios; 0 «database is locked» en el log. k6: 3,4 % de CPU en promedio (máx. 59 %).
+
 ### 4.8 Análisis, conclusiones y recomendaciones
 
 **¿Se cumplieron los umbrales?** Hora punta y pico, sí, con amplio margen (el pico cumple incluso los umbrales estrictos). En el estrés se cumplen hasta **700 usuarios**; al pasar a 800, en un solo minuto (20:49) el p95 salta de 27 ms a 39 s y las fallas a 24,9 % y luego a 98–100 %; el throughput cae de 62 a 12–16 peticiones/s.
@@ -237,7 +249,7 @@ Gráficos: `k6.png` y `recursos.png` en cada carpeta.
 - Recuperación: con k6 ya cerrado, Qolqe siguió ~5 min vaciando la cola (1 100 «locked» más) con ~605 MB.
 - Límite: sin flamegraph en esta corrida (`correr.py` no graba py-spy); solo el CPU total del contenedor.
 
-**Capacidad:** **700 usuarios simultáneos ≈ 21 000 sesiones/h ≈ 7× la hora punta y 2,3× el pico**, con entrada gradual (+100 cada 4 min) y precisión de ±100. Línea base relativa (1 CPU, 1 GB, una corrida).
+**Capacidad:** **700 usuarios simultáneos ≈ 21 000 sesiones/h ≈ 7× la hora punta y 2,3× el pico**, con entrada gradual (+100 cada 4 min) y precisión de ±100. Línea base relativa (1 CPU, 1 GB, una corrida). En la EC2, con el mismo límite de 1 CPU, la capacidad es **≥ 1 000 usuarios (≈ 30 000 sesiones/h, ≥ 10× la hora punta)** y el quiebre no llegó a verse: DEF-16 depende de cuántas escrituras coinciden, y con login y disco más rápidos coinciden menos. El defecto no desaparece; se vuelve menos probable.
 
 **Riesgos:** el margen se midió con entrada gradual, y una notificación que haga entrar a todos a la vez es justo la avalancha que dispara la contención; el colapso afecta a todos y dura más que la carga; 3 operaciones se aplicaron con error para el cliente, así que un reintento puede cobrar dos veces (sin idempotencia); la acumulación de 18 h no se midió.
 
