@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Corre saldo.js (k6) y locustfile.py (Locust) contra el mismo Qolqe y mide el CPU de cada generador.
-# Uso (desde la raíz, con QOLQE_URL y QOLQE_BD como en ../correr.sh): tests/performance/comparativa/correr.sh
+# Uso (desde la raíz, con Qolqe corriendo y QOLQE_URL y QOLQE_BD apuntando a él): tests/performance/comparativa/correr.sh
 set -euo pipefail
 cd "$(dirname "$0")/../../.."
 PY=.venv/bin/python

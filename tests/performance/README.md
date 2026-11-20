@@ -56,18 +56,17 @@ Qolqe y k6 corren en la EC2 (AWS Academy Learner Lab, `c7i.large`, Ubuntu 22.04,
    Ya en la EC2:
    ```bash
    cd ~/qolqe && docker start qolqe-rend && sleep 3 && curl -s -o /dev/null -w "%{http_code}\n" localhost:8001/docs   # 200
-   export QOLQE_PID=$(docker inspect -f '{{.State.Pid}}' qolqe-rend) QOLQE_URL=http://localhost:8001 \
-          QOLQE_BD=$PWD/datos/rendimiento/qolqe.db PATH=$HOME/.local/bin:$PATH
+   export PATH=$HOME/.local/bin:$PATH
    ```
 4. **Terminal 2**: `ssh -i ~/.ssh/labsuser.pem ubuntu@$IP` (para `docker stats`).
-5. Si pasaron más de 7 días desde la última corrida, la plantilla de datos venció (`DIAS_VIGENCIA_PLANTILLA`) y el primer `preparar` la reconstruye (tarda más). Para evitarlo, correr el comando del minuto 0:15 una vez antes de entrar, o al menos `.venv/bin/python tests/performance/datos.py preparar /tmp/x 120`.
+5. Si pasaron más de 7 días desde la última corrida, la plantilla de datos venció (`DIAS_VIGENCIA_PLANTILLA`) y el primer `preparar` la reconstruye (tarda más). Para evitarlo, correr el comando del minuto 0:15 una vez antes de entrar, una vez antes de entrar.
 
 **Guion:**
 
 | Min | Pantalla | Qué se hace | Qué se dice |
 |---|---|---|---|
 | 0:00 | Terminal 2 | `docker stats qolqe-rend` | "Esto corre en una EC2 de AWS: Qolqe en un contenedor de 1 núcleo y 1 GB es nuestro servidor; k6 usa el otro núcleo" |
-| 0:15 | Terminal 1 | `USUARIOS=120 DURACION=1m ETIQUETA=demo taskset -c 0 tests/performance/correr.sh carga` | "Prepara 120 usuarios, uno por VU, y arranca la hora punta: 50 sesiones por minuto" |
+| 0:15 | Terminal 1 | `USUARIOS=120 DURACION=1m ETIQUETA=demo taskset -c 0 .venv/bin/python tests/performance/correr.py carga` | "Prepara 120 usuarios, uno por VU, y arranca la hora punta: 50 sesiones por minuto" |
 | 0:30 | Navegador, http://localhost:5665 (por el túnel) | Mostrar VUs subiendo, req/s y p95 | "Modelo abierto: llegan 50 sesiones por minuto pase lo que pase; si Qolqe se atrasa, se ve aquí" |
 | 1:30 | Terminal 2 | CPU del contenedor | "El CPU que ven es el de Qolqe; k6 está en otro núcleo y casi no consume" |
 | 2:00 | `qolqe.js` en el editor de la laptop | Umbrales y pesos | "Cada umbral es una frase del requerimiento" |
@@ -87,10 +86,8 @@ Desde la laptop, en la raíz del repo (`git archive` sube solo lo versionado):
 S="ssh -i ~/.ssh/labsuser.pem ubuntu@$IP"
 git archive --format=tar --prefix=qolqe/ HEAD | $S 'rm -rf qolqe && tar x'
 $S 'mkdir -p .local/bin' && scp -i ~/.ssh/labsuser.pem ~/.local/bin/k6 ubuntu@$IP:.local/bin/k6
-$S 'cd qolqe && docker build -f tests/performance/Dockerfile -t qolqe-rendimiento . \
-    && python3 -m venv .venv && .venv/bin/pip install -r requirements.txt psutil matplotlib && mkdir -p datos/rendimiento \
-    && docker run -d --name qolqe-rend --cpus=1 --cpuset-cpus=1 --memory=1g --user $(id -u):$(id -g) -p 8001:8000 \
-         -v $PWD/datos/rendimiento:/bd -e QOLQE_BD=/bd/qolqe.db -e QOLQE_BD_PLANTILLA=/bd/plantilla_carga.db qolqe-rendimiento'
+$S 'cd qolqe && python3 -m venv .venv && .venv/bin/pip install psutil matplotlib \
+    && CPUSET=1 .venv/bin/python tests/performance/correr.py levantar'   # Qolqe fijado al núcleo 1
 ```
 
-Las pruebas largas se corren con `nohup` para que no se corten si se cae el SSH (`ETIQUETA=ec2 taskset -c 0 tests/performance/correr.sh <prueba>`), y los resultados se traen con `scp -r ubuntu@$IP:qolqe/tests/performance/resultados/<carpeta> tests/performance/resultados/`.
+Las pruebas largas se corren con `nohup` para que no se corten si se cae el SSH (`PATH=$HOME/.local/bin:$PATH ETIQUETA=ec2 nohup taskset -c 0 .venv/bin/python tests/performance/correr.py <prueba> &`), y los resultados se traen con `scp -r ubuntu@$IP:qolqe/tests/performance/resultados/<carpeta> tests/performance/resultados/`.

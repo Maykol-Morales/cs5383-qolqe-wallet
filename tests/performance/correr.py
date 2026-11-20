@@ -6,7 +6,8 @@ Uso, desde cualquier carpeta del repo (en Windows: py tests/performance/correr.p
   correr.py parar               detiene y borra el contenedor
 
 Variables de entorno: USUARIOS (1000), DURACION, FLUJOS, TOPE, PASO (pasan a k6), ETIQUETA (sufijo del
-directorio de resultados), QOLQE_URL (http://localhost:8001), CONTENEDOR (qolqe-rend).
+directorio de resultados), QOLQE_URL (http://localhost:8001), CONTENEDOR (qolqe-rend),
+CPUSET (núcleos fijos para el contenedor al levantar, p. ej. 1 en la EC2; k6 va aparte con `taskset -c 0`).
 Sale con el código de k6 (distinto de 0 si se incumple un umbral).
 
 Qolqe corre en el contenedor y k6 en el equipo. Los datos de prueba y la verificación de integridad leen y
@@ -65,7 +66,8 @@ def levantar():
         salir("falló `docker build`.")
     ejecutar("docker", "rm", "-f", CONTENEDOR, capturar=True)
     # Un solo proceso (el reloj de modo prueba está en memoria) y la base en un volumen del propio Docker.
-    r = ejecutar("docker", "run", "-d", "--name", CONTENEDOR, "--cpus=1", "--memory=1g", "-p", f"{PUERTO}:8000",
+    nucleos = [f"--cpuset-cpus={os.environ['CPUSET']}"] if os.getenv("CPUSET") else []
+    r = ejecutar("docker", "run", "-d", "--name", CONTENEDOR, "--cpus=1", *nucleos, "--memory=1g", "-p", f"{PUERTO}:8000",
                  "-v", f"{VOLUMEN}:/bd", "-e", "QOLQE_BD=/bd/qolqe.db", "-e", "QOLQE_BD_PLANTILLA=/bd/plantilla_carga.db",
                  IMAGEN, capturar=True)
     if r.returncode != 0:
