@@ -11,7 +11,7 @@ Proyecto 2 del curso **CS5383 Pruebas y Verificación de Software** (UTEC). Cont
 | Parte | Contenido | Estado |
 |---|---|---|
 | 1 | Pruebas de API (núcleo + G3), contrato con Schemathesis, 12 defectos, análisis EP/VL mapeado a escenarios | Hecha |
-| CI | `.github/workflows/pruebas.yml`: contrato → (api ∥ web ×3) → reportes (gate G1–G6, Qase vía `.github/scripts/qase.py`) → Pages; matriz `docs/trazabilidad.md` | Hecha (falta activar Pages) |
+| CI | `.github/workflows/pruebas.yml`: contrato → (api ∥ web ×3) → reportes (gate G1–G6, Qase vía `.github/scripts/qase.py`) → Pages; matriz `docs/trazabilidad.md` | Hecha (Pages publica desde `final`) |
 | Reportes | Allure 3 (`demo.py reporte`) y dashboard de Schemathesis + comparativa con BDD (`demo.py schemathesis` / `dashboard`) | Hecha |
 | Presentación | Deck final de 13 slides, mapa visual y guion `demo.py` | Hecha (ver "Presentación y demo") |
 | 2 | Pruebas web E2E: WebdriverIO 10 + Cucumber + Page Objects + Allure en `tests/e2e/` (migrado del repo `cs5383-webdriverio`) | Hecha: G3 (CP-W01–W05, W90) + Núcleo (CP-W06–W16, `nucleo.feature`); informe §3, §3.1 Page Object y §3.2 herramientas |
@@ -119,7 +119,7 @@ Sitio de Pages (generado por `.github/scripts/reportes.py sitio`, solo stdlib, C
 ## Pendiente / notas
 
 - Entorno local de pruebas: `python demo.py preparar` crea `.venv` e instala `requirements-dev.txt` (ya ignorado por git; ya creado en la máquina de Maykol).
-- Herramienta de API (**provisional**: pytest+httpx+pytest-bdd; la asignada en el sorteo está vacía). Herramientas web y de rendimiento aún sin definir en `docs/informe.md`.
+- Herramienta de API (**provisional**: pytest+httpx+pytest-bdd; la asignada en el sorteo está vacía). Web: WebdriverIO 10 + Cucumber (§3); rendimiento: k6 (§4).
 - Interpretaciones asumidas a confirmar con el docente están en `docs/informe.md` §1 (p. ej. "90 días" = `hasta − desde ≤ 90`). Además: el código de error de nombres inválidos difiere por endpoint (`SOLICITUD_INVALIDA` al registrarse, `PERFIL_INVALIDO` al editar el perfil) y el requisito no lo fija.
 - Limitaciones conocidas de las pruebas: el escenario sin `@DEF` de HU-N-03 CA2 pasa sin probar nada mientras exista DEF-05 (logout no invalida nada); los `.feature` usan `# language: en` con texto en español; el escenario `@concurrencia` no tiene pasos (Parte 3).
 - `IA.md`: el equipo lo editó a mano (quitó dos filas de la declaración); no reponer sin preguntar.
@@ -127,4 +127,4 @@ Sitio de Pages (generado por `.github/scripts/reportes.py sitio`, solo stdlib, C
 - Parte 2 · notas de WebdriverIO: `browser.act()` (`@ia`) tiene su caché commiteada en `tests/e2e/features/__act__/`, así que `npm run test:ia` la repite sin clave (0 tokens, ~12 s); grabar de nuevo (`npm run test:ia:regrabar`, ~140k tokens, ~45 s) usa la clave de `tests/e2e/.env` (ignorado; Maykol tiene una). Sonnet 5 exige `temperature: 1` (fijado en `wdio.conf.js`). `npm run demo` con clave graba en vivo, muestra la caché y repite; sin clave solo repite. DEF-14 (`features/historial-zona-horaria.feature`) va aparte: `npm run test:defectos` debe fallar mientras exista. El deck del laboratorio WebdriverIO (LSnrwob…) se borró el 2026-10-30; lo reemplaza el deck por rúbrica (abajo). La caché de `act` se indexa por el título del escenario: renombrarlo la invalida y obliga a regrabar. Comparativa act vs agente Claude en `docs/comparativa-ia.md` (2026-10-30). **Deck de la exposición de la Parte 2** (17 slides, ordenado por la rúbrica del slide 36: C1 web 5 · C2 patrón 2 · C3 pipeline 5 · C4 trazabilidad 4 · C5 demo 4; quipu = criterios, nudos = puntos): https://claude.ai/artifact/2XaeAeRaotLkVMBYRKECns. Las versiones de 5 y 15 min se borraron. Fuente y script de armado en el scratchpad de la sesión (no versionados); oradores en las notas: [Maykol] C1–C2, [Sebastian] C3–C4 (supuesto). las esperas sobre la UI se resolvieron recargando la página y esperando el PUT con `browser.mock` (condiciones de carrera vistas en la CI de Windows). `wdio.conf.js` fija la zona horaria del navegador en `America/Lima` (BiDi): la UI arma desde/hasta con la hora del navegador y el servidor rechaza `hasta` futuro en hora de Lima, así que en un runner UTC de noche el historial salía vacío.
 - Stash pendiente `stash@{0}` (pytest-html + vcr/har en el viejo `demo.sh`): obsoleto, reemplazado por Allure y el dashboard; se puede descartar.
 - Flujo de commits: se commitea y se hace push solo cuando el usuario lo pide; los mensajes terminan con `Co-Authored-By: Claude`.
-- Secciones 3, 4 y 6 de `docs/informe.md` están vacías hasta las Partes 2/3 y la entrega final.
+- `docs/informe.md`: §1–§5 completos; falta §6 (conclusiones y recomendaciones, entrega final).
