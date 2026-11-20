@@ -51,7 +51,7 @@ jobs:
           mv reporte-schemathesis/html-* reporte-schemathesis/html   # runner limpio: un solo html-*
           python .github/scripts/reportes.py resumen "Contrato OpenAPI (Schemathesis CLI)" reporte-schemathesis/junit-contrato.xml >> "$GITHUB_STEP_SUMMARY"
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: ${{ !cancelled() }}
         with: { name: contrato, path: reporte-schemathesis/ }
 
@@ -81,7 +81,7 @@ jobs:
       # Dashboard de contrato: los casos del job contrato (VCR + HAR) frente a las peticiones de cada escenario BDD
       # (adjuntos Allure), para ver qué escenarios repiten lo que ya comprobó Schemathesis. BROWSER=true: no abre nada.
       # Con EVIDENCIA=no no hay adjuntos HTTP y se omite.
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         if: ${{ !cancelled() && env.EVIDENCIA != 'no' }}
         with: { name: contrato, path: reporte-schemathesis }
       - name: Dashboard de contrato
@@ -97,7 +97,7 @@ jobs:
         if: ${{ !cancelled() }}
         run: python .github/scripts/reportes.py resumen "API (pytest-bdd)" reportes/junit-api.xml >> "$GITHUB_STEP_SUMMARY"
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: ${{ !cancelled() }}
         with: { name: api, path: reportes/ }
 
@@ -175,7 +175,7 @@ jobs:
           python .github/scripts/reportes.py resumen "Web E2E (3 corridas + @ia)" tests/e2e/reportes/junit-{corrida-*,ia}/*.xml tests/e2e/reportes/junit/*.xml >> "$GITHUB_STEP_SUMMARY"
           python .github/scripts/reportes.py resumen "Web E2E · DEF-14 (falla esperada)" tests/e2e/reportes/junit-def14/*.xml >> "$GITHUB_STEP_SUMMARY"
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: ${{ !cancelled() }}
         with:
           name: web
@@ -192,13 +192,13 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       # continue-on-error: si el contrato falló, api y web no corren y no dejan artefacto; el sitio sale igual
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         continue-on-error: true
         with: { name: contrato, path: reporte-schemathesis }
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         continue-on-error: true
         with: { name: api, path: reportes }
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         continue-on-error: true
         with: { name: web, path: tests/e2e }
 
@@ -215,13 +215,13 @@ jobs:
           QASE_PROJECT: ${{ vars.QASE_PROJECT || 'QOLQE' }}
         run: python .github/scripts/qase.py > /dev/null
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: trazabilidad
           path: |
             docs/trazabilidad.md
             sitio/
-      - uses: actions/upload-pages-artifact@v4
+      - uses: actions/upload-pages-artifact@v5
         with: { path: sitio }
 
       # Al final: el sitio ya se subió, así Pages muestra el estado real aunque el gate quede en rojo.
@@ -243,4 +243,4 @@ jobs:
       url: ${{ steps.despliegue.outputs.page_url }}
     steps:
       - id: despliegue
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5

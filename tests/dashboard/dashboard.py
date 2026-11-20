@@ -169,7 +169,7 @@ def bdd(carpeta, operacion, viola):
                                "envio": recortar(enviado), "viola": viola(op, url, enviado, token != "sin token")})
         escenarios.append({
             "nombre": r["name"], "feature": etiquetas.get("feature", ""), "hu": etiquetas.get("story", ""),
-            "modulo": "Núcleo" if etiquetas.get("epic") == "Núcleo" else "G3", "estado": r["status"], "defs": defs,
+            "modulo": {"Núcleo": "Núcleo", "G3 · Historial y categorías": "G3"}.get(etiquetas.get("epic"), "Otros"), "estado": r["status"], "defs": defs,
             "params": ", ".join(f"{p['name']}={p['value']}" for p in r.get("parameters", [])),
             "cuando": cuando, "entonces": entonces})
     return escenarios

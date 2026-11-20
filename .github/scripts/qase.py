@@ -12,6 +12,7 @@ con defect=true, falla → failed, omitido → skipped. Ver docs/gestion-casos.m
 import itertools
 import json
 import os
+import re
 import sys
 import urllib.request
 from pathlib import Path
@@ -56,7 +57,8 @@ def main():
     if not TOKEN:
         reportes.aviso("Sin QASE_API_TOKEN: no se sube a Qase (prueba en seco).")
     run = reportes.datos_run()
-    casos = [c for c in reportes.casos_con_resultados() if c["ejecuciones"]]
+    casos = [c for c in reportes.casos_con_resultados()  # solo el alcance del grupo (Núcleo + G3)
+             if c["ejecuciones"] and any(re.fullmatch(reportes.ALCANCE, h) for h in c["hu"])]
     qase = ids_existentes()
 
     nuevos = [c for c in casos if c["id"] not in qase]

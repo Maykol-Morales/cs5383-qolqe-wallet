@@ -621,7 +621,7 @@ def html_dashboard(casos, run, url_def, anclas, hist):
     mh = max(int(r[2]) for r in resumen_hu)
     filas_hu, grupo = "", None
     for hu, nivel, cs, pasa, dfc, otros in resumen_hu:
-        g = "Núcleo" if hu.startswith("HU-N") else "G3 · Historial y categorías" if hu.startswith("HU-G3") else "Sin historia de usuario"
+        g = "Núcleo" if hu.startswith("HU-N") else "G3 · Historial y categorías" if hu.startswith("HU-G3") else "Otros módulos (fuera de alcance)" if hu.startswith("HU-G") else "Sin historia de usuario"
         if g != grupo:
             filas_hu += f'<p class="grupo">{g}</p>'
             grupo = g

@@ -145,7 +145,8 @@ with open(os.path.join(os.path.dirname(__file__), "../../docs/defectos.md"), enc
 
 @pytest.hookimpl(trylast=True)  # después de que allure-pytest-bdd cree el resultado
 def pytest_bdd_before_scenario(request, feature, scenario):
-    allure.dynamic.epic("Núcleo" if "nucleo_" in feature.rel_filename else "G3 · Historial y categorías")
+    allure.dynamic.epic("Núcleo" if "nucleo_" in feature.rel_filename else
+                        "Otros módulos (fuera de alcance)" if "otros_" in feature.rel_filename else "G3 · Historial y categorías")
     for etiqueta in sorted(scenario.tags | feature.tags):
         if etiqueta.startswith("HU-"):
             allure.dynamic.story(etiqueta)

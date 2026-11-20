@@ -347,3 +347,60 @@ Gráficos: `k6.png` y `recursos.png` en cada carpeta.
 
 ## 6. Conclusiones y recomendaciones
 *(Entrega final)*
+
+### 6.1 Estado de calidad
+
+**Qolqe Wallet 1.0.0 no está listo para producción.** Las 17 HU del alcance (Núcleo + G3) tienen casos ejecutados en cada run del pipeline. La mayoría de los criterios se cumple, pero quedan **15 defectos abiertos: 3 críticos, 7 de severidad alta, 4 media y 1 baja** (§5). Los tres críticos tocan el dinero o la sesión:
+
+- DEF-04: una interbancaria deja el saldo negativo.
+- DEF-06: se transfiere a una cuenta cerrada y el dinero se pierde.
+- DEF-05: el logout no invalida el token.
+
+| Nivel | Resultado (2026-11-20) | Qué dice de la calidad |
+|---|---|---|
+| Contrato (Schemathesis) | 60 operaciones conformes con los checks del gate; ningún 5xx salvo DEF-15 | La API respeta su OpenAPI, pero el OpenAPI es más laxo que las reglas (44 hallazgos de imprecisión, §2) |
+| API (pytest-bdd) | 371 pasan (251 del alcance y 120 de los módulos de otros grupos, `features/otros_*.feature`), 24 *xfail* estrictos (los defectos de API), 1 omitido (`@concurrencia`); cobertura de `qolqe/` 90 % en local (antes 64 %; la meta era 75 %) | Las reglas de G3 se cumplen salvo el día `hasta` (DEF-07), la propiedad de los datos (DEF-08, DEF-09) y los nombres duplicados (DEF-10). En el núcleo fallan las reglas de dinero y de sesión |
+| Web (WebdriverIO) | 17 casos (CP-W01–W16, W90), 3/3 corridas en verde por run; DEF-14 falla como se espera | Los flujos principales funcionan en Chrome. El historial depende de la hora del navegador (DEF-14) |
+| Rendimiento (k6) | Hora punta y pico cumplen con amplio margen (p95 25 ms consultas, 115 ms dinero, 0 fallas, integridad OK); capacidad 700 usuarios simultáneos ≈ 7× la hora punta | La campaña «Quincena Qolqe» se sostiene si la entrada es gradual. Al pasar de 700 usuarios el servicio colapsa del todo (DEF-16) |
+
+El quality gate (G1–G6) pasa en `final` (run 44710360962). Pasa porque los defectos conocidos están marcados (`@DEF-nn` como *xfail* estricto, DEF-14 invertido, DEF-15 tolerado en G1). Un gate en verde quiere decir que no apareció ninguna falla nueva, no que la aplicación esté sana.
+
+### 6.2 Riesgos abiertos
+
+Ordenados por impacto para el usuario:
+
+1. **Pérdida o descuadre de dinero:** DEF-04 y DEF-06 (críticos) y DEF-13, porque el límite diario se evade con interbancarias. Bajo estrés, además, 3 operaciones se aplicaron aunque el cliente recibió error o timeout. Sin clave de idempotencia, un reintento cobra dos veces (§4.8).
+2. **Sesión y privacidad:** DEF-05 (un token robado sigue sirviendo tras el logout), DEF-03 (los fallos de PIN se acumulan aunque haya un ingreso correcto en medio, así que se bloquea al usuario legítimo), DEF-08 y DEF-09 (movimientos de otro usuario visibles).
+3. **Escritura después de responder (DEF-15, DEF-16):** una sola causa, el commit en el cierre de `obtener_bd`, produce tres síntomas. Con poca carga, una petición inmediata no ve lo recién guardado (500 al repetir el registro, 401 con un token nuevo). Con mucha carga, el colapso por «database is locked». Es el defecto con más alcance: afecta a todas las operaciones que escriben.
+4. **Comprobantes ambiguos:** DEF-12 (dos operaciones del mismo segundo comparten código) y DEF-01 (redondeo de la comisión).
+5. **Lo que no se probó:**
+   - la resistencia de 18 h (§4.3);
+   - la concurrencia real de HU-N-07 CA5 (`@concurrencia`; el estrés la ejercita, pero sin un caso que la aísle);
+   - los navegadores distintos de Chrome;
+   - los módulos G1, G2, G4, G5 y G6 en profundidad: tienen 73 escenarios de camino feliz y errores principales para cobertura, sin análisis de valores límite. Al escribirlos aparecieron 15 comportamientos que contradicen `requisitos.md` (bono desde S/ 30, 6.ª recarga, mora del día de vencimiento, alias con ñ, PIN reutilizado, entre otros); se quitaron de la suite y no se registraron como defectos porque son de otros grupos ([`hallazgos-otros-modulos.md`](hallazgos-otros-modulos.md));
+   - las interpretaciones de §1, que siguen sin confirmar con el docente.
+
+### 6.3 Lecciones aprendidas
+
+- **Cada nivel de prueba encontró defectos que los otros no podían ver** (§3.2):
+  - pytest-bdd encontró los 12 de reglas de negocio;
+  - la web, DEF-14;
+  - Schemathesis, DEF-15;
+  - k6, DEF-16.
+
+  Ninguna herramienta habría bastado sola. DEF-15 y DEF-16 tienen la misma raíz y salieron por caminos distintos: el contrato lo vio como un 500 aislado en la CI y el estrés como un colapso.
+- **Diseñar los casos desde los requisitos y no desde el código.** El análisis de particiones y valores límite (`casos-equivalencia-limites.md`) se hizo solo con `requisitos.md` y después se contrastó con los `.feature`. Al contrastarlo salieron fronteras que los escenarios no tenían (los 90 días exactos, las páginas 10/11/20/21, la página 0, el monto de S/ 500.00 contra 500.01). DEF-07 es justamente un defecto de frontera: el día `hasta` del rango queda fuera.
+- **Un caso que solo mira el código de estado puede pasar sin probar nada.** El dashboard de contrato encontró 44 escenarios BDD que el contrato ya cubría. Se reforzaron con el paso «no se persiste ningún cambio» y quedaron 12. Pasa algo parecido con el escenario de HU-N-03 CA2, que hoy pasa sin probar nada porque DEF-05 lo vacía.
+- **Lo intermitente se vuelve determinista o se registra como defecto.** El 500 «no reproducible» de la primera CI resultó ser DEF-15 cuando se tuvo el HAR del run. Las esperas de la UI se resolvieron esperando el `PUT` y no con pausas fijas. La zona horaria del navegador quedó fijada después de ver el historial vacío en un runner UTC.
+- **El entorno cambia la conclusión de rendimiento.** Con el modelo anterior, el mismo script quebraba a 400 usuarios en Docker local y no quebraba a 1 000 en EC2. Por eso la capacidad se informa como línea base relativa a un entorno fijo (1 CPU, 1 GB) y no como cifra absoluta.
+- **Marcar los defectos conocidos en el pipeline** (*xfail* estricto, DEF-14 invertido) mantiene el gate útil: si alguien corrige un defecto sin retirar su marca, la CI falla y avisa.
+
+### 6.4 Recomendaciones para el equipo de desarrollo
+
+1. **Corregir primero los críticos y los de dinero:** DEF-04, DEF-06, DEF-05 y DEF-13, y después DEF-03, DEF-08 y DEF-09 (seguridad y privacidad). Los escenarios `@DEF` ya existen: al corregir cada uno, su caso pasa a XPASS y basta con retirar la marca.
+2. **Hacer el commit dentro del endpoint y acortar las transacciones** (DEF-15 y DEF-16). Es un solo cambio en `qolqe/bd.py` y en las operaciones que escriben, y resuelve a la vez la lectura inmediata y el colapso por candado. Después hay que repetir el estrés, porque el siguiente límite esperado es el CPU del login (PBKDF2).
+3. **Agregar idempotencia en las operaciones de dinero** (una clave por transferencia, recarga y pago) y responder 503 con `Retry-After` en lugar de 500 cuando el servicio no da abasto.
+4. **Ajustar el OpenAPI a las reglas** (`minimum`, `maxLength`, `enum` en monto, PIN, celular, color y tipo). Así Schemathesis puede validar también los rechazos y no solo la forma de las respuestas.
+5. **Calcular las fechas del historial en el servidor o en hora de Lima** (DEF-14) y no con la hora del navegador.
+6. **Mantener el pipeline y la cobertura** (90 % en local tras sumar los módulos de otros grupos) y pasar a sus equipos los 15 comportamientos que contradicen `requisitos.md` en G1, G2, G4, G5 y G6.
+7. **Para la campaña:** escalonar las notificaciones, alertar cerca de 600 usuarios simultáneos (85 % de la capacidad) y medir la resistencia de 18 h en un entorno dedicado si el negocio la exige (§4.8).
