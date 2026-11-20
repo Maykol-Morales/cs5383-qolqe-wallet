@@ -9,7 +9,7 @@
 | Módulo | G3 · Historial (filtros, paginación, exportación CSV) y categorías, más el núcleo común |
 | Herramienta de API | pytest + httpx + pytest-bdd (**provisional**: la celda de la herramienta asignada está vacía en el sorteo; si cambia, los `.feature` se reutilizan tal cual) + Schemathesis para contrato |
 | Herramienta web | WebdriverIO 10 + Cucumber + Page Objects + Allure; CI/CD con GitHub Actions y GitHub Pages |
-| Herramienta de rendimiento | *(Parte 3)* |
+| Herramienta de rendimiento | k6 (§4.2) |
 
 **Alcance y nivel de prueba.** Se cubren **todas** las HU del núcleo (HU-N-01 a N-09) y de G3 (HU-G3-01 a G3-08), con 141 escenarios Gherkin (ver trazabilidad). Criterios para elegir el nivel:
 
@@ -165,7 +165,163 @@ Criterios: lenguaje que ya usa el equipo, soporte de BDD (Gherkin como fuente de
 | **GitHub Actions + GitHub Pages** | Jenkins, GitLab CI | El repo ya está en GitHub. No hay servidor que mantener y Pages publica gratis la matriz y los reportes de cada run |
 
 ## 4. Pruebas de rendimiento
-*(Parte 3)*
+*(Parte 3)* · Entregable: [`tests/performance/Informe_Rendimiento_G3.docx`](../tests/performance/Informe_Rendimiento_G3.docx) (plantilla del enunciado completa). Esta sección lo resume con las mismas cifras. Scripts y cómo correrlos en `tests/performance/` (README); plan y trazabilidad de cada valor en [`plan-rendimiento.md`](plan-rendimiento.md); reportes, CSV y gráficos de cada corrida en `tests/performance/resultados/<prueba>-<fecha>-docker/`.
+
+**Grupo:** G3 (Sebastian, Maykol) · **Fecha:** 2026-11-12 · **Aplicación:** Qolqe Wallet (FastAPI + SQLite) · **Herramienta:** k6 2.4.0
+
+### 4.1 Alcance y justificación
+
+**Contexto de negocio.** Antes de la campaña «Quincena Qolqe» (días 15 y último de cada mes, de 12:00 a 12:15, con el triple de usuarios simultáneos que en hora punta) hay que saber si Qolqe cumple en la hora punta (3 000 sesiones por hora) y en el pico de la campaña (300 usuarios simultáneos), y hasta cuántos usuarios simultáneos puede crecer antes de dejar de cumplir.
+
+**Flujos críticos.** Cada sesión es el login más uno de 4 flujos de 6 operaciones:
+
+| Flujo | Peso | Operaciones | Criterio |
+|---|---|---|---|
+| Inicio de sesión | toda sesión | login | **Frecuencia** (3 000 por hora) y **riesgo**: PBKDF2 de 200 000 iteraciones consume CPU |
+| 1. Chequear mi plata | 20 % | saldo y perfil, movimientos, límites o alertas, saldo, movimientos | **Frecuencia** (la consulta es el 30 % del tráfico) y **riesgo**: el saldo posterior de cada movimiento se calcula con una subconsulta por fila |
+| 2. Pago a los míos | 40 % | saldo, contactos, transferencia, saldo, segunda transferencia, movimientos | **Impacto en el dinero**: cada transferencia debita y acredita dos cuentas |
+| 3. Recargo celulares | 25 % | saldo, contactos, recarga propia, recarga a un familiar, saldo, límites o alertas | **Dinero y riesgo**: el antifraude simulado ocupa un hilo 40–120 ms |
+| 4. Pago mis servicios | 15 % | saldo, consultar deuda, pagar, otra deuda, pagar, movimientos | **Dinero**: siempre se paga la deuda consultada antes |
+
+Sumados, los pesos reproducen la tabla de operaciones del requerimiento con una desviación máxima de 1,7 puntos (§4.4).
+
+**Capa objetivo: API.** El requerimiento se expresa en operaciones y tiempos del servicio, y la web es HTML estático que llama a la misma API: el navegador no agrega trabajo al servidor y solo encarecería al generador.
+
+### 4.2 Herramienta seleccionada
+
+**k6** (Grafana; scripts en JavaScript, motor en Go). Cada parte del requerimiento cabe en el script sin plugins:
+
+- **Umbrales nativos** por percentil y etiqueta (`http_req_duration{tipo:consulta}` p(95) < 800, `{tipo:dinero}` p(95) < 1500); la corrida sale con código ≠ 0 si se incumplen (quality gate).
+- **Dos modelos de carga:** `ramping-arrival-rate` (abierto) para «sesiones por hora», donde `dropped_iterations` mide «sin acumular retrasos», y `ramping-vus` para «usuarios simultáneos» del pico y del estrés.
+- **Generador liviano:** 0,5 % de CPU en la carga, lejos del 80 % que invalida la corrida.
+- Los 4xx esperados se contabilizan aparte (`errores_negocio`) y el dashboard HTML se exporta con la corrida.
+
+| Herramienta | Ventajas | Limitaciones |
+|---|---|---|
+| JMeter | Interfaz gráfica, muchos plugins, la más conocida | Sin criterio por percentil sin Taurus; modelo abierto experimental; un hilo de JVM por usuario; la lógica queda en Groovy dentro de un `.jmx` |
+| Locust | Python (el lenguaje del SUT), interfaz web en vivo | Modelo cerrado por defecto, sin umbrales nativos, un núcleo por proceso |
+| Gatling | Muy eficiente, modelo abierto y assertions por percentil, gran reporte | El umbral por tipo pide agrupar peticiones; Node más una JVM. La alternativa más cercana |
+| Artillery | YAML simple, modelo abierto (`arrivalRate`) | Generador Node de un hilo; p95 por tipo con plugin |
+| Taurus | Capa YAML con `passfail` | No genera carga; k6 ya trae los umbrales |
+
+Limitaciones de k6: su runtime JavaScript no es Node (sin npm), no mide los recursos del servidor (lo hace `monitor.py`) y el script es código. Comparativa medida de CPU del generador (k6 vs Locust) en [`comparativa-rendimiento.md`](comparativa-rendimiento.md).
+
+### 4.3 Tipos de prueba seleccionados
+
+| Tipo | ¿Aplica? | Justificación |
+|---|---|---|
+| Carga | Sí | «Sostener el volumen de la hora punta sin acumular retrasos»: 3 000 sesiones/h con los umbrales y < 1 % de fallas |
+| Estrés | Sí | «Hasta cuántos usuarios simultáneos podemos crecer»: escalones de +100 desde el pico hasta el quiebre |
+| Pico | Sí | El triple de usuarios, la mayoría entrando en los primeros 5 min; degradación razonable, ninguna operación de dinero a medias ni duplicada |
+| Resistencia | No | El requerimiento no la pide («6:00 a 24:00 sin reinicios» no tiene umbral); la real serían 18 h, y 1 h no permite concluir sobre 18; lo que vigila ya se registra por minuto en las otras pruebas. Riesgo no cubierto en §4.8 |
+
+Además, una prueba de humo (1 VU, 3 sesiones) valida el script y mide la latencia sin contención.
+
+### 4.4 Modelo de carga
+
+| Parámetro | Carga (hora punta) | Pico (campaña) | Estrés |
+|---|---|---|---|
+| VUs | 50 sesiones/min (abierto) ≈ 100 VUs; máx. 120 | 300 | 300 → 1 000, +100 por escalón |
+| Ramp-up | 120 s | 300 s (lineal) | 300 s al primer escalón; 60 s cada siguiente |
+| Duración | 900 s estables (1 020 con rampa) | 900 s con rampa (12:00–12:15) | 180 s por escalón; 8 escalones, 2 160 s |
+| Think time | Triangular 10–25 s (media 18 s) | Igual | Igual |
+| Distribución | 4 flujos 20/40/25/15 → saldo y perfil 30,8 · movimientos 15,8 · transferencia 13,3 · contactos 10,8 · recarga 8,3 · deuda 5,0/5,0 · otras 10,8 | Igual | Igual |
+
+- **Little:** 3 000 sesiones/h × 2 min / 60 = 100 usuarios simultáneos; 50 llegadas por minuto. Campaña = 300.
+- **Sesión:** login + 6 operaciones con 6 pausas de 18 s ≈ 2 min. La triangular(10, 19, 25) tiene media 18 s exacta dentro del rango 10–25 s.
+- **Pesos:** con flujos enteros de 6 operaciones no puede ser exacto; la mayor desviación es 1,7 puntos (transferencia 13,3 % vs 15 %, recarga 8,3 % vs 10 %).
+- **Throughput esperado:** 18 000 operaciones/h = 5 operaciones/s ≈ 7,9 peticiones/s (9,5 peticiones por sesión).
+- **Datos:** 1 000 usuarios (los 200 de la semilla + 800 copias, ~1 000 movimientos c/u), S/ 10 000, 5 contactos y un suministro con 30 deudas; un usuario por VU y una referencia propia por operación de dinero para cruzarla con la BD.
+
+### 4.5 Criterios de aceptación
+
+| Criterio | Umbral | Fuente |
+|---|---|---|
+| p95 consultas e inicio de sesión | < 800 ms | «el 95 % debe responder en menos de 800 ms» |
+| p95 operaciones de dinero | < 1 500 ms | «el 95 % en menos de 1,5 segundos» |
+| Fallas técnicas | < 1 % (5xx, timeout, red); 0 errores de negocio | «no más del 1 % de las operaciones puede fallar» |
+| Throughput | ≥ 50 sesiones/min, ≥ 5 operaciones/s | 3 000 sesiones/h × 6 operaciones |
+| Sin acumular retrasos | 0 `dropped_iterations`, sesión p95 < 130 s | «sin acumular retrasos» |
+| Integridad del dinero | 0 operaciones a medias o duplicadas (cruce con la BD) | «ninguna operación … a medias ni aplicarse dos veces» |
+
+**Supuestos:** «degradación razonable» en el pico = p95 ≤ 2× el umbral y fallas < 5 %, integridad siempre en 0; «operación» = operación de negocio para el throughput y petición HTTP para el tiempo; la capacidad es el último escalón del estrés que cumple los umbrales de hora punta; el historial se consulta sin fechas (30 días) y la sesión termina sin logout. **Integridad:** por usuario, saldo final − inicial = suma de sus movimientos nuevos; 2 movimientos por transferencia y 1 por recarga o pago; cada deuda pagada una vez; cada referencia 2xx de k6 existe una vez en la BD.
+
+### 4.6 Restricciones del entorno
+
+- **Entorno:** Docker. Qolqe en `python:3.12-slim` con `--cpus=1 --memory=1g`, un proceso uvicorn y SQLite en un volumen, en :8001. k6 en el mismo equipo, fuera del contenedor (`correr.py`).
+- **Máquina:** AMD Ryzen 7 7800X3D (8 núcleos/16 hilos), 31 GB, Windows 11 Pro, Docker Desktop 29.9.3 (VM de 16 CPU y 15 GB).
+- **Medición:** `monitor.py` cada segundo: Qolqe con `docker stats` (% de un núcleo, máx. 100 %) y k6 con psutil → `recursos-qolqe.csv`, `recursos-k6.csv`; `horario.txt` marca inicio y fin y `graficos.py` cruza todo con k6.
+- **Limitaciones:** línea base relativa (1 núcleo por cgroups, SQLite local), generador y SUT en el mismo equipo (k6: 0,5 % CPU en carga, 1,4 % en pico, 1,9 % en estrés), latencia de localhost, una corrida por prueba, la memoria de `docker stats` incluye caché, Qolqe en modo prueba, sin resistencia.
+- **Plan vs ejecución:** resistencia descartada (§4.3); el primer escalón del estrés sube en 5 min, como el pico, para medir capacidad y no una avalancha de logins.
+
+### 4.7 Resultados
+
+#### Carga (hora punta, 15 min) · `resultados/carga-20261112-1949-docker/`
+
+| Criterio | Umbral | Medido | ¿Cumple? |
+|---|---|---|---|
+| p95 consultas e inicio de sesión | < 800 ms | 25 ms | Sí |
+| p95 dinero | < 1 500 ms | 114 ms | Sí |
+| Fallas técnicas | < 1 % | 0,00 % (0 de 7 328) | Sí |
+| Errores de negocio | 0 | 0 | Sí |
+| Throughput (meseta) | ≈ 7,9 peticiones/s | media 7,8 (7,6–8,0); 4 621 operaciones | Sí |
+| Sin acumular retrasos | 0 descartadas; sesión p95 < 130 s | 0; p95 120 s (media 108) | Sí |
+| Integridad | 0 a medias o duplicadas | 1 213 confirmadas / 1 214 filas → OK | Sí |
+
+Más lentos: transferencias p95 120 ms, login 28 ms, movimientos 18 ms, pagos 4 ms. Qolqe: CPU prom. 4,0 % (máx. 58,4 %), memoria 55–102 MB; k6: 0,5 % (máx. 25 %).
+
+#### Pico (campaña, 300 VUs) · `resultados/pico-20261112-2008-docker/`
+
+| Criterio | Umbral | Medido | ¿Cumple? |
+|---|---|---|---|
+| p95 consultas | < 800 ms (pico < 1 600) | 25 ms | Sí |
+| p95 dinero | < 1 500 ms (pico < 3 000) | 115 ms | Sí |
+| Fallas técnicas | < 1 % (pico < 5 %) | 0,00 % (0 de 20 411) | Sí |
+| Throughput (meseta) | ~3× hora punta | media 26,3 peticiones/s; 12 767 operaciones | — |
+| Sesiones completas | — | 2 008; p95 120 s | — |
+| Integridad | 0 | 3 407 / 3 407 → OK | Sí |
+
+Qolqe: CPU prom. 12,0 % (máx. 44,6 %), memoria 71–115 MB; k6: 1,4 % (máx. 28,1 %).
+
+#### Estrés (300 → 1 000 VUs) · `resultados/estres-20261112-2024-docker/`
+
+| Escalón | p95 consultas (peor min) | p95 dinero (peor min) | Fallas (peor min) | ¿Cumple? |
+|---|---|---|---|---|
+| 300–700 VUs | 26–27 ms | 114–118 ms | 0,0 % | Sí |
+| 800 VUs | ≥ 60 s (timeout) | ≥ 60 s | 100 % | **No** |
+| 900 VUs | ≥ 60 s | ≥ 60 s | 100 % | **No** |
+
+Fallas en total: 6 080 de 60 674 (10,0 %; k6 cortó con `abortOnFail` a los 32 min y 924 VUs). Integridad OK, con **3 operaciones aplicadas aunque k6 recibió error o timeout**. 1 971 «database is locked» en el log. Qolqe: 34 % CPU a 700 VUs, 12 % durante el colapso, memoria 142–150 → 297–538 MB; k6: 1,9 % (máx. 46,8 %).
+
+Gráficos: `k6.png` y `recursos.png` en cada carpeta.
+
+### 4.8 Análisis, conclusiones y recomendaciones
+
+**¿Se cumplieron los umbrales?** Hora punta y pico, sí, con amplio margen (el pico cumple incluso los umbrales estrictos). En el estrés se cumplen hasta **700 usuarios**; al pasar a 800, en un solo minuto (20:49) el p95 salta de 27 ms a 39 s y las fallas a 24,9 % y luego a 98–100 %; el throughput cae de 62 a 12–16 peticiones/s.
+
+**Cuello de botella: el candado de escritura de SQLite, no el CPU** ([DEF-16](defectos.md)).
+- Patrón de acantilado: p95 plano (~26 ms) hasta 700 y colapso total a 800, también en consultas de saldo.
+- El CPU estaba libre: 34 % a 700 VUs y 12 % durante el colapso → hilos esperando, no trabajando.
+- 1 971 «database is locked», todos en escrituras y ninguno antes de las 20:49:15: login (`autenticacion.py:136`, 1 574 trazas) y `mover_saldo` (`operaciones.py:23`, 334).
+- Fallas: 5 746 timeouts o conexiones cortadas y 334 respuestas 500 (177 en login); 0 de negocio.
+- Mecanismo (hipótesis consistente): SQLite admite un escritor; el commit se hace al cerrar la dependencia, después de responder, y necesita un hilo del pool de 40. Con muchas peticiones esperando el candado (`busy_timeout` 10 s) el pool se llena y quien tiene el candado no consigue hilo para el commit (misma raíz que DEF-15).
+- La predicción por CPU (≈ 5,6 ms por petición → ~2 000 usuarios) sobrestima: el recurso que se agota es el candado junto con el pool.
+- Recuperación: con k6 ya cerrado, Qolqe siguió ~5 min vaciando la cola (1 100 «locked» más) con ~605 MB.
+- Límite: sin flamegraph en esta corrida (`correr.py` no graba py-spy); solo el CPU total del contenedor.
+
+**Capacidad:** **700 usuarios simultáneos ≈ 21 000 sesiones/h ≈ 7× la hora punta y 2,3× el pico**, con entrada gradual (+100 cada 4 min) y precisión de ±100. Línea base relativa (1 CPU, 1 GB, una corrida).
+
+**Riesgos:** el margen se midió con entrada gradual, y una notificación que haga entrar a todos a la vez es justo la avalancha que dispara la contención; el colapso afecta a todos y dura más que la carga; 3 operaciones se aplicaron con error para el cliente, así que un reintento puede cobrar dos veces (sin idempotencia); la acumulación de 18 h no se midió.
+
+**Recomendaciones (para el equipo de Qolqe):**
+1. Commit dentro del endpoint y transacciones cortas (escribir al final, tras el antifraude).
+2. 503 con `Retry-After` en vez de 500, reintento con espera aleatoria y clave de idempotencia en transferencias, recargas y pagos.
+3. Escalonar la entrada en la campaña (notificaciones por tandas, sala de espera para el login).
+4. Alertar sobre ~600 usuarios simultáneos (85 % de la capacidad) o p95 de consultas > 200 ms.
+5. Medir de nuevo tras el cambio; el siguiente límite será el CPU del login (PBKDF2).
+6. Si el negocio exige las 18 h, resistencia en un entorno dedicado con memoria y tamaño de la BD como criterios.
+
+**Corridas anteriores (historial, no forman parte del informe):** las carpetas `resultados/*-20261110*`, `*-20261111*` y `*-20261112-0*-ec2` se hicieron con el modelo de carga anterior (pesos por operación, sin flujos) y con `correr.sh`, por eso sus cifras no se comparan con las de arriba.
 
 ## 5. Defectos encontrados
 *(Todas las partes)* · Detalle, pasos y evidencia en [`defectos.md`](defectos.md).
