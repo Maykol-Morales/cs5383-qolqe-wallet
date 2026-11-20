@@ -1,0 +1,5 @@
+Operaciones de dinero confirmadas a k6: 1; filas nuevas: 1
+FALLO usuario 1: saldo cambió -10150 y sus movimientos suman 0
+FALLO TRANSFERENCIA_ENVIADA: 0 movimientos para 1 operaciones
+FALLO 1 operaciones confirmadas a k6 sin fila en la BD: ['T-k6-1-2']
+INTEGRIDAD CON 3 FALLOS

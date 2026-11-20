@@ -1,0 +1,2 @@
+k6: 14561 peticiones, p95 11 ms, CPU del generador 5.2 % en la meseta
+Locust: 14471 peticiones, p95 17 ms, CPU del generador 14.0 % en la meseta

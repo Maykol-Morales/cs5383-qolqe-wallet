@@ -1,0 +1,2 @@
+Operaciones de dinero confirmadas a k6: 20173; filas nuevas: 20173
+INTEGRIDAD OK
