@@ -15,7 +15,7 @@ Proyecto 2 del curso **CS5383 Pruebas y Verificación de Software** (UTEC). Cont
 | Reportes | Allure 3 (`demo.py reporte`) y dashboard de Schemathesis + comparativa con BDD (`demo.py schemathesis` / `dashboard`) | Hecha |
 | Presentación | Deck final de 13 slides, mapa visual y guion `demo.py` | Hecha (ver "Presentación y demo") |
 | 2 | Pruebas web E2E: WebdriverIO 10 + Cucumber + Page Objects + Allure en `tests/e2e/` (migrado del repo `cs5383-webdriverio`) | Hecha: G3 (CP-W01–W05, W90) + Núcleo (CP-W06–W16, `nucleo.feature`); informe §3, §3.1 Page Object y §3.2 herramientas |
-| 3 | Rendimiento (`tests/performance/`) | Pendiente (solo `.gitkeep`) |
+| 3 | Rendimiento con k6 (`tests/performance/`, `correr.py` + Docker 1 CPU/1 GB, 4 flujos 20/40/25/15); entregable `tests/performance/Informe_Rendimiento_G3.docx`, resumen en `docs/informe.md` §4 | Hecha en Docker/Windows (capacidad 700 VUs); falta re-correr en EC2 con el modelo nuevo |
 
 ## Estructura
 
@@ -89,9 +89,9 @@ Resultado de referencia (Parte 1, 2026-10-17): `252 passed, 1 skipped, 24 xfaile
 - API de soporte (`QOLQE_MODO_PRUEBA=1`): `/api/pruebas/{reiniciar,reloj,notificaciones,saldo,procesar-diario}`. Reloj en memoria → un solo proceso.
 - Env vars: `QOLQE_BD`, `QOLQE_MODO_PRUEBA`, `QOLQE_MINUTOS_TOKEN`, `QOLQE_CLAVE_SECRETA`.
 
-## Defectos hallados (14 abiertos; detalle en `docs/defectos.md`)
+## Defectos hallados (15 abiertos; detalle en `docs/defectos.md`)
 
-DEF-01 redondeo comisión · 02 PIN descendente aceptado · 03 login exitoso no reinicia intentos · 04 interbancaria deja saldo negativo (Crítica) · 05 logout no invalida token (Crítica) · 06 transferencia a cuenta cerrada pierde dinero (Crítica) · 07 historial excluye el día `hasta` · 08 detalle de movimiento ajeno visible · 09 destinatario ve movimiento del emisor · 10 categoría editable con nombre duplicado · 11 (descartado: el token vence a los 30 min exactos, se acepta) · 12 dos operaciones del mismo segundo comparten código de operación · 13 el límite diario no cuenta las interbancarias · 14 (UI, Parte 2) historial vacío de noche si el celular no está en hora de Lima · 15 la respuesta sale antes del commit (500 al repetir el registro, 401 con token recién emitido; lo halló Schemathesis en CI, repro determinista `tests/api/reproducir_def15.py`)
+DEF-01 redondeo comisión · 02 PIN descendente aceptado · 03 login exitoso no reinicia intentos · 04 interbancaria deja saldo negativo (Crítica) · 05 logout no invalida token (Crítica) · 06 transferencia a cuenta cerrada pierde dinero (Crítica) · 07 historial excluye el día `hasta` · 08 detalle de movimiento ajeno visible · 09 destinatario ve movimiento del emisor · 10 categoría editable con nombre duplicado · 11 (descartado: el token vence a los 30 min exactos, se acepta) · 12 dos operaciones del mismo segundo comparten código de operación · 13 el límite diario no cuenta las interbancarias · 14 (UI, Parte 2) historial vacío de noche si el celular no está en hora de Lima · 15 la respuesta sale antes del commit (500 al repetir el registro, 401 con token recién emitido; lo halló Schemathesis en CI, repro determinista `tests/api/reproducir_def15.py`) · 16 (rendimiento, Parte 3) más de 40 logins simultáneos → 500 «database is locked», misma raíz que 15 (`tests/performance/reproducir_def16.py`)
 
 ## Presentación y demo
 

@@ -343,6 +343,7 @@ Gráficos: `k6.png` y `recursos.png` en cada carpeta.
 | DEF-13 | El límite diario no cuenta las transferencias interbancarias | Alta | Abierto |
 | DEF-14 | De noche en Lima, con el celular en otra zona horaria, el historial sale vacío (UI, Parte 2) | Media | Abierto |
 | DEF-15 | Qolqe responde antes de guardar la operación: una petición inmediata no ve el cambio (500 al repetir el registro, 401 con un token recién emitido) | Alta | Abierto |
+| DEF-16 | Con más de 40 inicios de sesión a la vez, Qolqe responde 500 «database is locked» (rendimiento, Parte 3) | Alta | Abierto |
 
 ## 6. Conclusiones y recomendaciones
 *(Entrega final)*
