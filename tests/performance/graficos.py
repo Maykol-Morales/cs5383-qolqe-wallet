@@ -74,7 +74,7 @@ def main(directorio: Path):
     if recursos:
         fig, (cpu, mem) = plt.subplots(2, 1, figsize=(11, 6), sharex=True)
         for ruta in recursos:
-            datos = list(csv.DictReader(open(ruta)))
+            datos = [d for d in csv.DictReader(open(ruta)) if float(d["memoria_MB"]) > 0]  # sin muestra todavía
             cpu.plot([float(d["cpu_%"]) for d in datos], label=ruta.stem.removeprefix("recursos-"))
             mem.plot([float(d["memoria_MB"]) for d in datos], label=ruta.stem.removeprefix("recursos-"))
         cpu.set_ylabel("CPU %")
