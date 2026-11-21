@@ -219,7 +219,7 @@ def k6_en_segundo_plano():
     if not (k6 and shutil.which("docker")) or subprocess.call(["docker", "info"], stdout=subprocess.DEVNULL,
                                                               stderr=subprocess.DEVNULL):
         print("Parte 3 omitida: faltan k6 o Docker encendido (ver tests/performance/README.md). Plan B: "
-              f"{RENDIMIENTO / 'resultados' / 'carga-20261112-0747-ec2' / 'dashboard.html'}")
+              f"{RENDIMIENTO / 'resultados' / 'carga-20261120-0853-docker-ec2' / 'dashboard.html'}")
         return None
     if not correr.contenedor_activo():
         print(f"Iniciando el contenedor {correr.CONTENEDOR}…", flush=True)

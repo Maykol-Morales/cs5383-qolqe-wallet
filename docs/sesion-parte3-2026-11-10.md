@@ -81,7 +81,7 @@ Herramientas instaladas: k6 1.3.0 en `~/.local/bin`; psutil, matplotlib y py-spy
   - 0 errores de negocio;
   - **integridad OK**: 4 operaciones de dinero cruzadas una a una;
   - se descartó: el monitor había tomado un proceso shell en vez de uvicorn (corregido con `lsof` sobre el puerto).
-- **Carga de calibración** (`DURACION=3m`): en curso al cerrar este resumen; queda en `tests/performance/resultados/carga-20261110-2011-calibracion/`.
+- **Carga de calibración** (`DURACION=3m`): en curso al cerrar este resumen; se borró en la limpieza final de resultados (queda en el historial de git, commit anterior a la limpieza).
 
 ## 6. Pendiente
 

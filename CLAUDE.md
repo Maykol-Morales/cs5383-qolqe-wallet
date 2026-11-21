@@ -16,7 +16,7 @@ Proyecto 2 del curso **CS5383 Pruebas y Verificación de Software** (UTEC). Cont
 | Presentación | Deck final de 13 slides, mapa visual y guion `demo.py` | Hecha (ver "Presentación y demo") |
 | 2 | Pruebas web E2E: WebdriverIO 10 + Cucumber + Page Objects + Allure en `tests/e2e/` (migrado del repo `cs5383-webdriverio`) | Hecha: G3 (CP-W01–W05, W90) + Núcleo (CP-W06–W28 y W46–W50, `nucleo.feature`) + G3 ampliado (CP-W29–W45); 50 escenarios web + 1 `@ia`; informe §3, §3.1 Page Object y §3.2 herramientas |
 | Final | Parte 3 traída a `final` sin merge (copia de archivos, 2026-11-20); informe §6; cobertura 90 % con `features/otros_*.feature`; `demo.py final`; deck final de 16 slides (ver "Presentación y demo") | Hecha (commits `1898475` Maykol, `b74e6b0` Sebastián; CI del run 44796177354 por confirmar) |
-| 3 | Rendimiento con k6 (`tests/performance/`, `correr.py` + Docker 1 CPU/1 GB, 4 flujos 20/40/25/15); entregable `tests/performance/Informe_Rendimiento_G3.docx`, resumen en `docs/informe.md` §4 | Hecha en Docker/Windows (capacidad 700 VUs); falta re-correr en EC2 con el modelo nuevo |
+| 3 | Rendimiento con k6 (`tests/performance/`, `correr.py` + Docker 1 CPU/1 GB, 4 flujos 20/40/25/15); entregable `tests/performance/Informe_Rendimiento_G3.docx`, resumen en `docs/informe.md` §4 | Hecha en Docker/Windows (capacidad 700 VUs); validada en EC2 el 2026-11-20 (≥ 1 000 VUs, 0 fallas; `resultados/*-20261120-*-docker-ec2/`) |
 
 ## Estructura
 
@@ -144,10 +144,10 @@ Sitio de Pages (generado por `.github/scripts/reportes.py sitio`, solo stdlib, C
 - `demo.py final` ensayado el 2026-11-20: rc=0, 3 min 36 s (API HU-G3-01 29 s: 41 passed + 4 xfailed; DEF-07 5 s con rc=1 a propósito; schemathesis g3 58 s, 1216 casos; web CP-W12 + HU-G3-01 15 s; k6 103 s, 6/6 umbrales, INTEGRIDAD OK 104/104). Las carpetas de ensayo `tests/performance/resultados/carga-20261120-0{455,505}-docker-demo-final/` no se versionan (borrables).
 - **Falta (al 2026-11-20)**:
   1. Confirmar CI verde del run 44796177354 (actions nuevas + 120 pruebas nuevas; Qase solo con el alcance).
-  2. Re-correr la Parte 3 en EC2 con `correr.py` y confirmar DEF-16 allá (necesita la IP del Learner Lab).
+  2. (Hecho el 2026-11-20 por Maykol) Parte 3 re-corrida en EC2 con `correr.py`: 0 fallas hasta 1 000 VUs; DEF-16 no se reprodujo allá (informe §4.7).
   3. Rotar el token de Qase (acción de Maykol).
   4. Decidir si se mueve el tag `parte-3` (hoy no apunta al último commit de la rama; push de la rama con `refs/heads/parte-3` porque el tag tiene el mismo nombre).
   5. Compartir desde Share el deck final y el de la Parte 3.
   6. Ensayar `python demo.py final` con Chrome visible antes de exponer (Chrome y la imagen Docker en caché).
-  7. Opcionales: filtrar HU ajenas de la matriz; DEF-17+ para los 15 hallazgos; corregir «EC2» en el slide de demo del deck de la Parte 3; borrar las carpetas de ensayo de k6.
+  7. Opcionales: filtrar HU ajenas de la matriz; DEF-17+ para los 15 hallazgos; corregir «EC2» en el slide de demo del deck de la Parte 3.
 - Commits por tarea repartidos entre Maykol (usuario git por defecto) y Sebastián (`GIT_AUTHOR_NAME/GIT_COMMITTER_NAME='Sebastián Urbina'`, email `129198429+Urbisin@users.noreply.github.com`); `gh` necesita `-R Maykol-Morales/cs5383-qolqe-wallet`.

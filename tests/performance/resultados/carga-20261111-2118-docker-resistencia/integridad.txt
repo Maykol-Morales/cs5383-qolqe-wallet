@@ -1,2 +1,0 @@
-Operaciones de dinero confirmadas a k6: 5288; filas nuevas: 5288
-INTEGRIDAD OK
