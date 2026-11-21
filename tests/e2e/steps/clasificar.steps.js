@@ -52,8 +52,10 @@ Then('veo el error de categoría {string}', async (mensaje) => {
     await expect($('[data-testid=categoria-error]')).toHaveText(mensaje)
 })
 
+// DEF-15: Qolqe responde antes de guardar, así que la lista puede seguir vieja un instante: se recarga hasta que cambie.
 Then('la lista de categorías no incluye {string}', async (nombre) => {
-    await expect($('[data-testid=lista-categorias]')).not.toHaveText(expect.stringContaining(nombre))
+    await recargarHasta(() => expect($('[data-testid=lista-categorias]')).not.toHaveText(expect.stringContaining(nombre), CORTO),
+        `La lista de categorías todavía incluye "${nombre}"`)
 })
 
 When('elimino la categoría {string}', async (nombre) => {
@@ -65,7 +67,8 @@ Then('veo el aviso {string}', async (mensaje) => {
 })
 
 Then('el contador de categorías muestra {string}', async (texto) => {
-    await expect($('[data-testid=contador-categorias]')).toHaveText(texto)
+    await recargarHasta(() => expect($('[data-testid=contador-categorias]')).toHaveText(texto, CORTO),
+        `El contador de categorías no llegó a "${texto}"`)
 })
 
 // --- Entrega final (2.ª tanda): editar y ver categorías, notas (HU-G3-04, HU-G3-05, HU-G3-07) ---
@@ -82,7 +85,8 @@ When('cancelo la edición', async () => {
 })
 
 Then('la lista de categorías incluye {string}', async (nombre) => {
-    await expect($('[data-testid=lista-categorias]')).toHaveText(expect.stringContaining(nombre))
+    await recargarHasta(() => expect($('[data-testid=lista-categorias]')).toHaveText(expect.stringContaining(nombre), CORTO),
+        `La lista de categorías no llegó a incluir "${nombre}"`)
 })
 
 Then('veo mis categorías en este orden', async (tabla) => {
