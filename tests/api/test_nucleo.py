@@ -250,6 +250,11 @@ def _(ctx, hora, dia):
     assert ctx.http.put("/api/pruebas/reloj", json={"ahora": f"{fecha.isoformat()}T{hora}"}).status_code == 200
 
 
+@when(parsers.parse("intento transferir S/ {monto} al celular {celular} con el CCI inválido {cci}"))
+def _(ctx, monto, celular, cci):
+    _transferir(ctx, monto, tipo="QOLQE", celular_destino=celular, cci=cci)
+
+
 @when(parsers.parse("transfiero S/ {monto} al CCI {cci}"))
 @when(parsers.parse("intento transferir S/ {monto} al CCI {cci}"))
 def _(ctx, monto, cci):

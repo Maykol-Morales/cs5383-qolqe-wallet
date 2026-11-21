@@ -336,3 +336,30 @@ Hasta 40 todos entran (la demora es el PBKDF2 en 1 núcleo, no el defecto). Con 
 - Salida del reproductor: `200 logins simultáneos → {500: 153, 200: 2, 'ReadTimeout': 45}; mediana 45.1 s, máx. 60.3 s` (2026-11-11 21:20).
 - Log del contenedor: `File "/app/qolqe/api/autenticacion.py", line 136, in iniciar_sesion` … `sqlite3.OperationalError: database is locked` (153 veces con 200 logins; 243 en total en las cinco corridas del reproductor).
 - Corrida de estrés: `tests/performance/resultados/estres-20261111-2048-docker-rampa-1min/` (`k6.txt`, `por-minuto.csv`, `recursos-qolqe.csv` con CPU de 9–14 % durante el colapso, `flamegraph.svg`).
+
+## DEF-17: Una transferencia a Qolqe con un `cci` inválido se ejecuta (el OpenAPI promete validarlo)
+
+*(Entrega final. Lo halló Schemathesis con `--checks all` (`negative_data_rejection`); ver `docs/comparativa-schemathesis.md` §4.1.)*
+
+| Campo | Valor |
+|---|---|
+| Módulo / regla | HU-N-07 CA1 / HU-N-08 CA1 · contrato OpenAPI de `SolicitudTransferencia.cci` (`pattern ^\d{20}$`, `minLength 20`, `maxLength 20`) |
+| Severidad | Baja |
+| Prioridad | Baja |
+| Entorno | Qolqe Wallet 1.0.0, Python 3.14, servidor real (uvicorn), Windows; reproducible por API (sin navegador) |
+| Prueba que lo detecta | `features/nucleo_transferencias.feature` · «Un CCI inválido se rechaza aunque la transferencia sea a Qolqe» (`@DEF-17`) |
+
+**Pasos para reproducir**
+1. Iniciar sesión como Ana (987654321 / 4826, saldo S/ 1500.00).
+2. `POST /api/transferencias` con `{"tipo":"QOLQE","celular_destino":"912345678","monto":"10.00","cci":"AAA"}`.
+3. `GET /api/cuentas/me/saldo`.
+
+**Resultado esperado:** `422`. El esquema que publica el propio servicio (`/openapi.json`) declara `cci` como 20 dígitos y la solicitud lo viola; el requisito no define qué hacer con campos que no corresponden al tipo, así que el rechazo (o, como mínimo, que el contrato diga que se ignora) es lo coherente con lo documentado.
+
+**Resultado obtenido:** `201 Created`; el saldo baja de S/ 1500.00 a S/ 1490.00 y Bruno recibe S/ 10.00. El campo `cci` se ignora cuando `tipo` es `QOLQE`. En sentido contrario, `{"tipo":"INTERBANCARIA","cci":"00212345678901234567","celular_destino":"basura","monto":"10.00"}` también responde `201` (comisión S/ 1.00): los campos que no corresponden al tipo se descartan sin avisar.
+
+**Impacto:** bajo. El destino y el monto son los correctos; el riesgo es que un cliente con un error (manda el CCI en el campo equivocado) no se entere, en un endpoint que mueve dinero. No es una regla de negocio incumplida sino una validación que el contrato promete y el código no hace (`qolqe/contrato.py` describe el esquema; la validación real del CCI es manual y solo corre para `INTERBANCARIA`).
+
+**Evidencia:** `POST /api/transferencias {"tipo":"QOLQE","celular_destino":"912345678","monto":"10.00","cci":"AAA"}` → `201 {"codigo_operacion":"TRF26112018515800001","tipo":"QOLQE","monto":"10.00","comision":"0.00","total":"10.00","destinatario":{"nombre":"Bruno D.","celular":"912345678","cci":null},"saldo":"1490.00",...}` (2026-11-20). Caso de Schemathesis: pestaña *Hallazgos* del dashboard, `POST /api/transferencias`, clase «Aceptó datos inválidos».
+
+**Nota (observación, no defecto):** `GET /api/movimientos?hasta=0` responde `200` con el rango 1969-12-02 a 1970-01-01 (Pydantic acepta un entero como marca de tiempo Unix aunque el OpenAPI dice `AAAA-MM-DD`). No se registra como defecto: la regla R-G3-01 se cumple, la lista sale vacía y la UI siempre manda `AAAA-MM-DD`. Detalle en `docs/comparativa-schemathesis.md` §4.2.

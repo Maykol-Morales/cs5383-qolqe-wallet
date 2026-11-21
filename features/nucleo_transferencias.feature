@@ -41,6 +41,14 @@ Feature: Transferencias
       | -10.00 | MONTO_INVALIDO |
       | 600.00 | MONTO_INVALIDO |
 
+  # Hallazgo de Schemathesis (--checks all): el OpenAPI declara cci = 20 dígitos y el servidor lo ignora si el tipo es QOLQE.
+  @HU-N-07 @api @DEF-17
+  Scenario: Un CCI inválido se rechaza aunque la transferencia sea a Qolqe
+    Given que inicié sesión como Ana
+    When intento transferir S/ 10.00 al celular 912345678 con el CCI inválido AAA
+    Then la respuesta es 422
+    And no se persiste ningún cambio si la operación fue rechazada
+
   @HU-N-07 @api
   Scenario: Descripción de hasta 60 caracteres
     When transfiero S/ 10.00 al celular 912345678 con una descripción de 61 caracteres

@@ -45,6 +45,8 @@
 
 **Corrida manual del CLI con todos los checks** (Schemathesis 4.31.1, `schemathesis run /openapi.json --max-examples 30 --checks all`, mismas exclusiones): 60 operaciones, 2 782 casos, 44 hallazgos, clasificados así: **(a) "rechazó una solicitud válida según el contrato" (23)**: el contrato es más laxo que las reglas de negocio (`monto=0` en recargas/solicitudes/comisión, categoría ajena como filtro, celular/color/tipo permitidos por el esquema pero no por la regla); es **imprecisión del contrato** (faltan `minimum`/`enum`), no defecto del código, porque las reglas están en `requisitos.md`. **(b) "aceptó una solicitud inválida según el contrato" (3)**: `pin` y `celular` más largos que `maxLength` en login/desbloqueo (responden 401/404 en vez de 422) y `cci` de tipo incorrecto en transferencias; **observaciones de bajo impacto** (el servidor igual no actúa), pendientes de decidir si se endurece el esquema. **(c) `Allow` inválido en 405 (17)**: ruido de FastAPI, no se considera defecto. **(d) "recurso no disponible tras crearlo" (1)**: crear un recurso y leerlo de inmediato da 404. Es la misma ventana de DEF-15 (la lectura llega antes del commit); no reapareció al repetir la corrida el 2026-11-20 (40 hallazgos: 19 de (a), 4 de (b), 17 de (c), ninguno de (d) ni 5xx), así que se atribuye a DEF-15 sin registrarlo aparte. Ningún 5xx. Reporte JUnit generado localmente (no versionado).
 
+**Comparativa detallada Schemathesis vs. features** (corrida del 2026-11-20, 50 hallazgos, 2 321 casos, la misma del dashboard): `docs/comparativa-schemathesis.md` lista cada hallazgo con su petición y respuesta, indica si un escenario nuestro ya cubría esa regla, qué descubrió Schemathesis que los features no (campo `cci` sobrante ejecutando una transferencia `QOLQE`, fecha numérica `hasta=0`, ids fuera de rango, DEF-15) y qué defectos solo detectan los features (13 de 15).
+
 **Cómo ejecutar** (desde la raíz del repo):
 
 ```bash
@@ -95,9 +97,23 @@ QOLQE_URL=http://localhost:8000 pytest tests/api/test_nucleo.py   # contra un se
 | CP-W14 | HU-N-08, HU-N-09 | Interbancaria de S/ 100.00: comisión 1.5 % y CCI enmascarado en el comprobante |
 | CP-W15 | HU-N-06 | Cerrar la cuenta con saldo se rechaza (`SALDO_PENDIENTE`) |
 | CP-W16 | HU-N-01, HU-N-06 | Cuenta nueva con S/ 0.00: se cierra y ya no puede ingresar |
+| CP-W17, CP-W18, CP-W19 | HU-N-01 | El registro rechaza DNI de 7 dígitos, celular ya registrado y celular que no empieza con 9 (mensaje exacto y sin salir de `/registro`) |
+| CP-W20 | HU-N-02 | Tres PIN incorrectos bloquean la cuenta (423); un cuarto intento con el PIN correcto sigue bloqueado |
+| CP-W21 | HU-N-02 | Una cuenta cerrada (semilla Fabián) no puede ingresar |
+| CP-W22 | HU-N-05 | El perfil rechaza nombres de 1 carácter (valor límite inferior, 2 a 80) |
+| CP-W23 | HU-N-06 | Cerrar la cuenta con PIN incorrecto (`PIN_INCORRECTO`) y la cuenta sigue abierta |
+| CP-W24, CP-W25 | HU-N-07 | Transferirse a uno mismo y a un celular no registrado se rechazan al confirmar |
+| CP-W26 | HU-N-07 | Una cuenta nueva con S/ 0.00 recibe `SALDO_INSUFICIENTE` al transferir |
+| CP-W27 | HU-N-08 | CCI de 10 dígitos rechazado |
+| CP-W28 | HU-N-08, HU-N-09 | Comisión interbancaria mínima: S/ 10.00 paga S/ 1.00 (no 1.5 % = S/ 0.15) |
+| CP-W29 | HU-G3-01 | Un rango de 91 días se rechaza (valor límite del máximo de 90) |
+| CP-W30 | HU-G3-01 | Filtrar por "Transferencias enviadas" |
+| CP-W31 | HU-G3-02 | Detalle del movimiento más reciente: mismo código, tipo e importe |
+| CP-W32, CP-W33 | HU-G3-03 | Categoría de 2 caracteres y nombre repetido en otra capitalización se rechazan |
+| CP-W34 | HU-G3-06 | Eliminar una categoría la quita de la lista y baja el contador a "2 de 10" |
 | CP-W90 | HU-G3-03, HU-G3-07 | El mismo flujo de CP-W01 con `browser.act()` (IA), repetido desde la caché |
 
-Sin esperas fijas (solo `waitUntil`/`expect` con auto-espera); pasan 3 veces seguidas en local y en cada run del pipeline. DEF-14 (`@DEF-14`) corre aparte y debe fallar.
+Entrega final: se pasó de 16 a **34 escenarios web** (Núcleo 11 → 23, G3 5 → 11, más el `@ia`). Sin esperas fijas (solo `waitUntil`/`expect` con auto-espera). Como DEF-15 hace que Qolqe responda antes de guardar, las verificaciones de estado guardado usan `recargarHasta` (`tests/e2e/pages/espera.js`: recarga y comprueba hasta que aparece o vence a los 20 s), que no oculta un defecto real: si el dato nunca se guarda, el caso falla. Pasan 3 veces seguidas en local y en cada run del pipeline. DEF-14 (`@DEF-14`) corre aparte y debe fallar.
 
 ### 3.1 Patrón de diseño: por qué Page Object
 
@@ -148,7 +164,7 @@ La base de la pirámide (unitarias) no tiene pruebas propias porque el SUT se pr
 
 **Evidencia de complementariedad en el propio repo**
 
-- **Cada nivel encontró defectos que los otros no veían.** Los 12 defectos abiertos de la API (DEF-01 a DEF-10, DEF-12 y DEF-13; `docs/defectos.md`) los detectó pytest-bdd. Todos son reglas de negocio con peticiones válidas según el OpenAPI (redondeo, saldo, límite diario, propiedad, sesión), así que el contrato no podía verlos. **DEF-14 solo se ve en la web**: la API responde según el requisito, y es la UI la que arma el rango con la fecha del navegador. Apareció en la CI de GitHub, con el navegador en UTC. **DEF-15 lo encontró Schemathesis**: un 500 intermitente al repetir el registro (la respuesta sale antes del commit), que ninguna prueba escrita a mano provocaba porque exige dos peticiones idénticas en milisegundos; en la web se veía como un rebote del login. Además dejó 44 hallazgos de **imprecisión del contrato** (faltan `minimum`/`enum`; §2).
+- **Cada nivel encontró defectos que los otros no veían.** Los 12 defectos abiertos de la API (DEF-01 a DEF-10, DEF-12 y DEF-13; `docs/defectos.md`) los detectó pytest-bdd. Todos son reglas de negocio con peticiones válidas según el OpenAPI (redondeo, saldo, límite diario, propiedad, sesión), así que el contrato no podía verlos. **DEF-14 solo se ve en la web**: la API responde según el requisito, y es la UI la que arma el rango con la fecha del navegador. Apareció en la CI de GitHub, con el navegador en UTC. **DEF-15 lo encontró Schemathesis**: un 500 intermitente al repetir el registro (la respuesta sale antes del commit), que ninguna prueba escrita a mano provocaba porque exige dos peticiones idénticas en milisegundos; en la web se veía como un rebote del login. Además, con todos los checks, dejó 50 hallazgos (28 de **imprecisión del contrato**: faltan `minimum`/`enum`; 4 de datos inválidos aceptados, 17 de `Allow` y DEF-15), de los que uno terminó como **DEF-17** (`cci` inválido ignorado en una transferencia a Qolqe); §2 y `docs/comparativa-schemathesis.md`.
 - **Una herramienta mide el solapamiento de otra.** El dashboard de contrato (`tests/dashboard/dashboard.py`) valida contra el OpenAPI la petición del paso `When` de cada escenario BDD, que saca de los adjuntos de Allure. Si esa petición ya viola el esquema y el `Then` solo mira el código de estado, marca el escenario como candidato a redundante con Schemathesis. Eran **44**. En lugar de borrarlos, se les agregó el paso «no se persiste ningún cambio si la operación fue rechazada» (16 escenarios en 4 `.feature`, commit `733b000`), que verifica algo que el contrato no puede ver: que la cuenta quedó igual. Quedaron **12** candidatos, que son lecturas sin estado y los de «requiere sesión».
 - **El pipeline las ordena por costo.** `contrato` va primero y es el gate barato. `api` y `web` corren en paralelo después. `reportes` junta los JUnit de todas, arma la trazabilidad y aplica el quality gate. Un fallo se ve en el nivel más bajo que lo detecta.
 
@@ -344,13 +360,14 @@ Gráficos: `k6.png` y `recursos.png` en cada carpeta.
 | DEF-14 | De noche en Lima, con el celular en otra zona horaria, el historial sale vacío (UI, Parte 2) | Media | Abierto |
 | DEF-15 | Qolqe responde antes de guardar la operación: una petición inmediata no ve el cambio (500 al repetir el registro, 401 con un token recién emitido) | Alta | Abierto |
 | DEF-16 | Con más de 40 inicios de sesión a la vez, Qolqe responde 500 «database is locked» (rendimiento, Parte 3) | Alta | Abierto |
+| DEF-17 | Una transferencia a Qolqe con un `cci` inválido se ejecuta aunque el OpenAPI lo declara de 20 dígitos (lo halló Schemathesis, entrega final) | Baja | Abierto |
 
 ## 6. Conclusiones y recomendaciones
 *(Entrega final)*
 
 ### 6.1 Estado de calidad
 
-**Qolqe Wallet 1.0.0 no está listo para producción.** Las 17 HU del alcance (Núcleo + G3) tienen casos ejecutados en cada run del pipeline. La mayoría de los criterios se cumple, pero quedan **15 defectos abiertos: 3 críticos, 7 de severidad alta, 4 media y 1 baja** (§5). Los tres críticos tocan el dinero o la sesión:
+**Qolqe Wallet 1.0.0 no está listo para producción.** Las 17 HU del alcance (Núcleo + G3) tienen casos ejecutados en cada run del pipeline. La mayoría de los criterios se cumple, pero quedan **16 defectos abiertos: 3 críticos, 7 de severidad alta, 4 media y 2 baja** (§5). Los tres críticos tocan el dinero o la sesión:
 
 - DEF-04: una interbancaria deja el saldo negativo.
 - DEF-06: se transfiere a una cuenta cerrada y el dinero se pierde.
