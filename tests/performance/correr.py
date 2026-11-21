@@ -125,9 +125,20 @@ def correr(prueba: str):
     mon_k6 = subprocess.Popen([*monitor, str(k6.pid), str(directorio / "recursos-k6.csv")])
     try:
         with open(directorio / "k6.txt", "w", encoding="utf-8") as registro:
+            anterior, repetida = "", 0
             for linea in k6.stdout:  # k6 a la pantalla y al archivo a la vez
                 sys.stdout.write(linea)
                 registro.write(linea)
+                if linea.startswith("running ("):
+                    # k6 no imprime el resumen ni sale mientras un navegador siga conectado a su dashboard (:5665):
+                    # la línea final se repite con el mismo tiempo. Se avisa una vez.
+                    repetida = repetida + 1 if linea.split(",")[0] == anterior else 0
+                    anterior = linea.split(",")[0]
+                    if repetida == 10:
+                        aviso = (">>> k6 terminó pero espera a que se cierre la pestaña del navegador abierta en "
+                                 "http://localhost:5665 (su dashboard en vivo). Ciérrala y sigue solo.\n")
+                        sys.stdout.write(aviso)
+                        registro.write(aviso)
         rc = k6.wait()
     except KeyboardInterrupt:
         k6.terminate()

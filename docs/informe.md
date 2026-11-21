@@ -59,7 +59,7 @@ pytest tests/api --cov=qolqe           # cobertura
 QOLQE_URL=http://localhost:8000 pytest tests/api/test_nucleo.py   # contra un servidor real
 ```
 
-**Resultados** (Qolqe Wallet 1.0.0, 2026-10-17): `252 passed, 1 skipped, 24 xfailed` y 60 subpruebas de contrato. Los 24 xfailed son 24 casos que detectan los 12 defectos de la sección 5; el skipped es el escenario de concurrencia. Con `MOSTRAR_DEFECTOS=1` esos 24 fallan por el motivo descrito en `docs/defectos.md`. Cobertura de líneas de la app con estas pruebas: `api/movimientos.py` 100 %, `api/categorias.py` 100 %, `api/cuentas.py` 100 %, `api/autenticacion.py` 100 %, `reglas/nucleo.py` 100 %, `reglas/historial.py` 98 %, `api/transferencias.py` 88 %.
+**Resultados** (Qolqe Wallet 1.0.0, 2026-10-17; es la foto de la Parte 1, **la actual de la rama `final` es `371 passed, 1 skipped, 25 xfailed`**, ver §6.1): `252 passed, 1 skipped, 24 xfailed` y 60 subpruebas de contrato. Los 24 xfailed eran 24 casos que detectaban los 12 defectos de entonces (hoy son 25 con DEF-17); el skipped es el escenario de concurrencia. Con `MOSTRAR_DEFECTOS=1` esos 24 fallan por el motivo descrito en `docs/defectos.md`. Cobertura de líneas de la app con estas pruebas: `api/movimientos.py` 100 %, `api/categorias.py` 100 %, `api/cuentas.py` 100 %, `api/autenticacion.py` 100 %, `reglas/nucleo.py` 100 %, `reglas/historial.py` 98 %, `api/transferencias.py` 88 %.
 
 **Trazabilidad HU → escenarios** (cada escenario lleva su `@HU-…`; `Outline` cuenta una vez):
 
@@ -416,7 +416,7 @@ Carga y pico repiten las cifras de Docker en Windows. **El estrés no quiebra**:
 | Nivel | Resultado (2026-11-20) | Qué dice de la calidad |
 |---|---|---|
 | Contrato (Schemathesis) | 60 operaciones conformes con los checks del gate; ningún 5xx salvo DEF-15 | La API respeta su OpenAPI, pero el OpenAPI es más laxo que las reglas (44 hallazgos de imprecisión, §2) |
-| API (pytest-bdd) | 371 pasan (251 del alcance y 120 de los módulos de otros grupos, `features/otros_*.feature`), 24 *xfail* estrictos (los defectos de API), 1 omitido (`@concurrencia`); cobertura de `qolqe/` 90 % en local (antes 64 %; la meta era 75 %) | Las reglas de G3 se cumplen salvo el día `hasta` (DEF-07), la propiedad de los datos (DEF-08, DEF-09) y los nombres duplicados (DEF-10). En el núcleo fallan las reglas de dinero y de sesión |
+| API (pytest-bdd) | 371 pasan (251 del alcance y 120 de los módulos de otros grupos, `features/otros_*.feature`), 25 *xfail* estrictos (los defectos de API), 1 omitido (`@concurrencia`); cobertura de `qolqe/` 90 % en local (antes 64 %; la meta era 75 %) | Las reglas de G3 se cumplen salvo el día `hasta` (DEF-07), la propiedad de los datos (DEF-08, DEF-09) y los nombres duplicados (DEF-10). En el núcleo fallan las reglas de dinero y de sesión |
 | Web (WebdriverIO) | 17 casos (CP-W01–W16, W90), 3/3 corridas en verde por run; DEF-14 falla como se espera | Los flujos principales funcionan en Chrome. El historial depende de la hora del navegador (DEF-14) |
 | Rendimiento (k6) | Hora punta y pico cumplen con amplio margen (p95 25 ms consultas, 115 ms dinero, 0 fallas, integridad OK); capacidad 700 usuarios simultáneos ≈ 7× la hora punta | La campaña «Quincena Qolqe» se sostiene si la entrada es gradual. Al pasar de 700 usuarios el servicio colapsa del todo (DEF-16) |
 

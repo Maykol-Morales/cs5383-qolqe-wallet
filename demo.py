@@ -244,9 +244,13 @@ def final(args):
     print("=== 0. Rendimiento: arranca k6 en segundo plano (se ve en el paso 4)", flush=True)
     esperar_enter(pausa)
     k6 = k6_en_segundo_plano()
-    if k6:
+    if k6 and pausa:
+        # Solo en la demo en vivo. k6 no termina (ni imprime el resumen) mientras esta pestaña siga abierta: hay que cerrarla
+        # al acabar la carga. En el ensayo no se abre, porque nadie la cierra y el paso 4 se queda esperando.
         time.sleep(3)  # ponytail: tiempo para que k6 abra el dashboard antes de abrir el navegador
         webbrowser.open("http://localhost:5665")
+        print("(Cierra la pestaña del dashboard de k6 cuando termine la carga: k6 espera a que se cierre para dar el resumen.)",
+              flush=True)
 
     paso("1a. API: escenarios de HU-G3-01 (pytest-bdd)", ["pytest", "tests/api", "-m", "HU-G3-01", *ALLURE],
          pausa=pausa)
@@ -278,6 +282,8 @@ def final(args):
     if k6:
         print("\n=== 4. Rendimiento: resultado de k6 (umbrales e integridad)", flush=True)
         esperar_enter(pausa)
+        if pausa:
+            print("Si k6 no termina, cierra la pestaña del dashboard (localhost:5665): k6 espera a que se cierre.", flush=True)
         t = time.monotonic()
         rc = k6.wait()
         TIEMPOS.append(("4. Espera a k6", time.monotonic() - t))
