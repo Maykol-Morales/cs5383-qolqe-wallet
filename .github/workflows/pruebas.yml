@@ -251,7 +251,7 @@ jobs:
         if: ${{ env.ANTHROPIC_API_KEY != '' }}
         continue-on-error: true
         env: { CONOCIDOS: "1", TOPE_USD: "1.50" }
-        run: MCP_CONFIG="$PWD/.mcp.json" benchmark/mcp/explorar.sh 1
+        run: MCP_CONFIG="$PWD/.mcp.json" bash benchmark/mcp/explorar.sh 1   # con bash: no depende del permiso de ejecución del archivo
 
       - name: Resumen
         if: ${{ !cancelled() && env.ANTHROPIC_API_KEY != '' }}
