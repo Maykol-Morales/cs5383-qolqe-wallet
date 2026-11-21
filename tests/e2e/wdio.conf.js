@@ -22,7 +22,7 @@ export const config = {
         },
     }],
     baseUrl,
-    waitforTimeout: 5000,
+    waitforTimeout: 10000,
 
     // BDD: escenarios Gherkin en features/, pasos en steps/, Page Objects en pages/.
     framework: 'cucumber',

@@ -44,3 +44,20 @@ Feature: Consultar y exportar mi historial
     And exporto el historial a CSV
     Then el CSV tiene el encabezado "fecha;codigo_operacion;tipo;descripcion;monto;comision;importe;categoria;nota"
     And el CSV trae los mismos movimientos que la tabla, todos de tipo "RECARGA"
+
+  # --- Entrega final: más escenarios de historial ---
+
+  @HU-G3-01 @CP-W29 @story=HU-G3-01 @severity=normal
+  Scenario: CP-W29 · Un rango de más de 90 días se rechaza
+    When busco mis movimientos desde hace 91 días
+    Then veo el error de historial "El rango máximo de consulta es de 90 días"
+
+  @HU-G3-01 @CP-W30 @story=HU-G3-01 @severity=normal
+  Scenario: CP-W30 · Filtrar el historial por tipo "Transferencias enviadas"
+    When filtro mis movimientos por el tipo "Transferencias enviadas"
+    Then todas las filas son de tipo "Transferencia enviada"
+
+  @HU-G3-02 @CP-W31 @story=HU-G3-02 @severity=normal
+  Scenario: CP-W31 · Ver el detalle del movimiento más reciente
+    When abro el detalle de mi movimiento más reciente
+    Then el detalle muestra el mismo código de operación, el tipo y el importe

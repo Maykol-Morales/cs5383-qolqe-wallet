@@ -86,3 +86,18 @@ Then('el CSV trae los mismos movimientos que la tabla, todos de tipo {string}', 
     expect(filas.map((f) => f[2])).toEqual(filas.map(() => tipo))
     expect(filas.map((f) => f[1])).toEqual(await HistorialPage.filas.map((f) => f.getAttribute('data-codigo')))
 })
+
+// --- Entrega final ---
+Then('veo el error de historial {string}', async (mensaje) => {
+    await expect($('[data-testid=historial-error]')).toHaveText(mensaje)
+})
+
+When('abro el detalle de mi movimiento más reciente', async function () {
+    this.codigo = await HistorialPage.abrirPrimerMovimiento()
+})
+
+Then('el detalle muestra el mismo código de operación, el tipo y el importe', async function () {
+    await expect($('[data-testid=detalle-codigo]')).toHaveText(this.codigo)
+    await expect($('[data-testid=detalle-tipo]')).not.toHaveText('')
+    await expect($('[data-testid=detalle-importe]')).toHaveText(expect.stringMatching(/S\/\s*-?[\d,]+\.\d{2}/))
+})

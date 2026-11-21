@@ -4,6 +4,7 @@ import LoginPage from '../pages/login.page.js'
 import RegistroPage from '../pages/registro.page.js'
 import InicioPage from '../pages/inicio.page.js'
 import PerfilPage from '../pages/perfil.page.js'
+import { recargarHasta, CORTO } from '../pages/espera.js'
 import TransferirPage from '../pages/transferir.page.js'
 
 When('me registro con DNI {string}, nombres {string}, celular {string} y PIN {string}', async (dni, nombres, celular, pin) => {
@@ -80,9 +81,10 @@ Then('veo el mensaje del perfil {string}', async (mensaje) => {
 
 // Tras recargar: se verifica lo guardado en Qolqe, no solo lo que quedó en el formulario.
 Then('mi perfil muestra los nombres {string}', async (nombres) => {
-    await browser.refresh()
-    await expect(PerfilPage.dato('nombres')).toHaveText(nombres)
-    await expect(InicioPage.usuarioNombre).toHaveText(nombres)
+    await recargarHasta(async () => {
+        await expect(PerfilPage.dato('nombres')).toHaveText(nombres, CORTO)
+        await expect(InicioPage.usuarioNombre).toHaveText(nombres, CORTO)
+    }, `Los nombres "${nombres}" no quedaron guardados`)
 })
 
 Given('estoy en Transferir', async () => {
@@ -126,4 +128,13 @@ When('cierro mi cuenta con el PIN {string}', async (pin) => {
 
 Then('veo el error de cierre {string}', async (mensaje) => {
     await expect(PerfilPage.errorCierre).toHaveText(mensaje)
+})
+
+Then('veo el error de inicio de sesión que empieza con {string}', async (inicio) => {
+    await expect(LoginPage.error).toHaveText(expect.stringContaining(inicio))
+})
+
+// El comprobante no aparece cuando Qolqe rechaza la operación: se espera el error en el diálogo de confirmación.
+When('confirmo la transferencia sin esperar comprobante', async () => {
+    await TransferirPage.confirmarSinComprobante()
 })

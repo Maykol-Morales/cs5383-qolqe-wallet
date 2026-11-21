@@ -24,6 +24,9 @@ Flujo de una ejecución: **escenario → paso → Page Object → WebdriverIO �
 | CP-W04 | HU-G3-01 | `historial.feature`: últimos 60 días → "Página 1 de 2", Siguiente, Anterior, Siguiente deshabilitado al final |
 | CP-W05 | HU-G3-08 | `historial.feature`: filtrar por Recargas y exportar; encabezado exacto y mismos códigos que la tabla |
 | CP-W06 a CP-W16 | HU-N-01 a HU-N-09 | `nucleo.feature`: registro, login, logout, saldo, perfil, cierre de cuenta (rechazado con saldo y exitoso con S/ 0.00) y transferencias Qolqe e interbancaria |
+| CP-W17 a CP-W28 | HU-N-01 a HU-N-09 | `nucleo.feature` (entrega final): validaciones de registro, bloqueo por 3 PIN, cuenta cerrada, nombres inválidos, PIN erróneo al cerrar, transferencia a sí mismo / no registrado / sin saldo, CCI inválido y comisión mínima |
+| CP-W29 a CP-W31 | HU-G3-01, HU-G3-02 | `historial.feature`: rango de 91 días, filtro "Transferencias enviadas" y detalle de un movimiento |
+| CP-W32 a CP-W34 | HU-G3-03, HU-G3-06 | `clasificar.feature`: validación y duplicado de categorías, eliminar categoría |
 | CP-W90 | HU-G3-03, HU-G3-07 | `clasificar-ia.feature` (`@ia`, `npm run test:ia`): CP-W01 con `browser.act()` |
 
 Sin esperas fijas: los Page Objects esperan con `expect`/`waitUntil` (p. ej. a que la tabla quite su esqueleto de carga). El CSV se descarga con `fetch` + `<a download>`; Chrome lo guarda en `reportes/descargas/` (`prefs` en `wdio.conf.js`).

@@ -1,4 +1,6 @@
 // Pantalla /historial (G3): movimientos, detalle, clasificación y categorías.
+import { recargarHasta, CORTO } from './espera.js'
+
 class HistorialPage {
     get filas() { return $$('[data-testid=fila-movimiento]') }
 
@@ -41,9 +43,21 @@ class HistorialPage {
         if (await error.isDisplayed()) throw new Error(`Qolqe rechazó la categoría: ${await error.getText()}`)
         // En Windows, a veces Qolqe confirmaba la creación pero la lista (y los selects que usa
         // clasificar) seguían viejos. Se recarga y se verifica el estado guardado.
-        await browser.refresh()
-        await expect($('[data-testid=lista-categorias]')).toHaveText(expect.stringContaining(nombre),
-            { message: `Qolqe confirmó "${nombre}" pero no quedó guardada` })
+        await recargarHasta(
+            () => expect($('[data-testid=lista-categorias]')).toHaveText(expect.stringContaining(nombre), CORTO),
+            `Qolqe confirmó "${nombre}" pero no quedó guardada`)
+    }
+
+    // Envía el formulario sin esperar éxito: el paso Then revisa el error o la lista.
+    async intentarCrearCategoria(nombre, color) {
+        await $("aria/Nombre").setValue(nombre)
+        await $(`aria/${color}`).parentElement().click()
+        await $("aria/Crear categoría").click()
+    }
+
+    async eliminarCategoria(nombre) {
+        await this.categoria(nombre).$("[data-testid=boton-eliminar-categoria]").click()
+        await $("[data-testid=boton-confirmar-accion]").click()
     }
 
     // Abre el movimiento más reciente y devuelve su código de operación.

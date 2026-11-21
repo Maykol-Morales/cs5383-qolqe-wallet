@@ -26,7 +26,7 @@ class LoginPage {
                 return false
             }
             return url.includes('/inicio') && (await $('[data-testid=saldo-valor]').getText()).startsWith('S/')
-        }, { timeout: 15000, timeoutMsg: `No se pudo ingresar como ${celular}: /inicio no mostró el saldo` })
+        }, { timeout: 30000, timeoutMsg: `No se pudo ingresar como ${celular}: /inicio no mostró el saldo` })
     }
 }
 

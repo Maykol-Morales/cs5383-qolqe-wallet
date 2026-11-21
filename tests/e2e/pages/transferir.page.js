@@ -28,6 +28,12 @@ class TransferirPage {
         await $('[data-testid=boton-confirmar]').click()
         await expect($('[data-testid=comprobante]')).toBeDisplayed()
     }
+
+    // Para operaciones que Qolqe rechaza al confirmar: el diálogo se cierra y el error queda en la página.
+    async confirmarSinComprobante() {
+        await $("[data-testid=boton-confirmar]").click()
+        await expect(this.error).toBeDisplayed()
+    }
 }
 
 export default new TransferirPage()
