@@ -116,6 +116,8 @@ button.tema { float: right; font: inherit; font-size: 13px; background: var(--su
   <nav class="pestanas" role="tablist">
     <button role="tab" aria-selected="true" data-vista="st">Schemathesis</button>
     <button role="tab" aria-selected="false" data-vista="cmp">Comparativa con pytest-bdd</button>
+    <button role="tab" aria-selected="false" data-vista="hal">Hallazgos</button>
+    <button role="tab" aria-selected="false" data-vista="todos">Todos los casos</button>
   </nav>
 </header>
 <main>
@@ -176,6 +178,34 @@ button.tema { float: right; font: inherit; font-size: 13px; background: var(--su
     <div class="tabla-env"><table id="t-repetidos"></table></div>
   </div>
   <div class="tarjeta"><h2>Solo lo cubrió Schemathesis</h2><p class="nota">Respuestas (operación, estado, código) de Núcleo + G3 que ningún escenario BDD provoca.</p><div class="tabla-env"><table id="t-solo-st"></table></div></div>
+  </div>
+</section>
+
+<section class="vista" id="hal">
+  <div id="sin-hal" class="tarjeta" hidden><p><b>Sin hallazgos.</b> Con los 5 checks de conformidad (gate del pipeline) Schemathesis no falla. Para ver el detalle completo: <code>python demo.py schemathesis todos</code> (activa positive/negative_data, Allow y disponibilidad tras crear).</p></div>
+  <div id="con-hal">
+    <div class="kpis" id="kpis-hal"></div>
+    <div class="tarjeta">
+      <h2>Lo que reporta Schemathesis, caso por caso</h2>
+      <p class="nota">Un hallazgo por operación y check. Clic en una fila para ver la petición exacta, la respuesta, el comando <code>curl</code> y qué escenarios nuestros provocan la misma respuesta.</p>
+      <div class="filtros"><input id="h-texto" type="search" placeholder="Buscar operación, código o mensaje"><select id="h-clase"></select><select id="h-modulo"></select></div>
+      <div class="tabla-env"><table id="t-hal"></table></div>
+    </div>
+    <div class="tarjeta"><h3>Cómo leer las clases</h3><div class="explica" id="h-explica"></div></div>
+  </div>
+</section>
+<section class="vista" id="todos">
+  <div class="tarjeta">
+    <h2>Todos los casos que generó Schemathesis</h2>
+    <p class="nota">Cada fila es una petición real enviada a Qolqe, tal como quedó en el log VCR. Clic en una fila para ver la petición y la respuesta. El CSV exporta los casos que coinciden con los filtros (el cuerpo de la petición y la respuesta se recortan a 240 caracteres; el log completo está en el VCR/HAR).</p>
+    <div class="filtros">
+      <input id="c-texto" type="search" placeholder="Buscar operación, URL, cuerpo o código de error">
+      <select id="c-fase"></select><select id="c-modo"></select><select id="c-estado"></select><select id="c-res"></select><select id="c-modulo"></select>
+      <button class="tema" id="c-csv" type="button" style="float:none">Descargar CSV</button>
+    </div>
+    <p class="nota" id="c-resumen"></p>
+    <div class="tabla-env"><table id="t-todos"></table></div>
+    <div class="filtros" style="margin-top:10px;align-items:center"><button class="tema" id="c-ant" type="button" style="float:none">‹ Anterior</button><span class="nota" id="c-pag"></span><button class="tema" id="c-sig" type="button" style="float:none">Siguiente ›</button></div>
   </div>
 </section>
 </main>
@@ -367,6 +397,115 @@ else {
 
   $("#t-solo-st").innerHTML = `<tr><th>Operación</th><th class="n">HTTP</th><th>Código</th><th class="n">Casos</th></tr>` +
     K.solo_st.map(([op, est, cod, n]) => `<tr><td class="mono">${esc(op)}</td><td class="n">${est}</td><td class="mono">${esc(cod)}</td><td class="n">${n}</td></tr>`).join("");
+}
+
+// ── Hallazgos ────────────────────────────────────────────────────────────
+const H = D.hallazgos || [];
+if (!H.length) { $("#sin-hal").hidden = false; $("#con-hal").hidden = true; }
+else {
+  const CL = {
+    critico: ["5xx del servidor", "var(--critico)"], consistencia: ["Consistencia (DEF-15)", "var(--s2)"],
+    aceptado: ["Aceptó datos inválidos", "var(--s4)"], contrato: ["Contrato impreciso", "var(--s1)"],
+    otro: ["Otro", "var(--texto-3)"], ruido: ["Ruido (Allow)", "var(--texto-3)"],
+  };
+  const hc = contar(H, h => h.clase);
+  $("#kpis-hal").innerHTML =
+    kpi("Hallazgos", H.length, `${fmt(H.reduce((a, h) => a + h.n, 0))} casos fallidos de ${fmt(C.length)}`, true) +
+    kpi("Contrato impreciso", hc.contrato || 0, "el OpenAPI no declara la regla") +
+    kpi("Aceptó datos inválidos", hc.aceptado || 0, "revisar si es decisión o hueco") +
+    kpi("Consistencia", hc.consistencia || 0, "ventana de DEF-15") +
+    kpi("5xx", hc.critico || 0, hc.critico ? `<span class="estado critico">defecto</span>` : `<span class="estado bien">ninguno</span>`);
+  $("#h-clase").innerHTML = `<option value="">Todas las clases</option>` +
+    Object.keys(hc).map(k => `<option value="${k}">${CL[k]?.[0] || k} (${hc[k]})</option>`).join("");
+  $("#h-modulo").innerHTML = `<option value="">Todos los módulos</option>` +
+    [...new Set(H.map(h => h.modulo))].sort().map(m => `<option>${m}</option>`).join("");
+  $("#h-explica").innerHTML = Object.keys(hc).map(k => {
+    const h = H.find(x => x.clase === k);
+    return `<div style="--c:${CL[k]?.[1]}"><b>${CL[k]?.[0] || k}.</b> ${esc(h.lectura)}</div>`;
+  }).join("");
+  const curl = c => {
+    const cuerpo = c.envio ? ` -H 'Content-Type: application/json' -d '${c.envio.replace(/'/g, "'\\''")}'` : "";
+    return `curl -X ${c.metodo} -H 'Authorization: Bearer <token>'${cuerpo} 'http://localhost:8000${c.url}'`;
+  };
+  function pintarHal() {
+    const q = $("#h-texto").value.toLowerCase(), cl = $("#h-clase").value, m = $("#h-modulo").value;
+    const filas = H.map((h, i) => [h, i]).filter(([h]) => (!cl || h.clase === cl) && (!m || h.modulo === m) &&
+      (!q || [h.op, h.caso.codigo, h.mensaje, h.caso.url].some(s => String(s).toLowerCase().includes(q))));
+    $("#t-hal").innerHTML = `<tr><th>Clase</th><th>Módulo</th><th>Operación</th><th>Qué envió</th><th>Respuesta</th><th class="n">Casos</th><th>¿BDD lo prueba?</th></tr>` +
+      (filas.map(([h, i]) => {
+        const c = h.caso;
+        const bdd = h.clase !== "contrato" ? '<span class="nota">no comparable</span>'
+          : h.n_cubren ? `<span class="estado bien">sí · ${h.n_cubren} escenario${h.n_cubren > 1 ? "s" : ""}</span>` : '<span class="estado aviso">no</span>';
+        const [met, ruta] = h.op.split(" ");
+        return `<tr class="abre" data-i="${i}"><td><span class="clase-dot" style="--c:${CL[h.clase]?.[1]}"></span>${CL[h.clase]?.[0] || h.clase}</td><td>${h.modulo}</td><td><span class="metodo">${met}</span> <span class="mono">${esc(ruta)}</span></td><td class="mono">${esc((c.envio || c.url).slice(0, 70))}</td><td><b class="mono">${c.estado}</b> ${c.codigo ? `<span class="chip">${esc(c.codigo)}</span>` : ""}</td><td class="n">${h.n}</td><td>${bdd}</td></tr>`;
+      }).join("") || '<tr><td colspan="7">Sin coincidencias.</td></tr>');
+  }
+  $("#t-hal").addEventListener("click", e => {
+    const tr = e.target.closest("tr.abre"); if (!tr) return;
+    if (tr.nextElementSibling?.classList.contains("detalle")) { tr.nextElementSibling.remove(); return; }
+    const h = H[tr.dataset.i], c = h.caso;
+    const cubren = h.n_cubren
+      ? `<p><b>Escenarios nuestros que provocan esta misma respuesta (${h.n_cubren}):</b></p><ul>${h.cubren.map(([n, f, hu]) => `<li>${esc(n)} <span class="nota">· ${esc(f)} · ${esc(hu)}</span></li>`).join("")}${h.n_cubren > h.cubren.length ? "<li>…</li>" : ""}</ul>` : "";
+    tr.insertAdjacentHTML("afterend", `<tr class="detalle"><td colspan="7"><div class="caso">
+      <p><b>${esc(h.titulo)}</b> · <span class="mono">${esc(h.check)}</span> · ${esc(D.fases[c.fase])}</p>
+      <p class="nota">Mensaje de Schemathesis: ${esc(h.mensaje)}</p><p>${esc(h.lectura)}</p>
+      <pre>${esc(c.metodo)} ${esc(c.url)}${c.envio ? "\n" + esc(c.envio) : ""}</pre><pre>← ${c.estado} ${esc(c.respuesta)}</pre>
+      <pre>${esc(curl(c))}</pre>${cubren}
+      <p class="nota">Caso ${esc(c.id)} · reproducir con <code>st replay ${esc(c.id)}</code></p></div></td></tr>`);
+  });
+  $("#h-texto").oninput = $("#h-clase").onchange = $("#h-modulo").onchange = pintarHal;
+  pintarHal();
+}
+
+// ── Todos los casos ──────────────────────────────────────────────────────
+{
+  const POR_PAGINA = 100;
+  let pagina = 0, visibles = C;
+  const opciones = (sel, etiqueta, valores) => { $(sel).innerHTML = `<option value="">${etiqueta}</option>` + valores.map(([v, t]) => `<option value="${esc(v)}">${esc(t)}</option>`).join(""); };
+  opciones("#c-fase", "Todas las fases", Object.entries(D.fases));
+  opciones("#c-modo", "Positivos y negativos", [["positive", "Positivos (datos válidos)"], ["negative", "Negativos (datos que violan el esquema)"]]);
+  opciones("#c-estado", "Todos los HTTP", [...new Set(C.map(c => c.estado))].sort((a, b) => a - b).map(e => [e, e]));
+  opciones("#c-res", "Pasan y fallan", [["ok", "Solo los que pasan"], ["fallo", "Solo los que fallan"]]);
+  opciones("#c-modulo", "Todos los módulos", [...new Set(C.map(c => c.modulo))].sort().map(m => [m, m]));
+  const filtrar = () => {
+    const q = $("#c-texto").value.toLowerCase(), fa = $("#c-fase").value, mo = $("#c-modo").value, es = $("#c-estado").value,
+      re = $("#c-res").value, mod = $("#c-modulo").value;
+    visibles = C.filter(c => (!fa || c.fase === fa) && (!mo || c.modo === mo) && (!es || String(c.estado) === es) &&
+      (!mod || c.modulo === mod) && (!re || (re === "fallo") === (c.fallos.length > 0)) &&
+      (!q || `${c.op} ${c.url} ${c.envio} ${c.codigo}`.toLowerCase().includes(q)));
+    pagina = 0; pintarTodos();
+  };
+  function pintarTodos() {
+    const paginas = Math.max(1, Math.ceil(visibles.length / POR_PAGINA)), ini = pagina * POR_PAGINA;
+    $("#c-resumen").textContent = `${fmt(visibles.length)} de ${fmt(C.length)} casos · ${fmt(visibles.filter(c => c.fallos.length).length)} con algún check fallido`;
+    $("#c-pag").textContent = `Página ${pagina + 1} de ${paginas}`;
+    $("#c-ant").disabled = pagina === 0; $("#c-sig").disabled = pagina >= paginas - 1;
+    $("#t-todos").innerHTML = `<tr><th>#</th><th>Fase</th><th>Modo</th><th>Operación</th><th>Qué envió</th><th>HTTP</th><th>Código</th><th class="n">ms</th><th>Checks</th></tr>` +
+      (visibles.slice(ini, ini + POR_PAGINA).map((c, i) => {
+        const n = Object.keys(c.checks).length, f = c.fallos.length;
+        const [met, ruta] = c.op.split(" ");
+        return `<tr class="abre" data-i="${ini + i}"><td class="n">${ini + i + 1}</td><td>${esc(D.fases[c.fase])}</td><td>${c.modo === "negative" ? "negativo" : "positivo"}</td><td><span class="metodo">${met}</span> <span class="mono">${esc(ruta)}</span></td><td class="mono">${esc((c.envio || c.url).slice(0, 60))}</td><td><b class="mono">${c.estado}</b></td><td>${c.codigo ? `<span class="chip">${esc(c.codigo)}</span>` : ""}</td><td class="n">${c.ms}</td><td>${f ? `<span class="estado critico">${f} falla${f > 1 ? "n" : ""}</span>` : `<span class="estado bien">${n} ok</span>`}</td></tr>`;
+      }).join("") || '<tr><td colspan="9">Sin coincidencias.</td></tr>');
+  }
+  $("#t-todos").addEventListener("click", e => {
+    const tr = e.target.closest("tr.abre"); if (!tr) return;
+    if (tr.nextElementSibling?.classList.contains("detalle")) { tr.nextElementSibling.remove(); return; }
+    const c = visibles[tr.dataset.i];
+    tr.insertAdjacentHTML("afterend", `<tr class="detalle"><td colspan="9">${casoHTML(c)}${c.fallos.length ? `<div class="caso"><b>Checks fallidos</b><pre>${esc(c.fallos.join("\n"))}</pre></div>` : ""}<p class="nota">Checks: ${Object.entries(c.checks).map(([k, v]) => `${esc(k)} ${v === "SUCCESS" ? "✓" : "✗"}`).join(" · ")}</p></td></tr>`);
+  });
+  $("#c-ant").onclick = () => { pagina--; pintarTodos(); };
+  $("#c-sig").onclick = () => { pagina++; pintarTodos(); };
+  $("#c-texto").oninput = filtrar;
+  ["#c-fase", "#c-modo", "#c-estado", "#c-res", "#c-modulo"].forEach(s => $(s).onchange = filtrar);
+  $("#c-csv").onclick = () => {
+    const celda = v => `"${String(v ?? "").replace(/"/g, '""')}"`;
+    const filas = [["n", "id", "fase", "modo", "metodo", "operacion", "url", "cuerpo_enviado", "http", "codigo_error", "ms", "resultado", "checks_fallidos"],
+      ...visibles.map((c, i) => [i + 1, c.id, c.fase, c.modo, c.metodo, c.op, c.url, c.envio, c.estado, c.codigo, c.ms, c.fallos.length ? "FALLA" : "OK", c.fallos.join(" | ")])];
+    const blob = new Blob(["﻿" + filas.map(f => f.map(celda).join(",")).join("\r\n")], { type: "text/csv;charset=utf-8" });
+    const a = Object.assign(document.createElement("a"), { href: URL.createObjectURL(blob), download: "casos-schemathesis.csv" });
+    a.click(); URL.revokeObjectURL(a.href);
+  };
+  pintarTodos();
 }
 </script>
 </body>

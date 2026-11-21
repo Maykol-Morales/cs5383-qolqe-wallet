@@ -248,6 +248,45 @@ def comparar(casos, escenarios, documentadas):
             "solo_st": [[*t, sum(1 for c in casos if (c["op"], c["estado"], c["codigo"]) == t)] for t in solo_st]}
 
 
+# Qué significa cada check que falla (nombre del check en Schemathesis → clase, título, lectura para el equipo)
+CLASES_HALLAZGO = {
+    "positive_data_acceptance": ("contrato", "Rechazó una solicitud válida según el OpenAPI",
+                                 "El contrato es más laxo que la regla de negocio (faltan minimum, enum, pattern, maxLength). No es defecto del código: es imprecisión del contrato."),
+    "negative_data_rejection": ("aceptado", "Aceptó una solicitud que viola el OpenAPI",
+                                "Datos que violan el esquema y la API responde éxito. Revisar si es decisión de diseño (p. ej. no revelar qué celulares existen) o un hueco de validación."),
+    "allow_header_conformance": ("ruido", "Cabecera Allow incorrecta en 405",
+                                 "Comportamiento del framework (FastAPI). Ruido: no se considera defecto."),
+    "ensure_resource_availability": ("consistencia", "Recurso no disponible tras crearlo",
+                                     "La lectura llega antes que el commit: es la ventana de DEF-15."),
+    "not_a_server_error": ("critico", "Respuesta 5xx", "El servidor se cayó con datos generados. Defecto."),
+}
+
+
+def hallazgos(casos, escenarios):
+    """Agrupa los casos con algún check fallido por (operación, check): un hallazgo por grupo, con un caso
+    representativo (petición y respuesta) y los escenarios BDD que provocan la misma respuesta (operación,
+    estado, código). Solo se compara en positive_data_acceptance: ahí el servidor respondió con una regla de
+    negocio y la pregunta es si algún escenario nuestro ya la probaba."""
+    grupos = {}
+    for c in casos:
+        for f in c["fallos"]:
+            check, _, mensaje = f.partition(": ")
+            grupos.setdefault((c["op"], check), []).append((c, mensaje.split("\n")[0]))
+    salida = []
+    for (op, check), items in grupos.items():
+        clase, titulo, lectura = CLASES_HALLAZGO.get(check, ("otro", check, "Check sin clasificar."))
+        c, mensaje = items[0]
+        cubren = []
+        if check == "positive_data_acceptance" and escenarios:
+            cubren = sorted({(e["nombre"], e["feature"], e["hu"]) for e in escenarios for t in e["cuando"]
+                             if (t["op"], t["estado"], t["codigo"]) == (op, c["estado"], c["codigo"])})
+        salida.append({"op": op, "modulo": modulo(op.split(" ", 1)[1]), "check": check, "clase": clase, "titulo": titulo,
+                       "lectura": lectura, "mensaje": mensaje, "n": len(items), "caso": c,
+                       "cubren": [list(x) for x in cubren[:5]], "n_cubren": len(cubren)})
+    orden = {"critico": 0, "consistencia": 1, "aceptado": 2, "contrato": 3, "otro": 4, "ruido": 5}
+    return sorted(salida, key=lambda h: (orden.get(h["clase"], 4), h["op"]))
+
+
 def main():
     carpeta = RAIZ / "reporte-schemathesis"
     vcr = Path(sys.argv[1]) if len(sys.argv) > 1 else max(carpeta.glob("vcr-*.yaml"), key=lambda p: p.stat().st_mtime, default=None)
@@ -266,6 +305,7 @@ def main():
         "documentadas": sorted(documentadas), "modulos": {op: modulo(op.split(" ", 1)[1]) for op in documentadas},
         "fases": FASES, "casos": casos,
         "duracion": duracion, "p95": p95([c["ms"] for c in casos]),
+        "hallazgos": hallazgos(casos, escenarios),
         "escenarios": escenarios, "comparativa": comparar(casos, escenarios, documentadas) if escenarios else None,
     }
     plantilla = (Path(__file__).parent / "plantilla.html").read_text(encoding="utf-8")
