@@ -42,7 +42,7 @@ El escenario `@ia` pide los pasos al modelo una sola vez y los repite desde la c
 
 ## 4. Límites
 
-- **El job de exploración no se ha ejecutado en el CI**: no hay `ANTHROPIC_API_KEY` en la máquina de desarrollo. Se probó el mismo flujo en local con la CLI de Claude y la sesión iniciada (`benchmark/mcp/explorar.sh`, `CONOCIDOS=1`), y se validó el workflow (sintaxis, entradas, que `reportes` no depende de él). Lo que no se ha visto es Chrome headless del MCP en el runner de Linux ni la instalación de Claude Code ahí.
+- **Primera ejecución en el CI** (run 44864757692, lanzado a mano el 2026-11-21): Chrome headless del MCP y la instalación de Claude Code funcionaron en el runner de Linux (184 s, 70 turnos, ≈ US$ 0,41) y el resumen quedó en el run. El primer intento había fallado con código 126 porque `explorar.sh` no tenía permiso de ejecución en git (se corrigió; no llegó a llamar al modelo). **La marca del agente no es del todo fiable.** De sus 5 entradas, 3 eran reconfirmaciones correctas (DEF-01, DEF-06 y DEF-07), una era **DEF-14 marcado como «nuevo»** (a las 23:10 de Lima el runner, en UTC, ya está en el día siguiente y el historial pide un `hasta` futuro: es exactamente DEF-14, aunque el agente escribió que «no coincide») y otra **no era un hallazgo** (un resumen de las reglas que sí se cumplen). Verificado a mano: **0 defectos nuevos**. Por eso el resumen advierte que hay que reproducir cada hallazgo antes de registrarlo.
 - Una sola sesión por ejecución y un solo modelo: otra sesión puede encontrar otras cosas, y el agente puede reportar falsos positivos.
 - Es una exploración: no sustituye a la suite automática, que detecta los defectos conocidos de forma determinista y gratis.
 

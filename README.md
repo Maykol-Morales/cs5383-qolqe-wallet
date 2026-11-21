@@ -2,6 +2,8 @@
 
 Billetera digital **ficticia** usada como sistema bajo prueba (SUT) en el Proyecto 2 del curso **CS5383 Pruebas y Verificación de Software**.
 
+**Trabajo de pruebas del Grupo 3:** arquitectura con diagramas en [`docs/arquitectura.md`](docs/arquitectura.md) · informe en [`docs/informe.md`](docs/informe.md) · guía para la exposición en [`docs/guia-exposicion.md`](docs/guia-exposicion.md) · reportes publicados en https://maykol-morales.github.io/cs5383-qolqe-wallet/
+
 > ⚠️ **Antes de empezar:**
 > - **No modifiquen el código de la carpeta `qolqe/`.** Su trabajo es probarlo, no repararlo.
 > - Todos los datos son ficticios.
