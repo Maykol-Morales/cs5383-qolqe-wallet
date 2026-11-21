@@ -157,6 +157,23 @@ npm run test:ia                    # repite desde la caché
 
 Sin clave ni caché, el escenario `@ia` se marca como *skipped*. Claude Sonnet 5 solo acepta `temperature: 1`, por eso `wdio.conf.js` la fija (el servicio manda otra por defecto). Otro modelo: `WDIO_AI_MODEL=proveedor:modelo`.
 
+## 6. Explorar con un agente: MCP de WebdriverIO
+
+Además de `browser.act()` (sección 5), WebdriverIO tiene un **servidor MCP** (`@wdio/mcp`) que le da a un agente de código como Claude Code herramientas para manejar el navegador. Está declarado en `.mcp.json` de esta carpeta: al abrir `claude` aquí ofrece activarlo (hay que aprobarlo, y `npx` descarga el paquete la primera vez). En Windows puede hacer falta `cmd /c npx`; la alternativa es `claude mcp add --transport stdio wdio-mcp -- npx -y @wdio/mcp`.
+
+**Regla de trabajo del equipo: la IA explora y propone; lo que corre en el CI es el Page Object.** El agente sirve para explorar una pantalla, descubrir selectores y revisar comportamientos antes de decidir qué automatizar. Luego la prueba se escribe como escenario + Page Object (determinista, 0 tokens, 3–4 s) y esa es la que corre en cada push. Ninguna variante con agente se usa como regresión: paga tokens en cada ejecución y no es determinista.
+
+Qué elegir, según lo medido en `docs/comparativa-mcp-agentes.md` (misma tarea, Claude Code con Sonnet 5.5, mediana de 3 corridas):
+
+| Enfoque | Tiempo | USD por tarea | Cuándo |
+|---|---|---|---|
+| MCP de WebdriverIO | 24 s | 0,078 | exploración interactiva, lo más rápido |
+| `wdio session` en la terminal | 45 s | 0,067 | lo más barato y estable; exporta los pasos a una especificación |
+| Scripts propios del agente | 42 s | 0,103 | máximo control; deja un script reutilizable |
+| Claude in Chrome | 87 s | 0,140 | revisión visual puntual (usa tu Chrome real) |
+
+**Uso real: sesión exploratoria** (`benchmark/mcp/explorar.sh`, prompt en `benchmark/mcp/explorar-prompt.md`). Un agente con solo el MCP, sin saber cuáles son los defectos conocidos, exploró la interfaz durante 2,5 minutos (US$ 0,49) y encontró 4 problemas, todos reales y ya registrados: **DEF-06** (transferir a una cuenta cerrada), **DEF-03** (el ingreso exitoso no reinicia el conteo de PIN), **DEF-02** (el registro acepta el PIN 4321) y **DEF-07** (el historial no muestra los movimientos de hoy). No halló defectos nuevos y se le pasaron 4 de los 8 alcanzables por interfaz (comisión, saldo con comisión, nombre repetido al editar una categoría y límite diario con interbancarias), así que **complementa** a la suite, no la reemplaza.
+
 ## Estructura
 
 ```

@@ -159,6 +159,8 @@ Entrega final: se pasó de 16 a **50 escenarios web** (Núcleo 11 → 28, G3 5 �
 
 **Comparativa de IA** (`docs/comparativa-ia.md`): para la misma tarea, Page Objects 3,6 s y 0 tokens; `browser.act` graba una vez (~137k tokens, US$ 0,29, 34 s) y repite gratis en 6,8 s; un agente Claude (`claude -p`) cuesta en cada corrida (US$ 0,36 con Sonnet 5, US$ 0,04 con Sonnet 5.5) y tarda 17–165 s. Conclusión: Page Objects para la regresión; `act` con caché versionada si se quiere escribir pasos como intención; el agente, para explorar y generar pasos, no como suite.
 
+**Comparativa del conector MCP de WebdriverIO frente a un agente de código** (`docs/comparativa-mcp-agentes.md`, 2026-11-21): la misma tarea con Claude Code (Sonnet 5.5, 3 corridas por enfoque, todas correctas). El MCP (`@wdio/mcp`) tarda 24 s y cuesta US$ 0,078; `wdio session` en la terminal, 45 s y US$ 0,067; scripts propios del agente, 42 s y US$ 0,103. El MCP gasta casi el doble de contexto (177 k frente a ~96 k tokens) porque hace más llamadas pequeñas, y suma unos 3 mil tokens fijos por sus herramientas; entre MCP y CLI no hay diferencia de precio demostrable con 3 corridas. Claude in Chrome (la extensión, en el Chrome real) es el más caro y lento: US$ 0,140 y 87 s (+79 % frente al MCP), con 30 turnos y el mayor costo fijo (15 k tokens), sobre todo por sus 19 a 21 acciones de `computer` una por una. Conclusión: ninguno sirve como regresión en cada push (paga tokens y no es determinista); para explorar y escribir pruebas cuestan de 7 a 10 centavos por tarea y valen la pena. La documentación oficial no publica cifras de tokens ni de costo, así que las medidas son propias. El MCP se usó además de verdad: una sesión exploratoria (US$ 0,49, 2,5 min) halló 4 problemas, todos defectos ya registrados (DEF-02, DEF-03, DEF-06 y DEF-07), sin ningún falso positivo ni defecto nuevo, y se le pasaron 4 de los 8 alcanzables por interfaz; complementa a la suite. La regla de trabajo (la IA explora, el Page Object corre en el CI) y el `.mcp.json` están en `tests/e2e/README.md` §6.
+
 ### 3.2 Estrategia de herramientas: cómo se complementan
 
 Cada herramienta cubre un riesgo que las otras dejan abierto. Ninguna reemplaza a otra: si se quitara una, quedaría sin cubrir una clase de defecto concreta.
@@ -320,7 +322,7 @@ Qolqe: CPU prom. 12,0 % (máx. 44,6 %), memoria 71–115 MB; k6: 1,4 % (máx. 28
 
 Fallas en total: 6 080 de 60 674 (10,0 %; k6 cortó con `abortOnFail` a los 32 min y 924 VUs). Integridad OK, con **3 operaciones aplicadas aunque k6 recibió error o timeout**. 1 971 «database is locked» en el log. Qolqe: 34 % CPU a 700 VUs, 12 % durante el colapso, memoria 142–150 → 297–538 MB; k6: 1,9 % (máx. 46,8 %).
 
-Gráficos: `k6.png` y `recursos.png` en cada carpeta.
+Gráficos: `k6.png` y `recursos.png` en cada carpeta. **Resumen por corrida:** el dashboard web de k6 (`dashboard.html`) solo grafica las métricas globales, sin etiquetas: no trae los percentiles por tipo de operación (consulta frente a dinero), no dice si cada umbral pasó y abrevia el total de peticiones («7.3k»). Esos datos sí están en la consola (`k6.txt`) y en `summary.json`, así que `resumen.py` arma con ellos un `resumen.html` por carpeta (percentiles por tipo, ✓/✗ de cada umbral, totales exactos, recursos, integridad y endpoints) y `resultados/index.html` con una fila por corrida.
 
 #### Validación en EC2 · `resultados/{humo,carga,pico,estres}-20261120-*-docker-ec2/`
 
