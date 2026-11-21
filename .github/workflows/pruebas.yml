@@ -17,6 +17,10 @@ on:
         type: choice
         options: [fallos, todo, no]
         default: fallos
+      exploracion:
+        description: "Además corre la exploración con IA: un agente de Claude con el MCP de WebdriverIO busca defectos nuevos (necesita el secreto ANTHROPIC_API_KEY; unos US$ 0,5)"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -189,6 +193,78 @@ jobs:
             tests/e2e/reportes/
             tests/e2e/evidencia/
 
+  # Exploración con IA (docs/ia-en-el-ciclo.md): un agente de Claude Code con SOLO el MCP de WebdriverIO explora la interfaz de
+  # Qolqe buscando comportamientos que contradigan las reglas de negocio. Se le pasa la lista de defectos conocidos
+  # (docs/defectos.md) para que busque cosas nuevas. Cuesta unos US$ 0,5 por sesión (tope US$ 1,50), así que solo corre a pedido
+  # (Run workflow → exploracion) y con el secreto ANTHROPIC_API_KEY; sin él se omite sin fallar. Los hallazgos son candidatos
+  # que hay que reproducir a mano. No forma parte del gate ni del job reportes.
+  exploracion:
+    name: Exploración con IA (MCP de WebdriverIO)
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.exploracion }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run: { working-directory: tests/e2e }
+    env:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      QOLQE_URL: http://localhost:8002
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Sin clave
+        if: ${{ env.ANTHROPIC_API_KEY == '' }}
+        working-directory: .
+        run: |
+          {
+            echo "### Exploración con IA (MCP de WebdriverIO)"
+            echo
+            echo 'Omitida: falta el secreto `ANTHROPIC_API_KEY` del repositorio (Settings → Secrets and variables → Actions).'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/setup-python@v6
+        if: ${{ env.ANTHROPIC_API_KEY != '' }}
+        with: { python-version: "3.12", cache: pip, cache-dependency-path: requirements.txt }
+      - uses: actions/setup-node@v5
+        if: ${{ env.ANTHROPIC_API_KEY != '' }}
+        with: { node-version: "22" }
+
+      # El servidor MCP se descarga con npx antes de la sesión para que esa espera no cuente dentro del agente.
+      - name: Instalar Qolqe, Claude Code y el servidor MCP
+        if: ${{ env.ANTHROPIC_API_KEY != '' }}
+        working-directory: .
+        run: |
+          python -m venv .venv && .venv/bin/pip install -q -r requirements.txt
+          npm install -g @anthropic-ai/claude-code
+          npx -y @wdio/mcp --help < /dev/null || true
+
+      - name: Levantar Qolqe
+        if: ${{ env.ANTHROPIC_API_KEY != '' }}
+        working-directory: .
+        run: |
+          QOLQE_MODO_PRUEBA=1 QOLQE_BD="$RUNNER_TEMP/qolqe-exploracion.db" nohup .venv/bin/python -m uvicorn qolqe.main:app --port 8002 \
+            > "$RUNNER_TEMP/qolqe-exploracion.log" 2>&1 &
+          curl -sf --retry 30 --retry-connrefused --retry-delay 1 localhost:8002/api/salud || { cat "$RUNNER_TEMP/qolqe-exploracion.log"; exit 1; }
+
+      # CONOCIDOS=1: el agente recibe la lista de docs/defectos.md y busca cosas distintas. MCP_CONFIG: el .mcp.json de Linux (npx).
+      # continue-on-error: si la sesión falla o llega al tope de gasto, el resumen lo explica y el run no se cae.
+      - name: Exploración (agente de Claude + MCP de WebdriverIO)
+        if: ${{ env.ANTHROPIC_API_KEY != '' }}
+        continue-on-error: true
+        env: { CONOCIDOS: "1", TOPE_USD: "1.50" }
+        run: MCP_CONFIG="$PWD/.mcp.json" benchmark/mcp/explorar.sh 1
+
+      - name: Resumen
+        if: ${{ !cancelled() && env.ANTHROPIC_API_KEY != '' }}
+        working-directory: .
+        run: python .github/scripts/exploracion.py >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v7
+        if: ${{ !cancelled() && env.ANTHROPIC_API_KEY != '' }}
+        with:
+          name: exploracion
+          path: tests/e2e/benchmark/mcp/crudo/X-1.json
+          if-no-files-found: ignore
+
   reportes:
     name: Quality gate y sitio
     needs: [contrato, api, web]
@@ -207,16 +283,6 @@ jobs:
       - uses: actions/download-artifact@v8
         continue-on-error: true
         with: { name: web, path: tests/e2e }
-
-      # Triage con IA (docs/ia-en-el-ciclo.md): si el run tuvo fallas, Claude las clasifica (defecto conocido / intermitente /
-      # nueva) con el JUnit, docs/defectos.md y las demás corridas, y escribe sitio/triage.html. Es un asesor: nunca entra al
-      # gate. Sin fallas, sin el secreto ANTHROPIC_API_KEY (forks, PR) o si la API falla, se omite y el run sigue igual.
-      # Va antes de «Matriz y sitio» para que la portada ya encuentre triage.html.
-      - name: Triage con IA
-        continue-on-error: true
-        env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-        run: python .github/scripts/triage.py sitio >> "$GITHUB_STEP_SUMMARY"
 
       # docs/trazabilidad.md (HU → caso → nivel → resultado) + sitio/ con portada, matriz y reportes
       - name: Matriz y sitio

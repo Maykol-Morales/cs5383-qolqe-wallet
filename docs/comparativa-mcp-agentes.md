@@ -94,7 +94,8 @@ Para que el análisis no quede solo en una tarea de laboratorio, se usó el MCP 
 - **Cobertura de lo conocido:** de los 8 defectos que considero alcanzables desde la interfaz en una sola sesión (DEF-01, 02, 03, 04, 06, 07, 10 y 13) halló 4 (02, 03, 06 y 07). Se le pasaron DEF-01 (comisión que no redondea 0.005), DEF-04 (saldo negativo con comisión), DEF-10 (nombre repetido al editar una categoría) y DEF-13 (límite diario con transferencias interbancarias): justo los que piden hacer cuentas o repetir operaciones. Los demás (05, 08, 09, 12, 14, 15, 16) no se alcanzan con una sesión de interfaz. «Alcanzable» es juicio propio.
 - **Qué aporta:** una validación independiente. Un agente al que no se le dijo qué buscar redescubrió 4 defectos en 2,5 minutos, a unos US$ 0,12 por defecto. Es **complementario, no un reemplazo**: la suite automática detecta los 16 de forma determinista y gratis en cada run.
 - **Dónde encaja:** antes de escribir pruebas (para decidir qué automatizar) y para revisar pantallas nuevas, no como regresión. Esta sesión cuesta unas 6 veces la tarea de la sección 3 porque explora más.
-- **Límites:** n = 1 (otra sesión puede encontrar otras cosas), el resumen de reglas condiciona lo que busca, y al no haber hallazgos nuevos no se pudo medir su capacidad de descubrir.
+- **Segunda sesión (2026-11-21, ya con la lista de conocidos y reportando todo):** 2,5 minutos y US$ 0,49; halló DEF-01, 02, 03 y 06 (esta vez sí la comisión, pero no DEF-07) y ningún defecto nuevo. Entre las dos sesiones se cubren 5 de los 8 alcanzables (01, 02, 03, 06 y 07), así que cada sesión encuentra algo distinto. Esa versión es la que corre el job `exploracion` del CI (`docs/ia-en-el-ciclo.md`).
+- **Límites:** n = 2 sesiones (otra puede encontrar otras cosas), el resumen de reglas condiciona lo que busca, y al no haber hallazgos nuevos no se pudo medir su capacidad de descubrir.
 
 ## Fuentes
 

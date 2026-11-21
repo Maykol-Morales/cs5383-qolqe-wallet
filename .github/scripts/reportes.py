@@ -762,8 +762,7 @@ def sitio(destino):
                ("api/", "Allure · API", "pytest-bdd: núcleo + G3, defectos conocidos como xfail"),
                ("web/", "Allure · Web E2E", "WebdriverIO + Cucumber: 3 corridas seguidas y el escenario de IA"),
                ("schemathesis/", "Schemathesis", "Reporte del CLI: contrato OpenAPI con semilla fija"),
-               ("contrato/", "Dashboard de contrato", "Logs VCR + HAR y comparativa con los escenarios BDD"),
-               ("triage.html", "Triage con IA", "Diagnóstico de las fallas del run (asesor, no parte del gate)")]
+               ("contrato/", "Dashboard de contrato", "Logs VCR + HAR y comparativa con los escenarios BDD")]
     items = "".join(f'<li><a href="{href}"><span class="t">{t}</span><span class="d">{d}</span><span class="flecha"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg></span></a></li>'
                     if (destino / href.rstrip("/")).exists() else f'<li><p class="no"><b>{t}</b> · no generado en este run</p></li>'
                     for href, t, d in enlaces)

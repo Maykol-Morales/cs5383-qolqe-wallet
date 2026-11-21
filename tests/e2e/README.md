@@ -174,6 +174,8 @@ Qué elegir, según lo medido en `docs/comparativa-mcp-agentes.md` (misma tarea,
 
 **Uso real: sesión exploratoria** (`benchmark/mcp/explorar.sh`, prompt en `benchmark/mcp/explorar-prompt.md`). Un agente con solo el MCP, sin saber cuáles son los defectos conocidos, exploró la interfaz durante 2,5 minutos (US$ 0,49) y encontró 4 problemas, todos reales y ya registrados: **DEF-06** (transferir a una cuenta cerrada), **DEF-03** (el ingreso exitoso no reinicia el conteo de PIN), **DEF-02** (el registro acepta el PIN 4321) y **DEF-07** (el historial no muestra los movimientos de hoy). No halló defectos nuevos y se le pasaron 4 de los 8 alcanzables por interfaz (comisión, saldo con comisión, nombre repetido al editar una categoría y límite diario con interbancarias), así que **complementa** a la suite, no la reemplaza.
 
+**También corre en el CI.** El job `exploracion` de `.github/workflows/pruebas.yml` repite esa sesión (con `CONOCIDOS=1`, que le pasa la lista de defectos de `docs/defectos.md` para que busque cosas nuevas) y deja los hallazgos como resumen del run. Es a pedido: *Actions → Pruebas → Run workflow* con la casilla `exploracion`, y necesita el secreto `ANTHROPIC_API_KEY`. Los hallazgos son candidatos que hay que reproducir a mano. Detalle en `docs/ia-en-el-ciclo.md`.
+
 ## Estructura
 
 ```
