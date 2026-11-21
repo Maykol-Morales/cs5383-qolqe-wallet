@@ -147,7 +147,13 @@ jobs:
       # !cancelled(): corren aunque falle una corrida, para que G4 informe su resultado real.
       - name: Escenario @ia desde la caché (npm run test:ia)
         if: ${{ !cancelled() }}
-        run: npm run test:ia && mv reportes/junit reportes/junit-ia
+        # tee guarda la consola para que reportes.py publique el resumen de @wdio/ai-service (llamadas, caché, curaciones y
+        # tokens) en el dashboard; pipefail evita que el tee oculte un fallo del escenario.
+        run: |
+          set -o pipefail
+          mkdir -p reportes
+          npm run test:ia 2>&1 | tee reportes/ia-consola.txt
+          mv reportes/junit reportes/junit-ia
 
       # DEF-14 debe fallar mientras exista, como un xfail estricto de pytest: si pasa, el defecto se corrigió
       # y el job falla para retirar @DEF-14. Se invierte en vez de continue-on-error para que una corrección
@@ -201,6 +207,16 @@ jobs:
       - uses: actions/download-artifact@v8
         continue-on-error: true
         with: { name: web, path: tests/e2e }
+
+      # Triage con IA (docs/ia-en-el-ciclo.md): si el run tuvo fallas, Claude las clasifica (defecto conocido / intermitente /
+      # nueva) con el JUnit, docs/defectos.md y las demás corridas, y escribe sitio/triage.html. Es un asesor: nunca entra al
+      # gate. Sin fallas, sin el secreto ANTHROPIC_API_KEY (forks, PR) o si la API falla, se omite y el run sigue igual.
+      # Va antes de «Matriz y sitio» para que la portada ya encuentre triage.html.
+      - name: Triage con IA
+        continue-on-error: true
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: python .github/scripts/triage.py sitio >> "$GITHUB_STEP_SUMMARY"
 
       # docs/trazabilidad.md (HU → caso → nivel → resultado) + sitio/ con portada, matriz y reportes
       - name: Matriz y sitio

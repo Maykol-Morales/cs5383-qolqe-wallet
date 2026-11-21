@@ -566,6 +566,30 @@ def historial(run, casos, segundos, destino):
 
 # ── Páginas ─────────────────────────────────────────────────────────────────────────────────────
 
+IA_CONSOLA = RAIZ / "tests/e2e/reportes/ia-consola.txt"   # salida de `npm run test:ia` (el job web la guarda con tee)
+
+
+def ia_resumen():
+    """Resumen que imprime @wdio/ai-service al final del escenario @ia («4 act calls · 4 from cache · … · 0 tokens»)
+    y los pasos curados que lista debajo de «Healed:». None si el job web no dejó la consola."""
+    if not IA_CONSOLA.is_file():
+        return None
+    texto = IA_CONSOLA.read_text(encoding="utf-8", errors="replace")
+    m = re.search(r"@wdio/ai-service:\s*(\d+) act calls\s*·\s*(\d+) from cache\s*·\s*(\d+) healed without the model\s*·\s*"
+                  r"(\d+) healed by the model\s*·\s*(\d+) recorded by the model\s*·\s*([\d.,]+)(k?) tokens", texto)
+    if not m:
+        return None
+    tokens = float(m.group(6).replace(",", "")) * (1000 if m.group(7) else 1)
+    curados = []
+    if "Healed:" in texto:
+        for linea in texto.split("Healed:", 1)[1].splitlines()[1:]:
+            if not linea.strip() or linea.startswith("Updated cache"):
+                break
+            curados.append(linea.strip())
+    return {"act": int(m.group(1)), "cache": int(m.group(2)), "curado_sin_modelo": int(m.group(3)), "curado_modelo": int(m.group(4)),
+            "grabado": int(m.group(5)), "tokens": int(tokens), "curados": curados}
+
+
 def html_dashboard(casos, run, url_def, anclas, hist):
     n, total = conteo(casos), len(casos)
     resumen_hu, _ = tablas(casos)
@@ -659,6 +683,17 @@ def html_dashboard(casos, run, url_def, anclas, hist):
                         f'<span class="num">{p:.0f} %</span>' for a, p in cob)
     cuadro_cob = (f'<div class="panel"><h3>Cobertura de líneas por módulo</h3><div class="filas">{filas_cob}</div></div>' if cob
                   else '<div class="panel"><h3>Cobertura</h3><p class="mudo">Sin reportes/cobertura.xml en este run.</p></div>')
+    ia = ia_resumen()
+    if ia:
+        curados = ("<ul>" + "".join(f"<li>{html.escape(c)}</li>" for c in ia["curados"]) + "</ul>") if ia["curados"] else ""
+        cuerpo += seccion("C1", "IA en el ciclo: WebdriverIO (browser.act)",
+                          "El escenario <code>@ia</code> (CP-W90) pide los pasos al modelo una sola vez y los repite desde la caché "
+                          "commiteada. En el CI no hay clave de API, así que solo puede <b>curar sin modelo</b> (probar otros selectores "
+                          "del mismo elemento): «0 tokens» significa que nadie gastó. Si la interfaz cambiara, aquí se vería cuántos "
+                          "pasos se curaron antes de fallar.",
+                          kpis([("Llamadas de IA", str(ia["act"])), ("Desde la caché", str(ia["cache"])),
+                                ("Curados sin modelo", str(ia["curado_sin_modelo"])), ("Curados por el modelo", str(ia["curado_modelo"])),
+                                ("Grabados por el modelo", str(ia["grabado"])), ("Tokens", f'{ia["tokens"]:,}'.replace(",", " "))]) + curados)
     cuerpo += seccion("C3", "El pipeline en el tiempo",
                       f"Cada run suma una fila a <code>historial.json</code> en Pages ({len(hist)} run(s) registrados). "
                       "La cobertura sale de pytest-cov en el job de la API.", f'<div class="dos">{tendencia}{cuadro_cob}</div>')
@@ -727,7 +762,8 @@ def sitio(destino):
                ("api/", "Allure · API", "pytest-bdd: núcleo + G3, defectos conocidos como xfail"),
                ("web/", "Allure · Web E2E", "WebdriverIO + Cucumber: 3 corridas seguidas y el escenario de IA"),
                ("schemathesis/", "Schemathesis", "Reporte del CLI: contrato OpenAPI con semilla fija"),
-               ("contrato/", "Dashboard de contrato", "Logs VCR + HAR y comparativa con los escenarios BDD")]
+               ("contrato/", "Dashboard de contrato", "Logs VCR + HAR y comparativa con los escenarios BDD"),
+               ("triage.html", "Triage con IA", "Diagnóstico de las fallas del run (asesor, no parte del gate)")]
     items = "".join(f'<li><a href="{href}"><span class="t">{t}</span><span class="d">{d}</span><span class="flecha"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg></span></a></li>'
                     if (destino / href.rstrip("/")).exists() else f'<li><p class="no"><b>{t}</b> · no generado en este run</p></li>'
                     for href, t, d in enlaces)
