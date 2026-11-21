@@ -158,10 +158,21 @@ Then('mi perfil muestra el correo {string}', async (correo) => {
     await recargarHasta(() => expect(PerfilPage.dato('correo')).toHaveText(correo, CORTO), `El correo "${correo}" no quedó guardado`)
 })
 
+// DEF-15: Qolqe responde antes de guardar. La siguiente transferencia depende de lo ya usado hoy (límite diario), así que
+// después de cada una se espera a que /api/limites ya cuente el acumulado; si no, la última podría pasar por leer un total viejo.
 When('hago {int} transferencias de {string} al celular {string}', async (n, monto, celular) => {
     for (let i = 0; i < n; i++) {
         await TransferirPage.continuar({ monto, celular })
         await TransferirPage.confirmar()
+        const esperado = Number(monto) * (i + 1)
+        await browser.waitUntil(async () => {
+            const usado = await browser.execute(async () => {
+                const token = JSON.parse(sessionStorage.getItem('qolqe.sesion'))?.access_token
+                const res = await fetch('/api/limites', { headers: { Authorization: `Bearer ${token}` } })
+                return res.ok ? Number((await res.json()).usado_hoy) : -1
+            })
+            return usado >= esperado
+        }, { timeout: 15000, interval: 300, timeoutMsg: `Qolqe no llegó a contar S/ ${esperado.toFixed(2)} usados hoy` })
         await TransferirPage.nueva()
     }
 })

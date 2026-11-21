@@ -295,6 +295,8 @@ def main():
     har = Path(sys.argv[2]) if len(sys.argv) > 2 else vcr.with_name(vcr.name.replace("vcr-", "har-").replace(".yaml", ".json"))
     documentadas, operacion, viola = contrato()
     comando, semilla, casos, duracion = schemathesis(vcr, har, operacion)
+    if comando.startswith("<"):  # el VCR guarda «<unknown entrypoint>» cuando el CLI corre desde un script (demo.py)
+        comando = f"python demo.py schemathesis [todos]  (semilla {semilla}, 30 ejemplos por operación)"
     for c in casos:
         c["modulo"] = modulo(c["op"].split(" ", 1)[1])
         c["documentada"] = c["op"] in documentadas
