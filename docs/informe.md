@@ -111,9 +111,20 @@ QOLQE_URL=http://localhost:8000 pytest tests/api/test_nucleo.py   # contra un se
 | CP-W31 | HU-G3-02 | Detalle del movimiento más reciente: mismo código, tipo e importe |
 | CP-W32, CP-W33 | HU-G3-03 | Categoría de 2 caracteres y nombre repetido en otra capitalización se rechazan |
 | CP-W34 | HU-G3-06 | Eliminar una categoría la quita de la lista y baja el contador a "2 de 10" |
+| CP-W35, CP-W36 | HU-G3-05 | Editar una categoría (nombre y color) y rechazar un nombre de 2 caracteres desde el diálogo |
+| CP-W37 | HU-G3-04 | Categorías en orden alfabético con su contador (Comida 0, Familia 5, Servicios 5) y «3 de 10» |
+| CP-W38, CP-W39 | HU-G3-08 | El CSV trae los 20 movimientos del rango aunque la tabla muestre 10 por página, y exportar filtrado por categoría |
+| CP-W40 | HU-G3-08 | Exportar un rango de 91 días se rechaza y no se descarga ningún archivo |
+| CP-W41, CP-W42 | HU-G3-01 | Filtrar por categoría y por un rango de fechas que excluye los últimos 30 días |
+| CP-W43, CP-W44 | HU-G3-07 | Valor límite de la nota: 101 caracteres se rechazan, 100 se guardan |
+| CP-W45 | HU-G3-07 | Quitar la categoría de un movimiento ya clasificado |
+| CP-W46 | HU-N-03 | Sin sesión, `/inicio`, `/transferir`, `/perfil` y `/historial` llevan a `/login` |
+| CP-W47, CP-W48 | HU-N-05 | Cambiar el correo (queda guardado tras recargar) y rechazar uno con formato inválido |
+| CP-W49 | HU-N-07 | Límite diario (Diego, S/ 1 000): dos transferencias de S/ 500 y la siguiente de S/ 0.01 se rechaza |
+| CP-W50 | HU-N-07 | El destinatario (Bruno) ve su saldo de S/ 850.00 y la transferencia recibida en el inicio |
 | CP-W90 | HU-G3-03, HU-G3-07 | El mismo flujo de CP-W01 con `browser.act()` (IA), repetido desde la caché |
 
-Entrega final: se pasó de 16 a **34 escenarios web** (Núcleo 11 → 23, G3 5 → 11, más el `@ia`). Sin esperas fijas (solo `waitUntil`/`expect` con auto-espera). Como DEF-15 hace que Qolqe responda antes de guardar, las verificaciones de estado guardado usan `recargarHasta` (`tests/e2e/pages/espera.js`: recarga y comprueba hasta que aparece o vence a los 20 s), que no oculta un defecto real: si el dato nunca se guarda, el caso falla. Pasan 3 veces seguidas en local y en cada run del pipeline. DEF-14 (`@DEF-14`) corre aparte y debe fallar.
+Entrega final: se pasó de 16 a **50 escenarios web** (Núcleo 11 → 28, G3 5 → 22, más el `@ia`). Sin esperas fijas (solo `waitUntil`/`expect` con auto-espera). Como DEF-15 hace que Qolqe responda antes de guardar, las verificaciones de estado guardado usan `recargarHasta` (`tests/e2e/pages/espera.js`: recarga y comprueba hasta que aparece o vence a los 20 s), que no oculta un defecto real: si el dato nunca se guarda, el caso falla. Pasan 3 veces seguidas en local y en cada run del pipeline. DEF-14 (`@DEF-14`) corre aparte y debe fallar.
 
 ### 3.1 Patrón de diseño: por qué Page Object
 

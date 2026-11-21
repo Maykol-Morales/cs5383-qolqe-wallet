@@ -183,3 +183,48 @@ Feature: Usar mi billetera: cuenta, sesión, perfil y transferencias
     And estoy en Transferir
     When preparo una transferencia de "10.00" al CCI "00212345678901234567"
     Then la confirmación muestra monto "S/ 10.00", comisión "S/ 1.00" y total "S/ 11.00"
+
+  # --- Entrega final (2.ª tanda): sesión, perfil y límite diario ---
+
+  @HU-N-03 @CP-W46 @story=HU-N-03 @severity=critical
+  Scenario: CP-W46 · Sin sesión, las páginas protegidas me llevan al ingreso
+    Given que no tengo una sesión iniciada
+    Then al abrir "/inicio" sin sesión me lleva al ingreso
+    And al abrir "/transferir" sin sesión me lleva al ingreso
+    And al abrir "/perfil" sin sesión me lleva al ingreso
+    And al abrir "/historial" sin sesión me lleva al ingreso
+
+  @HU-N-05 @CP-W47 @story=HU-N-05 @severity=normal
+  Scenario: CP-W47 · Cambiar mi correo y verlo guardado
+    Given que inicié sesión como Ana
+    And estoy en Mi perfil
+    When cambio mi correo a "ana.nueva@correo.pe"
+    Then veo el mensaje del perfil "Tus datos fueron actualizados"
+    And mi perfil muestra el correo "ana.nueva@correo.pe"
+
+  @HU-N-05 @CP-W48 @story=HU-N-05 @severity=normal
+  Scenario: CP-W48 · Un correo con formato inválido se rechaza
+    Given que inicié sesión como Ana
+    And estoy en Mi perfil
+    When cambio mi correo a "no-es-un-correo"
+    Then veo el mensaje del perfil "El correo no tiene un formato válido"
+
+  @HU-N-07 @CP-W49 @story=HU-N-07 @severity=critical
+  Scenario: CP-W49 · Al superar el límite diario la transferencia se rechaza
+    Given que inicié sesión como Diego
+    And estoy en Transferir
+    When hago 2 transferencias de "500.00" al celular "912345678"
+    And preparo una transferencia de "0.01" al celular "912345678"
+    And confirmo la transferencia sin esperar comprobante
+    Then veo el error de transferencia "La operación supera tu límite diario de S/ 1000.00" sin confirmación
+
+  @HU-N-07 @CP-W50 @story=HU-N-07 @severity=critical
+  Scenario: CP-W50 · El destinatario ve su saldo y el movimiento recibido
+    Given que inicié sesión como Ana
+    And estoy en Transferir
+    When preparo una transferencia de "50.00" al celular "912345678"
+    And confirmo la transferencia
+    And cierro sesión
+    And inicio sesión con el celular "912345678" y el PIN "7391"
+    Then veo el saludo "Hola, Bruno" y el saldo "S/ 850.00"
+    And el primer movimiento reciente del inicio es "Transferencia de Ana T." por "50.00"

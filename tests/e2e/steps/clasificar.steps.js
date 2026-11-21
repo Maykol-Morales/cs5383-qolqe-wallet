@@ -5,7 +5,11 @@ import { recargarHasta, CORTO } from '../pages/espera.js'
 import HistorialPage from '../pages/historial.page.js'
 
 // Usuarios semilla de Qolqe (README del SUT, sección 4).
-export const USUARIOS = { Ana: { celular: '987654321', pin: '4826' } }
+export const USUARIOS = {
+    Ana: { celular: '987654321', pin: '4826' },
+    Bruno: { celular: '912345678', pin: '7391' },
+    Diego: { celular: '998877665', pin: '3604' }, // límite diario S/ 1000, saldo S/ 2500
+}
 
 Given('que inicié sesión como {word}', async (nombre) => {
     const { celular, pin } = USUARIOS[nombre]
@@ -62,4 +66,56 @@ Then('veo el aviso {string}', async (mensaje) => {
 
 Then('el contador de categorías muestra {string}', async (texto) => {
     await expect($('[data-testid=contador-categorias]')).toHaveText(texto)
+})
+
+// --- Entrega final (2.ª tanda): editar y ver categorías, notas (HU-G3-04, HU-G3-05, HU-G3-07) ---
+When('edito la categoría {string} con el nombre {string} y el color {string}', async (nombre, nuevo, color) => {
+    await HistorialPage.editarCategoria(nombre, nuevo, color)
+})
+
+Then('veo el error del diálogo {string}', async (mensaje) => {
+    await expect($('[data-testid=dialogo-error]')).toHaveText(mensaje)
+})
+
+When('cancelo la edición', async () => {
+    await $('[data-testid=boton-cancelar-dialogo]').click()
+})
+
+Then('la lista de categorías incluye {string}', async (nombre) => {
+    await expect($('[data-testid=lista-categorias]')).toHaveText(expect.stringContaining(nombre))
+})
+
+Then('veo mis categorías en este orden', async (tabla) => {
+    const esperado = tabla.hashes()
+    await expect(HistorialPage.categorias).toBeElementsArrayOfSize(esperado.length)
+    const items = await HistorialPage.categorias
+    for (const [i, { nombre, movimientos }] of esperado.entries()) {
+        await expect(items[i]).toHaveText(expect.stringContaining(nombre))
+        await expect(items[i]).toHaveText(expect.stringContaining(`${movimientos} movimientos`))
+    }
+})
+
+When('intento clasificar mi movimiento más reciente con una nota de {int} caracteres', async function (n) {
+    this.codigo = await HistorialPage.abrirPrimerMovimiento()
+    await $('[data-testid=input-nota]').setValue('n'.repeat(n))
+    await $('aria/Guardar clasificación').click()
+})
+
+Then('veo el error de clasificación {string}', async (mensaje) => {
+    await expect($('[data-testid=clasificar-mensaje]')).toHaveText(mensaje)
+})
+
+When('clasifico mi movimiento más reciente en {string} con una nota de {int} caracteres', async function (categoria, n) {
+    this.codigo = await HistorialPage.abrirPrimerMovimiento()
+    await HistorialPage.clasificar(categoria, 'n'.repeat(n))
+})
+
+Then('la fila del movimiento conserva una nota de {int} caracteres', async function (n) {
+    await recargarHasta(() => expect(HistorialPage.fila(this.codigo)).toHaveText(expect.stringContaining('n'.repeat(n)), CORTO),
+        `La nota de ${n} caracteres no quedó guardada`)
+})
+
+Then('la fila del movimiento no muestra la categoría {string}', async function (categoria) {
+    await recargarHasta(() => expect(HistorialPage.fila(this.codigo)).not.toHaveText(expect.stringContaining(categoria), CORTO),
+        `La categoría "${categoria}" sigue en la fila`)
 })

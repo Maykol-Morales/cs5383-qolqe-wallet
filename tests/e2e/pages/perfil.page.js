@@ -13,6 +13,11 @@ class PerfilPage {
         await $('[data-testid=boton-guardar-perfil]').click()
     }
 
+    async cambiarCorreo(correo) {
+        await $('[data-testid=input-correo]').setValue(correo)
+        await $('[data-testid=boton-guardar-perfil]').click()
+    }
+
     // HU-N-06: el diálogo pide el PIN; si Qolqe rechaza el cierre, el error queda en el diálogo.
     get errorCierre() { return $('[data-testid=dialogo-error]') }
 

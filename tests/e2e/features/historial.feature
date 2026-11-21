@@ -61,3 +61,38 @@ Feature: Consultar y exportar mi historial
   Scenario: CP-W31 · Ver el detalle del movimiento más reciente
     When abro el detalle de mi movimiento más reciente
     Then el detalle muestra el mismo código de operación, el tipo y el importe
+
+  # --- Entrega final (2.ª tanda): exportar y filtrar ---
+
+  @HU-G3-08 @CP-W38 @story=HU-G3-08 @severity=normal
+  Scenario: CP-W38 · El CSV trae todos los movimientos del rango, no solo la página
+    When busco mis movimientos desde hace 60 días
+    Then veo 10 movimientos y el indicador "Página 1 de 2"
+    When exporto el historial a CSV
+    Then el CSV trae 20 movimientos
+
+  @HU-G3-08 @CP-W39 @story=HU-G3-08 @severity=normal
+  Scenario: CP-W39 · Exportar a CSV el historial filtrado por una categoría
+    When busco mis movimientos desde hace 60 días
+    And filtro mis movimientos por la categoría "Familia"
+    And exporto el historial a CSV
+    Then el CSV trae los mismos movimientos que la tabla, todos de la categoría "Familia"
+
+  @HU-G3-08 @CP-W40 @story=HU-G3-08 @severity=normal
+  Scenario: CP-W40 · Exportar un rango de más de 90 días se rechaza y no descarga nada
+    When busco mis movimientos desde hace 91 días
+    And intento exportar el historial a CSV
+    Then veo el error de historial "El rango máximo de consulta es de 90 días"
+    And no se descargó ningún CSV
+
+  @HU-G3-01 @CP-W41 @story=HU-G3-01 @severity=normal
+  Scenario: CP-W41 · Filtrar el historial por categoría
+    When busco mis movimientos desde hace 60 días
+    And filtro mis movimientos por la categoría "Servicios"
+    Then todas las filas son de la categoría "Servicios"
+
+  @HU-G3-01 @CP-W42 @story=HU-G3-01 @severity=normal
+  Scenario: CP-W42 · Filtrar por un rango de fechas que excluye los últimos 30 días
+    Given que anoto los movimientos de mis últimos 30 días
+    When busco mis movimientos desde hace 60 días hasta hace 31 días
+    Then veo al menos un movimiento y ninguno es de los últimos 30 días

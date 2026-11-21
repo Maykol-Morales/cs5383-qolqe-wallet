@@ -14,7 +14,7 @@ Proyecto 2 del curso **CS5383 Pruebas y Verificación de Software** (UTEC). Cont
 | CI | `.github/workflows/pruebas.yml`: contrato → (api ∥ web ×3) → reportes (gate G1–G6, Qase vía `.github/scripts/qase.py`) → Pages; matriz `docs/trazabilidad.md` | Hecha (Pages publica desde `final`) |
 | Reportes | Allure 3 (`demo.py reporte`) y dashboard de Schemathesis + comparativa con BDD (`demo.py schemathesis` / `dashboard`) | Hecha |
 | Presentación | Deck final de 13 slides, mapa visual y guion `demo.py` | Hecha (ver "Presentación y demo") |
-| 2 | Pruebas web E2E: WebdriverIO 10 + Cucumber + Page Objects + Allure en `tests/e2e/` (migrado del repo `cs5383-webdriverio`) | Hecha: G3 (CP-W01–W05, W90) + Núcleo (CP-W06–W28, `nucleo.feature`) + G3 ampliado (CP-W29–W34); 34 escenarios web; informe §3, §3.1 Page Object y §3.2 herramientas |
+| 2 | Pruebas web E2E: WebdriverIO 10 + Cucumber + Page Objects + Allure en `tests/e2e/` (migrado del repo `cs5383-webdriverio`) | Hecha: G3 (CP-W01–W05, W90) + Núcleo (CP-W06–W28 y W46–W50, `nucleo.feature`) + G3 ampliado (CP-W29–W45); 50 escenarios web + 1 `@ia`; informe §3, §3.1 Page Object y §3.2 herramientas |
 | Final | Parte 3 traída a `final` sin merge (copia de archivos, 2026-11-20); informe §6; cobertura 90 % con `features/otros_*.feature`; `demo.py final`; deck final de 16 slides (ver "Presentación y demo") | Hecha (commits `1898475` Maykol, `b74e6b0` Sebastián; CI del run 44796177354 por confirmar) |
 | 3 | Rendimiento con k6 (`tests/performance/`, `correr.py` + Docker 1 CPU/1 GB, 4 flujos 20/40/25/15); entregable `tests/performance/Informe_Rendimiento_G3.docx`, resumen en `docs/informe.md` §4 | Hecha en Docker/Windows (capacidad 700 VUs); falta re-correr en EC2 con el modelo nuevo |
 

@@ -148,6 +148,8 @@ Resumen (ID, título, severidad y estado) en la sección 5 de [`informe.md`](inf
 
 **Evidencia:** Tras `POST /api/transferencias` (código `TRF26101206582300001`): `GET /api/movimientos` → `movimientos[0].codigo_operacion = "PAG26101114032300001"` (de ayer); `total` sigue en 10.
 
+**Se ve también en la UI (entrega final, CP-W50):** tras recibir una transferencia hoy, el destinatario (Bruno) abre *Movimientos* con el rango por defecto y la tabla no la muestra (la primera fila es la del 2026-11-10), mientras que el bloque «recientes» del inicio (`GET /api/movimientos/recientes`) sí la trae. Por eso CP-W50 verifica el movimiento en el inicio y no en el historial.
+
 ## DEF-08: El detalle de un movimiento de otro usuario es visible (200 en lugar de 404)
 
 | Campo | Valor |

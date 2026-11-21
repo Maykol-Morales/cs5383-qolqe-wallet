@@ -138,3 +138,39 @@ Then('veo el error de inicio de sesión que empieza con {string}', async (inicio
 When('confirmo la transferencia sin esperar comprobante', async () => {
     await TransferirPage.confirmarSinComprobante()
 })
+
+// --- Entrega final (2.ª tanda): sesión, correo, límite diario y destinatario ---
+Given('que no tengo una sesión iniciada', async () => {
+    await browser.url('/login')
+    await browser.execute(() => sessionStorage.clear()) // el token vive en sessionStorage y persiste entre escenarios
+})
+
+Then('al abrir {string} sin sesión me lleva al ingreso', async (ruta) => {
+    await browser.url(ruta)
+    await expect(browser).toHaveUrl(expect.stringContaining('/login'))
+})
+
+When('cambio mi correo a {string}', async (correo) => {
+    await PerfilPage.cambiarCorreo(correo)
+})
+
+Then('mi perfil muestra el correo {string}', async (correo) => {
+    await recargarHasta(() => expect(PerfilPage.dato('correo')).toHaveText(correo, CORTO), `El correo "${correo}" no quedó guardado`)
+})
+
+When('hago {int} transferencias de {string} al celular {string}', async (n, monto, celular) => {
+    for (let i = 0; i < n; i++) {
+        await TransferirPage.continuar({ monto, celular })
+        await TransferirPage.confirmar()
+        await TransferirPage.nueva()
+    }
+})
+
+// Se mira el bloque «recientes» del inicio y no la tabla del historial: con DEF-07 el historial por defecto
+// (hasta = hoy) no muestra los movimientos de hoy, así que la transferencia recién recibida no aparece ahí.
+Then('el primer movimiento reciente del inicio es {string} por {string}', async (descripcion, monto) => {
+    await expect($$('[data-testid=lista-recientes] li')).toBeElementsArrayOfSize({ gte: 1 })
+    const primero = (await $$('[data-testid=lista-recientes] li'))[0]
+    await expect(primero).toHaveText(expect.stringContaining(descripcion))
+    await expect(primero).toHaveText(expect.stringContaining(monto))
+})

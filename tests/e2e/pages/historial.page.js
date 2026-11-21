@@ -11,11 +11,15 @@ class HistorialPage {
     get siguiente() { return $('[data-testid=boton-siguiente]') }
 
     // Desde/hasta van por JS: lo que se teclea en un <input type=date> depende del idioma del navegador.
-    async filtrar({ diasAtras, tipo }) {
+    async filtrar({ diasAtras, hastaDias, tipo, categoria }) {
         if (diasAtras) await browser.execute((d) => {
             document.querySelector('[data-testid=input-desde]').value = new Date(Date.now() - d * 86400000).toLocaleDateString('en-CA')
         }, diasAtras)
+        if (hastaDias) await browser.execute((d) => {
+            document.querySelector('[data-testid=input-hasta]').value = new Date(Date.now() - d * 86400000).toLocaleDateString('en-CA')
+        }, hastaDias)
         if (tipo) await $('[data-testid=select-tipo]').selectByVisibleText(tipo)
+        if (categoria) await $('[data-testid=select-categoria]').selectByVisibleText(categoria)
         await this.cambiarA('boton-buscar')
     }
 
@@ -46,6 +50,16 @@ class HistorialPage {
         await recargarHasta(
             () => expect($('[data-testid=lista-categorias]')).toHaveText(expect.stringContaining(nombre), CORTO),
             `Qolqe confirmó "${nombre}" pero no quedó guardada`)
+    }
+
+    get categorias() { return $$('[data-testid=categoria]') }
+
+    // Abre el diálogo «Editar categoría», cambia nombre y color y lo envía; el paso Then mira el aviso o el error del diálogo.
+    async editarCategoria(nombre, nuevoNombre, color) {
+        await this.categoria(nombre).$('[data-testid=boton-editar-categoria]').click()
+        await $('[data-testid=input-editar-nombre]').setValue(nuevoNombre)
+        await $('[data-testid=input-editar-color]').selectByAttribute('value', color)
+        await $('[data-testid=boton-guardar-dialogo]').click()
     }
 
     // Envía el formulario sin esperar éxito: el paso Then revisa el error o la lista.

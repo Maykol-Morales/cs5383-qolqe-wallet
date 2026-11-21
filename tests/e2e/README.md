@@ -27,6 +27,9 @@ Flujo de una ejecución: **escenario → paso → Page Object → WebdriverIO �
 | CP-W17 a CP-W28 | HU-N-01 a HU-N-09 | `nucleo.feature` (entrega final): validaciones de registro, bloqueo por 3 PIN, cuenta cerrada, nombres inválidos, PIN erróneo al cerrar, transferencia a sí mismo / no registrado / sin saldo, CCI inválido y comisión mínima |
 | CP-W29 a CP-W31 | HU-G3-01, HU-G3-02 | `historial.feature`: rango de 91 días, filtro "Transferencias enviadas" y detalle de un movimiento |
 | CP-W32 a CP-W34 | HU-G3-03, HU-G3-06 | `clasificar.feature`: validación y duplicado de categorías, eliminar categoría |
+| CP-W35 a CP-W37, CP-W43 a CP-W45 | HU-G3-04, HU-G3-05, HU-G3-07 | `clasificar.feature` (2.ª tanda): editar categoría, ver categorías con su contador, valor límite de la nota (100/101) y quitar la categoría |
+| CP-W38 a CP-W42 | HU-G3-01, HU-G3-08 | `historial.feature` (2.ª tanda): CSV de todo el rango, CSV por categoría, exportar con rango inválido, filtro por categoría y por rango de fechas |
+| CP-W46 a CP-W50 | HU-N-03, HU-N-05, HU-N-07 | `nucleo.feature` (2.ª tanda): páginas protegidas sin sesión, editar correo, límite diario y el destinatario ve su saldo y el movimiento |
 | CP-W90 | HU-G3-03, HU-G3-07 | `clasificar-ia.feature` (`@ia`, `npm run test:ia`): CP-W01 con `browser.act()` |
 
 Sin esperas fijas: los Page Objects esperan con `expect`/`waitUntil` (p. ej. a que la tabla quite su esqueleto de carga). El CSV se descarga con `fetch` + `<a download>`; Chrome lo guarda en `reportes/descargas/` (`prefs` en `wdio.conf.js`).

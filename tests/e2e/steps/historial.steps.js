@@ -101,3 +101,51 @@ Then('el detalle muestra el mismo código de operación, el tipo y el importe', 
     await expect($('[data-testid=detalle-tipo]')).not.toHaveText('')
     await expect($('[data-testid=detalle-importe]')).toHaveText(expect.stringMatching(/S\/\s*-?[\d,]+\.\d{2}/))
 })
+
+// --- Entrega final (2.ª tanda): filtros por categoría y rango, exportar (HU-G3-01, HU-G3-08) ---
+When('filtro mis movimientos por la categoría {string}', async (categoria) => {
+    await HistorialPage.filtrar({ categoria })
+})
+
+Then('todas las filas son de la categoría {string}', async (categoria) => {
+    await expect(HistorialPage.filas).toBeElementsArrayOfSize({ gte: 1 })
+    for (const fila of await HistorialPage.filas) await expect(fila.$('td:nth-child(4)')).toHaveText(expect.stringContaining(categoria))
+})
+
+When('busco mis movimientos desde hace {int} días hasta hace {int} días', async (desde, hasta) => {
+    await HistorialPage.filtrar({ diasAtras: desde, hastaDias: hasta })
+})
+
+Given('que anoto los movimientos de mis últimos 30 días', async function () {
+    await HistorialPage.filtrar({ diasAtras: 30 })
+    await expect(HistorialPage.filas).toBeElementsArrayOfSize({ gte: 1 })
+    this.codigos30 = await HistorialPage.filas.map((f) => f.getAttribute('data-codigo'))
+})
+
+Then('veo al menos un movimiento y ninguno es de los últimos 30 días', async function () {
+    await expect(HistorialPage.filas).toBeElementsArrayOfSize({ gte: 1 })
+    const codigos = await HistorialPage.filas.map((f) => f.getAttribute('data-codigo'))
+    expect(codigos.filter((c) => this.codigos30.includes(c))).toEqual([])
+})
+
+Then('el CSV trae {int} movimientos', function (n) {
+    expect(this.csv.length - 1).toBe(n)
+})
+
+Then('el CSV trae los mismos movimientos que la tabla, todos de la categoría {string}', async function (categoria) {
+    const filas = this.csv.slice(1).map((l) => l.split(';'))
+    expect(filas.length).toBeGreaterThan(0)
+    expect(filas.map((f) => f[7])).toEqual(filas.map(() => categoria))
+    expect(filas.map((f) => f[1])).toEqual(await HistorialPage.filas.map((f) => f.getAttribute('data-codigo')))
+})
+
+// Para el rango inválido Qolqe rechaza la exportación: se compara el contenido de la carpeta antes y después del clic.
+When('intento exportar el historial a CSV', async function () {
+    mkdirSync(descargas, { recursive: true })
+    this.antes = readdirSync(descargas)
+    await $('[data-testid=boton-exportar]').click()
+})
+
+Then('no se descargó ningún CSV', function () {
+    expect(readdirSync(descargas)).toEqual(this.antes)
+})

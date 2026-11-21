@@ -29,6 +29,12 @@ class TransferirPage {
         await expect($('[data-testid=comprobante]')).toBeDisplayed()
     }
 
+    // Tras el comprobante: vuelve al formulario vacío para otra transferencia.
+    async nueva() {
+        await $('[data-testid=boton-nueva-transferencia]').click()
+        await expect($('[data-testid=input-monto]')).toBeDisplayed()
+    }
+
     // Para operaciones que Qolqe rechaza al confirmar: el diálogo se cierra y el error queda en la página.
     async confirmarSinComprobante() {
         await $("[data-testid=boton-confirmar]").click()
