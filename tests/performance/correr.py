@@ -144,6 +144,7 @@ def correr(prueba: str):
     datos("verificar")
     ejecutar("docker", "cp", f"{CONTENEDOR}:{EN_CONTENEDOR}/tests/performance/out/integridad.txt", directorio / "integridad.txt")
     ejecutar(sys.executable, AQUI / "graficos.py", directorio)
+    ejecutar(sys.executable, AQUI / "resumen.py", directorio)  # resumen.html: percentiles por tipo, umbrales y totales exactos
     print(f"Resultados en {directorio} (k6 salió con {rc})")
     sys.exit(rc)
 

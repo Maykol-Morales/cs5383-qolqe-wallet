@@ -8,6 +8,7 @@ Requerimiento "Quincena Qolqe" (`pdfs/P2_Parte3_Enunciado.pdf`). Modelo, umbrale
 | `datos.py` | `preparar` (reinicia y deja un usuario por VU con deudas y contactos) y `verificar` (integridad) |
 | `monitor.py` | CPU y memoria de un proceso → CSV (script del enunciado) |
 | `graficos.py` | `por-minuto.csv`, `por-endpoint.csv`, `k6.png`, `recursos.png` |
+| `resumen.py` | `resumen.html` de la corrida (y, sin argumentos, el de todas más `resultados/index.html`). Junta lo que el dashboard de k6 no trae: percentiles por tipo de operación, ✓/✗ de cada umbral y totales exactos, con los recursos, la integridad y los endpoints. `correr.py` lo llama al terminar |
 | `correr.py` | Todo lo anterior en orden, con Qolqe en Docker y k6 en el equipo. Funciona en Windows, macOS y Linux |
 | `reproducir_def16.py` | DEF-16: N logins simultáneos contra un Qolqe dedicado; sale con 1 si alguno da 5xx |
 
